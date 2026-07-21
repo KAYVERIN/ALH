@@ -110,6 +110,7 @@ InitTestScene*.unity*
 /Packages/*
 /[Aa]ssets/Prefabs/*
 /[Aa]ssets/Settings/*
+/[Aa]ssets/Editor/*
 /[Aa]ssets/TextMesh Pro/*
 !/[Aa]ssets/Scripts/**/*.cs
 *.asset
