@@ -75,7 +75,4 @@ crashlytics-build.properties
 # === ИГНОРИРУЕМ ВСЁ В ПАПКЕ ASSETS ===
 /[Aa]ssets/*
 # Но разрешаем папки со скриптами 
-!/[Aa]ssets//[Ss]cripts/**/
-# Разрешаем только .cs файлы
-!/[Aa]ssets/**/*.cs
-/[Aa]ssets/**/*.meta
+!/[Aa]ssets/[Ss]cripts/**/*.cs
