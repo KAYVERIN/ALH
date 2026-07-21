@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.Tilemaps;
 using UnityEngine.EventSystems;
 
-   /// <summary>
+/// <summary>
 /// CameraController - управление камерой в 2D игре.
 /// Поддерживает: WASD/стрелки, движение по краям экрана, зум колесиком,
 /// перетаскивание поля разными кнопками мыши, И НАКЛОН ДЛЯ PERSPECTIVE КАМЕРЫ!
