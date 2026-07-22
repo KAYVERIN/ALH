@@ -1,16 +1,18 @@
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
+using TMPro; // ⬅️ ВАЖНО: добавить using для TextMeshPro
 
 /// <summary>
 /// Окно информации о карте в World Space
 /// Отображает данные из полей CardObject и позволяет перетаскивать окно
+/// Использует TextMeshPro для текста
 /// </summary>
 public class WorldInfoWindow : MonoBehaviour, IDragHandler, IBeginDragHandler
 {
     [Header("UI References")]
-    [SerializeField] private Text titleText;
-    [SerializeField] private Text contentText;
+    [SerializeField] private TextMeshProUGUI titleText;        // ⬅️ TextMeshProUGUI
+    [SerializeField] private TextMeshProUGUI contentText;      // ⬅️ TextMeshProUGUI
     [SerializeField] private Button closeButton;
     [SerializeField] private Image backgroundImage;
 
