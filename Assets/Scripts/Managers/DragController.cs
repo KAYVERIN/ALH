@@ -3,211 +3,349 @@ using UnityEngine.EventSystems;
 
 public class DragController : MonoBehaviour
 {
-    [Header("Settings")]
-    [SerializeField] private bool enableDebugLogs = false;
+    [Header("Настройки")]
+    public LayerMask cardLayer;
+    public float dragThreshold = 10f;
 
-    [Header("References")]
-    [SerializeField] private CardObject cardObject;
-    [SerializeField] private CardVisualController visualController;
+    [Header("Отладка")]
+    public bool enableDebugLogs = true;
 
-    private Camera mainCamera;
-    private Vector3 dragOffset;
+    private CardObject draggedCard = null;
     private bool isDragging = false;
 
-    // События для внешних систем
-    public System.Action<CardObject> OnDragStart;
-    public System.Action<CardObject, Vector3> OnDragEnd;
+    private Vector2 mouseDownPosition;
+    private CardObject clickedCard = null;
+    private bool isMouseDownOnCard = false;
+    private bool hasExceededThreshold = false;
 
-    private void Awake()
+    void Start()
     {
-        // Получаем компоненты
-        if (cardObject == null)
-            cardObject = GetComponent<CardObject>();
+        CardObject.OnCardPickedUp += OnCardPickedUpHandler;
+    }
 
-        if (visualController == null)
-            visualController = GetComponent<CardVisualController>();
+    void OnDestroy()
+    {
+        CardObject.OnCardPickedUp -= OnCardPickedUpHandler;
+    }
 
-        mainCamera = Camera.main;
-
-        if (cardObject == null)
-            Debug.LogError("DragController: CardObject component not found!");
-
+    void OnCardPickedUpHandler(CardObject newCard)
+    {
         if (enableDebugLogs)
-            Debug.Log($"DragController: Initialized on {gameObject.name}");
-    }
+            Debug.Log($"DragController: получена новая карта {newCard.cardName}");
 
-    private void OnMouseDown()
-    {
-        if (enableDebugLogs) Debug.Log($"DragController: OnMouseDown on {gameObject.name}");
-
-        // ============================================================
-        // 1. ПРОВЕРКА НА UI
-        // ============================================================
-        if (IsPointerOverUI())
-        {
-            if (enableDebugLogs) Debug.Log("DragController: Click on UI ignored");
-            return;
-        }
-
-        // ============================================================
-        // 2. ПРОВЕРКА НА БЛОКИРОВКУ (isBlocked из CardObject)
-        // ============================================================
-        if (cardObject != null && cardObject.isBlocked)
-        {
-            if (enableDebugLogs) Debug.Log("DragController: Card is blocked");
-            return;
-        }
-
-        // ============================================================
-        // 3. ПРОВЕРКА НА DRAG (если карта уже перетаскивается)
-        // ============================================================
-        if (cardObject != null && cardObject.isDragging)
-        {
-            if (enableDebugLogs) Debug.Log("DragController: Card already dragging");
-            return;
-        }
-
-        StartDrag();
-    }
-
-    private void OnMouseUp()
-    {
-        if (enableDebugLogs) Debug.Log($"DragController: OnMouseUp on {gameObject.name}");
-
-        // ============================================================
-        // 1. ПРОВЕРКА НА UI
-        // ============================================================
-        if (IsPointerOverUI())
-        {
-            if (enableDebugLogs) Debug.Log("DragController: Release on UI ignored");
-            return;
-        }
-
-        // ============================================================
-        // 2. ПРОВЕРКА ЧТО МЫ ДЕЙСТВИТЕЛЬНО ПЕРЕТАСКИВАЕМ
-        // ============================================================
-        if (isDragging && cardObject != null && cardObject.isDragging)
-        {
-            EndDrag();
-        }
-    }
-
-    private void Update()
-    {
-        // Обновляем позицию при перетаскивании
-        if (isDragging && cardObject != null && cardObject.isDragging)
-        {
-            UpdateDragPosition();
-        }
-    }
-
-    /// <summary>
-    /// Начинает перетаскивание карты
-    /// </summary>
-    private void StartDrag()
-    {
-        if (cardObject == null) return;
-
+        draggedCard = newCard;
         isDragging = true;
-
-        // Вычисляем offset между позицией карты и мышью
-        Vector3 cardWorldPos = transform.position;
-        Vector3 mouseWorldPos = GetMouseWorldPosition();
-        dragOffset = cardWorldPos - mouseWorldPos;
-
-        // ============================================================
-        // ИСПОЛЬЗУЕМ СУЩЕСТВУЮЩИЙ МЕТОД PickUp() ИЗ CardObject
-        // ============================================================
-        cardObject.PickUp();
-
-        // Вызываем событие
-        OnDragStart?.Invoke(cardObject);
-
-        if (enableDebugLogs) Debug.Log($"DragController: Started dragging {gameObject.name}");
+        isMouseDownOnCard = false;
+        clickedCard = null;
+        hasExceededThreshold = false;
     }
 
-    /// <summary>
-    /// Обновляет позицию карты во время перетаскивания
-    /// </summary>
-    private void UpdateDragPosition()
+    void Update()
     {
-        if (cardObject == null) return;
-
-        Vector3 mouseWorldPos = GetMouseWorldPosition();
-        Vector3 newPosition = mouseWorldPos + dragOffset;
-
-        // Сохраняем Z (глубину) карты
-        newPosition.z = transform.position.z;
-
-        // Обновляем позицию
-        transform.position = newPosition;
-
-        // Вызываем метод обновления из CardObject
-        cardObject.UpdateDragPosition(mouseWorldPos);
-
-        if (enableDebugLogs && Time.frameCount % 30 == 0)
+        // ============================================================
+        //  ОБНОВЛЕНИЕ ПОЗИЦИИ ПЕРЕТАСКИВАЕМОЙ КАРТЫ
+        // ============================================================
+        if (isDragging && draggedCard != null)
         {
-            Debug.Log($"DragController: Dragging {gameObject.name} to {newPosition}");
+            Vector3 mouseWorldPos = GetMouseWorldPosition();
+
+            if (enableDebugLogs && Time.frameCount % 30 == 0)
+                Debug.Log($"[DragController] Update: mouseWorldPos={mouseWorldPos}");
+
+            draggedCard.UpdateDragPosition(mouseWorldPos);
+
+            Cell nearestCell = GridManager.Instance?.GetCellAtWorldPosition(mouseWorldPos);
+            if (nearestCell != null)
+            {
+                if (enableDebugLogs && Time.frameCount % 30 == 0)
+                    Debug.Log($"[DragController] Update: подсветка на ячейке ({nearestCell.gridX}, {nearestCell.gridY})");
+                GridManager.Instance.ShowHighlight(nearestCell.gridX, nearestCell.gridY);
+            }
+            else
+            {
+                if (enableDebugLogs && Time.frameCount % 30 == 0)
+                    Debug.Log("[DragController] Update: подсветка скрыта (вне сетки)");
+                GridManager.Instance.HideHighlight();
+            }
+        }
+
+        // ============================================================
+        //  ОБРАБОТКА ДВИЖЕНИЯ МЫШИ С ЗАЖАТОЙ ЛКМ
+        // ============================================================
+        if (isMouseDownOnCard && !isDragging && InputHandler.Instance != null && InputHandler.Instance.GetKey("Drag"))
+        {
+            float dragDistance = Vector2.Distance(mouseDownPosition, Input.mousePosition);
+
+            if (dragDistance > dragThreshold && !hasExceededThreshold)
+            {
+                hasExceededThreshold = true;
+
+                if (enableDebugLogs)
+                    Debug.Log($"Превышен порог → поднимаем карту {clickedCard.cardName}");
+
+                clickedCard.PickUp();
+
+                if (draggedCard == null && clickedCard.isDragging)
+                {
+                    draggedCard = clickedCard;
+                    isDragging = true;
+                    if (enableDebugLogs)
+                        Debug.Log($"Начато перетаскивание для {draggedCard.cardName} (обычный подъём)");
+                }
+
+                if (draggedCard == null)
+                {
+                    if (enableDebugLogs)
+                        Debug.Log($"Карта {clickedCard.cardName} НЕ поднялась!");
+                    isMouseDownOnCard = false;
+                    clickedCard = null;
+                    hasExceededThreshold = false;
+                }
+            }
+        }
+
+        // ============================================================
+        //  ОБРАБОТКА НАЖАТИЙ МЫШИ
+        // ============================================================
+        if (InputHandler.Instance != null && InputHandler.Instance.GetKeyDown("Drag"))
+        {
+            HandleMouseDown();
+        }
+
+        if (InputHandler.Instance != null && InputHandler.Instance.GetKeyUp("Drag"))
+        {
+            if (isMouseDownOnCard || isDragging)
+            {
+                HandleMouseUp();
+            }
+        }
+
+        if (InputHandler.Instance != null && InputHandler.Instance.GetKeyDown("Pause"))
+        {
+            if (isDragging && draggedCard != null)
+            {
+                HandleEscape();
+            }
         }
     }
 
     /// <summary>
-    /// Завершает перетаскивание карты
-    /// </summary>
-    private void EndDrag()
-    {
-        if (cardObject == null) return;
-
-        // Получаем позицию мыши для Drop
-        Vector3 dropPosition = GetMouseWorldPosition();
-
-        // ============================================================
-        // ИСПОЛЬЗУЕМ СУЩЕСТВУЮЩИЙ МЕТОД Drop() ИЗ CardObject
-        // ============================================================
-        bool cardRemains = cardObject.Drop(dropPosition);
-
-        // Сбрасываем состояние
-        isDragging = false;
-
-        // Если карта осталась под курсором (остаток стопки) - не сбрасываем isDragging в CardObject
-        if (!cardRemains)
-        {
-            // Карта убрана (помещена или уничтожена)
-            if (enableDebugLogs) Debug.Log($"DragController: Card {gameObject.name} was placed or destroyed");
-        }
-        else
-        {
-            // Карта осталась (остаток стопки) - продолжаем перетаскивание
-            if (enableDebugLogs) Debug.Log($"DragController: Card {gameObject.name} remains (stack remainder)");
-        }
-
-        // Вызываем событие
-        OnDragEnd?.Invoke(cardObject, dropPosition);
-
-        if (enableDebugLogs) Debug.Log($"DragController: Stopped dragging {gameObject.name}");
-    }
-
-    /// <summary>
-    /// Получает мировую позицию курсора мыши
+    /// Получает мировые координаты мыши (работает с Orthographic и Perspective)
     /// </summary>
     private Vector3 GetMouseWorldPosition()
     {
-        if (mainCamera == null)
+        if (enableDebugLogs && Time.frameCount % 60 == 0)
+            Debug.Log("[DragController] GetMouseWorldPosition: начало");
+
+        if (GridManager.Instance != null)
         {
-            Debug.LogError("DragController: Main Camera not found!");
-            return Vector3.zero;
+            Vector3 pos = GridManager.Instance.GetMouseWorldPositionOnGrid();
+            if (enableDebugLogs && Time.frameCount % 60 == 0)
+                Debug.Log($"[DragController] GetMouseWorldPosition: из GridManager → {pos}");
+            return pos;
         }
 
-        Vector3 mouseScreenPos = Input.mousePosition;
+        if (enableDebugLogs)
+            Debug.LogWarning("[DragController] GridManager.Instance == null, используем fallback");
 
-        // Преобразуем экранные координаты в мировые
-        Vector3 worldPos = mainCamera.ScreenToWorldPoint(new Vector3(
-            mouseScreenPos.x,
-            mouseScreenPos.y,
-            Mathf.Abs(mainCamera.transform.position.z - transform.position.z)
-        ));
+        Camera cam = Camera.main;
+        if (cam == null) return Vector3.zero;
 
-        return worldPos;
+        Vector3 mousePos = Input.mousePosition;
+
+        if (cam.orthographic)
+        {
+            Vector3 world = cam.ScreenToWorldPoint(new Vector3(mousePos.x, mousePos.y, 0));
+            world.z = 0;
+            return world;
+        }
+        else
+        {
+            Plane plane = new Plane(Vector3.forward, Vector3.zero);
+            Ray ray = cam.ScreenPointToRay(mousePos);
+            float distance;
+            if (plane.Raycast(ray, out distance))
+            {
+                return ray.GetPoint(distance);
+            }
+            return cam.ScreenToWorldPoint(new Vector3(mousePos.x, mousePos.y, 10f));
+        }
+    }
+
+    void HandleMouseDown()
+    {
+        // ============================================================
+        // 1. ПРОВЕРКА НА UI (новое!)
+        // ============================================================
+        if (IsPointerOverUI())
+        {
+            if (enableDebugLogs)
+                Debug.Log("DragController: Click on UI ignored");
+            return;
+        }
+
+        Vector3 mouseWorldPos = GetMouseWorldPosition();
+
+        // ============================================================
+        // ИСПОЛЬЗУЕМ 3D RAYCAST (для 3D коллайдеров)
+        // ============================================================
+        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+        RaycastHit hit;
+
+        if (Physics.Raycast(ray, out hit, Mathf.Infinity, cardLayer))
+        {
+            CardObject card = hit.collider.GetComponent<CardObject>();
+            if (card != null)
+            {
+                // Проверяем блокировку
+                if (card.isBlocked)
+                {
+                    if (enableDebugLogs)
+                        Debug.Log($"Карта {card.cardName} заблокирована");
+                    return;
+                }
+
+                if (card.isDragging)
+                {
+                    if (enableDebugLogs)
+                        Debug.Log($"Нажатие на уже поднятую карту: {card.cardName} - игнорируем");
+                    return;
+                }
+
+                if (enableDebugLogs)
+                    Debug.Log($"Нажатие на карту: {card.cardName}");
+
+                mouseDownPosition = Input.mousePosition;
+                clickedCard = card;
+                isMouseDownOnCard = true;
+                hasExceededThreshold = false;
+            }
+        }
+        else
+        {
+            // Если кликнули не по карте - сбрасываем состояние
+            if (enableDebugLogs)
+                Debug.Log("Клик не по карте");
+
+            // Если есть перетаскивание - отменяем
+            if (isDragging && draggedCard != null)
+            {
+                // Не отменяем, просто игнорируем
+            }
+        }
+    }
+
+    void HandleMouseUp()
+    {
+        // ============================================================
+        // 1. ПРОВЕРКА НА UI (новое!)
+        // ============================================================
+        if (IsPointerOverUI())
+        {
+            if (enableDebugLogs)
+                Debug.Log("DragController: Release on UI ignored");
+
+            // Если карта перетаскивается - отменяем
+            if (isDragging && draggedCard != null)
+            {
+                draggedCard.ReturnToOriginalPosition();
+                isDragging = false;
+                draggedCard = null;
+                GridManager.Instance?.HideHighlight();
+            }
+
+            isMouseDownOnCard = false;
+            clickedCard = null;
+            hasExceededThreshold = false;
+            return;
+        }
+
+        // ============================================================
+        //  СЛУЧАЙ 1: ПЕРЕТАСКИВАНИЕ
+        // ============================================================
+        if (isDragging && draggedCard != null)
+        {
+            if (enableDebugLogs)
+                Debug.Log($"Завершение перетаскивания: {draggedCard.cardName}");
+
+            CardObject card = draggedCard;
+
+            // Получаем позицию мыши перед отпусканием
+            Vector3 mouseWorldPos = GetMouseWorldPosition();
+            if (enableDebugLogs)
+                Debug.Log($"[DragController] HandleMouseUp: позиция мыши = {mouseWorldPos}");
+
+            // Передаём позицию в метод Drop
+            bool cardRemainsUnderCursor = card.Drop(mouseWorldPos);
+
+            if (cardRemainsUnderCursor)
+            {
+                if (enableDebugLogs)
+                    Debug.Log($"[DragController] {card.cardName} продолжает перетаскивание (остаток стопки)");
+
+                // Карта осталась под курсором - продолжаем
+                card.UpdateDragPosition(mouseWorldPos);
+
+                isMouseDownOnCard = false;
+                clickedCard = null;
+                hasExceededThreshold = false;
+
+                // НЕ сбрасываем isDragging и draggedCard!
+                return;
+            }
+
+            // Если карта не осталась под курсором - сбрасываем всё
+            isDragging = false;
+            draggedCard = null;
+            isMouseDownOnCard = false;
+            clickedCard = null;
+            hasExceededThreshold = false;
+            GridManager.Instance?.HideHighlight();
+
+            if (enableDebugLogs)
+                Debug.Log("Перетаскивание завершено");
+
+            return;
+        }
+
+        // ============================================================
+        //  СЛУЧАЙ 2: КЛИК
+        // ============================================================
+        if (isMouseDownOnCard && clickedCard != null && !hasExceededThreshold)
+        {
+            if (enableDebugLogs)
+                Debug.Log($"Клик: открываем UI для {clickedCard.cardName}");
+
+            CardObject.OnCardClicked?.Invoke(clickedCard);
+
+            clickedCard = null;
+            isMouseDownOnCard = false;
+            hasExceededThreshold = false;
+        }
+        else
+        {
+            isMouseDownOnCard = false;
+            clickedCard = null;
+            hasExceededThreshold = false;
+        }
+    }
+
+    void HandleEscape()
+    {
+        if (draggedCard != null)
+        {
+            draggedCard.ReturnToOriginalPosition();
+        }
+
+        isDragging = false;
+        draggedCard = null;
+        clickedCard = null;
+        isMouseDownOnCard = false;
+        hasExceededThreshold = false;
+        GridManager.Instance?.HideHighlight();
+
+        if (enableDebugLogs)
+            Debug.Log("ESC: карта возвращена на место");
     }
 
     /// <summary>
@@ -223,25 +361,4 @@ public class DragController : MonoBehaviour
 
         return EventSystem.current.IsPointerOverGameObject();
     }
-
-    /// <summary>
-    /// Принудительно отменяет перетаскивание
-    /// </summary>
-    public void CancelDrag()
-    {
-        if (isDragging && cardObject != null)
-        {
-            if (enableDebugLogs) Debug.Log($"DragController: Drag cancelled for {gameObject.name}");
-
-            isDragging = false;
-
-            // Возвращаем карту на место
-            cardObject.ReturnToOriginalPosition();
-        }
-    }
-
-    /// <summary>
-    /// Проверяет, перетаскивается ли карта в данный момент
-    /// </summary>
-    public bool IsDragging => isDragging;
 }
