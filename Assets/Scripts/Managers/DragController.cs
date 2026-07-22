@@ -6,6 +6,7 @@ public class DragController : MonoBehaviour
     [Header("Настройки")]
     public LayerMask cardLayer;
     public float dragThreshold = 10f;
+    public float raycastDistance = 100f; // <-- ДОБАВИТЬ ЭТУ СТРОКУ!
 
     [Header("Отладка")]
     public bool enableDebugLogs = true;
