@@ -1,147 +1,204 @@
 using UnityEngine;
 using UnityEngine.UI;
-using TMPro;
+using UnityEngine.EventSystems;
 
-/// <summary>
-/// Окно информации в World Space
-/// </summary>
-public class WorldInfoWindow : MonoBehaviour, ICardWindow
+public class WorldInfoWindow : MonoBehaviour, IDragHandler, IBeginDragHandler
 {
-    [Header("UI Элементы")]
-    [SerializeField] private TextMeshProUGUI cardNameText;
-    [SerializeField] private TextMeshProUGUI typeText;
-    [SerializeField] private TextMeshProUGUI descriptionText;
-    [SerializeField] private Image iconImage;
+    [Header("UI References")]
+    [SerializeField] private Text titleText;
+    [SerializeField] private Text contentText;
     [SerializeField] private Button closeButton;
     [SerializeField] private Image backgroundImage;
-    [SerializeField] private TextMeshProUGUI titleText;
 
-    [Header("Настройки")]
-    [SerializeField] private Color resourceColor = new Color(0.2f, 0.6f, 0.2f);
-    [SerializeField] private Color ingredientColor = new Color(0.2f, 0.6f, 0.6f);
-    [SerializeField] private Color npcColor = new Color(0.6f, 0.4f, 0.8f);
-    [SerializeField] private Color buildingColor = new Color(0.6f, 0.5f, 0.2f);
-    [SerializeField] private float heightAboveCard = 2f;
+    [Header("Window Settings")]
+    [SerializeField] private bool enableDebugLogs = false;
+    [SerializeField] private bool isDraggable = true;
 
+    [Header("Adaptive Settings")]
+    [SerializeField] private bool adaptToResolution = true;
+    [SerializeField] private Vector2 baseResolution = new Vector2(1920, 1080);
+    [SerializeField] private float minScale = 0.5f;
+    [SerializeField] private float maxScale = 2f;
+
+    private RectTransform rectTransform;
+    private Vector2 dragOffset;
     private CardObject currentCard;
+    private Canvas canvas;
 
-    private void Awake()
+    void Awake()
     {
+        rectTransform = GetComponent<RectTransform>();
+        canvas = GetComponent<Canvas>();
+
+        // Настройка Canvas
+        if (canvas != null)
+        {
+            canvas.renderMode = RenderMode.WorldSpace;
+            canvas.sortingOrder = 100;
+        }
+
+        // Подписка на кнопку закрытия
         if (closeButton != null)
+        {
             closeButton.onClick.AddListener(Close);
+        }
+
+        // Адаптация под разрешение
+        if (adaptToResolution)
+        {
+            AdaptToResolution();
+        }
+
+        if (enableDebugLogs) Debug.Log("[WorldInfoWindow] Awake completed");
     }
 
+    // Адаптация размера под экран
+    private void AdaptToResolution()
+    {
+        if (rectTransform == null) return;
+
+        float screenWidth = Screen.width;
+        float screenHeight = Screen.height;
+
+        float widthRatio = screenWidth / baseResolution.x;
+        float heightRatio = screenHeight / baseResolution.y;
+        float scale = Mathf.Clamp((widthRatio + heightRatio) / 2f, minScale, maxScale);
+
+        // Сохраняем базовый размер, меняем только масштаб
+        rectTransform.localScale = Vector3.one * scale * 0.01f;
+
+        if (enableDebugLogs)
+            Debug.Log($"[WorldInfoWindow] Scale: {scale}, Screen: {screenWidth}x{screenHeight}");
+    }
+
+    // Установка данных карты
     public void SetCard(CardObject card)
     {
-        if (card == null) return;
-
         currentCard = card;
 
-        // Название карты
-        if (cardNameText != null)
-            cardNameText.text = card.cardName;
-
-        // Заголовок окна
-        if (titleText != null)
-            titleText.text = $"📜 {card.cardName}";
-
-        // Тип
-        if (typeText != null)
-            typeText.text = $"Тип: {card.cardType}";
-
-        // Описание
-        if (descriptionText != null)
+        if (card != null && card.CardData != null)
         {
-            CardData data = CardLibrary.Instance?.GetCard(card.cardID);
-            if (data != null && !string.IsNullOrEmpty(data.description))
-                descriptionText.text = data.description;
-            else
-                descriptionText.text = card.description ?? "Нет описания";
-        }
+            // Заполняем информацию из CardData
+            if (titleText != null)
+                titleText.text = card.CardData.cardName ?? "Без имени";
 
-        // Иконка
-        if (iconImage != null)
-        {
-            CardData data = CardLibrary.Instance?.GetCard(card.cardID);
-            if (data != null && data.cardIcon != null)
+            if (contentText != null)
             {
-                iconImage.sprite = data.cardIcon;
-                iconImage.gameObject.SetActive(true);
+                string info = $"Тип: {card.CardData.cardType}\n";
+                info += $"Можно стакать: {(card.CardData.isStackable ? "Да" : "Нет")}\n";
+                info += $"Макс. стек: {card.CardData.maxStackSize}\n";
+                info += $"Цвет: {card.CardData.cardColor}\n";
+                info += $"Позиция: {transform.position}";
+                contentText.text = info;
             }
-            else
+        }
+        else
+        {
+            // Если данных нет - показываем базовую информацию
+            if (titleText != null)
+                titleText.text = $"Карта #{card?.GetInstanceID() ?? 0}";
+
+            if (contentText != null)
             {
-                iconImage.gameObject.SetActive(false);
+                string info = $"ID: {card?.GetInstanceID() ?? 0}\n";
+                info += $"Позиция: {transform.position}\n";
+                info += $"Активна: {(card != null ? card.gameObject.activeSelf : false)}";
+                contentText.text = info;
             }
         }
 
-        // Цвет фона
-        if (backgroundImage != null)
+        // Позиционируем над картой
+        if (card != null)
         {
-            switch (card.cardType)
-            {
-                case CardType.Resource:
-                    backgroundImage.color = resourceColor;
-                    break;
-                case CardType.Ingredient:
-                    backgroundImage.color = ingredientColor;
-                    break;
-                case CardType.Npc:
-                    backgroundImage.color = npcColor;
-                    break;
-                case CardType.Building:
-                    backgroundImage.color = buildingColor;
-                    break;
-                default:
-                    backgroundImage.color = new Color(0.3f, 0.3f, 0.3f);
-                    break;
-            }
+            PositionAboveCard(card);
         }
 
-        // Позиционируем окно над картой
-        PositionAboveCard(card);
+        // Показываем окно
+        gameObject.SetActive(true);
+
+        if (enableDebugLogs) Debug.Log($"[WorldInfoWindow] SetCard: {card?.name}");
     }
 
-    // WorldInfoWindow.cs
-
-    private void PositionAboveCard(CardObject card)
+    // Позиционирование над картой
+    public void PositionAboveCard(CardObject card)
     {
         if (card == null) return;
 
-        // ============================================================
-        //  БЕРЁМ КООРДИНАТЫ КАРТЫ НА СЕТКЕ (Z = 0)
-        // ============================================================
-        Vector3 cardPos;
-
-        if (card.currentCell != null)
+        // Получаем размер карты
+        float cardHeight = 1f;
+        BoxCollider boxCollider = card.GetComponent<BoxCollider>();
+        if (boxCollider != null)
         {
-            cardPos = card.currentCell.worldPosition;
-        }
-        else
-        {
-            cardPos = card.transform.position;
+            cardHeight = boxCollider.size.y * card.transform.localScale.y;
         }
 
-        // Фиксируем Z = 0
-        cardPos.z = 0;
+        Vector3 cardPos = card.transform.position;
+        Vector3 windowPos = new Vector3(
+            cardPos.x,
+            cardPos.y + cardHeight + 1.5f,
+            cardPos.z - 0.5f
+        );
 
-        // Поднимаем над картой
-        cardPos.y += heightAboveCard;
+        transform.position = windowPos;
 
-        Debug.Log($"[WorldInfoWindow] Позиционируем над картой: {cardPos}");
-
-        DragWorldWindow dragWindow = GetComponent<DragWorldWindow>();
-        if (dragWindow != null)
-        {
-            dragWindow.SetPosition(cardPos);
-        }
-        else
-        {
-            transform.position = cardPos;
-        }
+        if (enableDebugLogs) Debug.Log($"[WorldInfoWindow] Position: {windowPos}");
     }
 
+    // Закрытие
     public void Close()
     {
-        Destroy(gameObject);
+        gameObject.SetActive(false);
+        currentCard = null;
+
+        if (enableDebugLogs) Debug.Log("[WorldInfoWindow] Closed");
     }
+
+    // Перетаскивание
+    public void OnBeginDrag(PointerEventData eventData)
+    {
+        if (!isDraggable) return;
+
+        Vector2 mousePos;
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(
+            rectTransform,
+            eventData.position,
+            eventData.pressEventCamera,
+            out mousePos
+        );
+        dragOffset = rectTransform.anchoredPosition - mousePos;
+
+        if (enableDebugLogs) Debug.Log("[WorldInfoWindow] Begin Drag");
+    }
+
+    public void OnDrag(PointerEventData eventData)
+    {
+        if (!isDraggable) return;
+
+        Vector3 worldPos = GetWorldPosition(eventData.position);
+        transform.position = worldPos;
+
+        if (enableDebugLogs) Debug.Log($"[WorldInfoWindow] Drag: {worldPos}");
+    }
+
+    // Получение позиции в мире
+    private Vector3 GetWorldPosition(Vector3 screenPos)
+    {
+        Camera cam = Camera.main;
+        if (cam == null) return transform.position;
+
+        Ray ray = cam.ScreenPointToRay(screenPos);
+        Plane plane = new Plane(Vector3.forward, transform.position.z);
+
+        float distance;
+        if (plane.Raycast(ray, out distance))
+        {
+            Vector3 worldPos = ray.GetPoint(distance);
+            worldPos.z = transform.position.z;
+            return worldPos;
+        }
+
+        return transform.position;
+    }
+
+    public bool IsOpen() => gameObject.activeSelf;
 }
