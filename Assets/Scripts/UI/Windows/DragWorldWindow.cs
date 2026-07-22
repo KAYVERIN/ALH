@@ -1,140 +1,121 @@
+// DragWorldWindow.cs
 using UnityEngine;
 using UnityEngine.EventSystems;
 
-/// <summary>
-/// Парящее окно в World Space — работает с Orthographic и Perspective камерами
-/// </summary>
-public class DragWorldWindow : MonoBehaviour, IDragHandler, IBeginDragHandler, IPointerDownHandler
+public class DragWorldWindow : MonoBehaviour, IDragHandler, IBeginDragHandler
 {
-    [Header("Настройки")]
-    [SerializeField] private RectTransform dragArea;
-    [SerializeField] private float dragHeight = 2f;
-    [SerializeField] private bool lookAtCamera = true;
-    [SerializeField] private bool enableDebugLogs = true;
+    [Header("Settings")]
+    [SerializeField] private bool enableDebugLogs = false;
 
-    private RectTransform windowRect;
+    [Header("References")]
+    [SerializeField] private Canvas canvas;
+    [SerializeField] private RectTransform dragArea; // Drag Area Image
+
     private Vector3 offset;
+    private RectTransform rectTransform;
     private Camera mainCamera;
+    private Vector3 lastMousePosition;
     private bool isDragging = false;
-    private Vector3 dragStartPosition; // ← ДОБАВЛЯЕМ!
 
     private void Awake()
     {
-        windowRect = GetComponent<RectTransform>();
+        rectTransform = GetComponent<RectTransform>();
+
+        if (canvas == null)
+            canvas = GetComponentInParent<Canvas>();
+
         mainCamera = Camera.main;
 
-        if (dragArea == null)
-        {
-            Transform header = transform.Find("Header");
-            if (header != null)
-                dragArea = header.GetComponent<RectTransform>();
-        }
+        if (canvas == null)
+            Debug.LogError("DragWorldWindow: Canvas not found!");
 
         if (dragArea == null)
-            dragArea = windowRect;
+            dragArea = GetComponent<RectTransform>();
 
         if (enableDebugLogs)
-        {
-            string cameraType = mainCamera != null ? (mainCamera.orthographic ? "Orthographic" : "Perspective") : "null";
-            Debug.Log($"[DragWorldWindow] Инициализирован, камера: {cameraType}");
-        }
+            Debug.Log("DragWorldWindow: Initialized");
     }
 
-    private void Update()
+    /// <summary>
+    /// Устанавливает позицию окна в мировых координатах
+    /// </summary>
+    public void SetPosition(Vector3 worldPosition)
     {
-        if (lookAtCamera && mainCamera != null)
-        {
-            transform.LookAt(mainCamera.transform);
-            transform.Rotate(0, 180, 0);
-        }
-    }
+        if (rectTransform == null)
+            rectTransform = GetComponent<RectTransform>();
 
-    public void OnPointerDown(PointerEventData eventData)
-    {
-        if (dragArea != null)
+        // Сохраняем Z (глубину) если она есть, иначе используем -10 (чуть выше поля)
+        Vector3 newPos = worldPosition;
+        if (rectTransform != null)
         {
-            bool isOverDragArea = RectTransformUtility.RectangleContainsScreenPoint(
-                dragArea,
-                eventData.position,
-                eventData.pressEventCamera
-            );
-
-            if (enableDebugLogs)
-                Debug.Log($"[DragWorldWindow] Клик по Drag Area: {isOverDragArea}");
+            newPos.z = rectTransform.position.z;
         }
+        else
+        {
+            newPos.z = -10f; // Стандартная глубина для окон
+        }
+
+        rectTransform.position = newPos;
+
+        if (enableDebugLogs)
+            Debug.Log($"DragWorldWindow: Position set to {newPos}");
     }
 
     public void OnBeginDrag(PointerEventData eventData)
     {
-        if (mainCamera == null) return;
+        if (mainCamera == null || canvas == null) return;
 
-        Vector3 mouseWorld = GetMouseWorldPosition(eventData.position);
-        mouseWorld.y = transform.position.y;
-
-        dragStartPosition = transform.position;
-        offset = dragStartPosition - mouseWorld;
         isDragging = true;
 
+        // Сохраняем разницу между позицией окна и мышью
+        offset = rectTransform.position - GetMouseWorldPosition();
+
         if (enableDebugLogs)
-            Debug.Log($"[DragWorldWindow] Начало перетаскивания, offset: {offset}");
+            Debug.Log($"DragWorldWindow: Begin drag at {rectTransform.position}");
     }
 
     public void OnDrag(PointerEventData eventData)
     {
-        if (mainCamera == null || !isDragging) return;
+        if (mainCamera == null || canvas == null) return;
+        if (!isDragging) return;
 
-        Vector3 mouseWorld = GetMouseWorldPosition(eventData.position);
-        mouseWorld.y = transform.position.y;
+        // Получаем мировую позицию мыши
+        Vector3 mouseWorldPos = GetMouseWorldPosition();
 
-        transform.position = mouseWorld + offset;
-    }
+        // Устанавливаем позицию окна с учётом offset
+        Vector3 newPosition = mouseWorldPos + offset;
 
-    /// <summary>
-    /// Преобразует экранные координаты в мировые (работает с Orthographic и Perspective)
-    /// Всегда возвращает Z = 0 (плоскость сетки)
-    /// </summary>
-    private Vector3 GetMouseWorldPosition(Vector2 screenPos)
-    {
-        Camera cam = Camera.main;
-        if (cam == null) return Vector3.zero;
+        // Сохраняем Z (глубину) неизменной
+        newPosition.z = rectTransform.position.z;
 
-        if (cam.orthographic)
-        {
-            // Orthographic: используем глубину по Z
-            float depth = Mathf.Abs(transform.position.z - cam.transform.position.z);
-            Vector3 world = cam.ScreenToWorldPoint(new Vector3(screenPos.x, screenPos.y, depth));
-            world.z = 0;
-            return world;
-        }
-        else
-        {
-            // Perspective: проецируем на плоскость Z = 0
-            Plane plane = new Plane(Vector3.forward, Vector3.zero);
-            Ray ray = cam.ScreenPointToRay(screenPos);
-            float distance;
-            if (plane.Raycast(ray, out distance))
-            {
-                Vector3 world = ray.GetPoint(distance);
-                world.z = 0;
-                return world;
-            }
-            // Fallback
-            Vector3 fallback = cam.ScreenToWorldPoint(new Vector3(screenPos.x, screenPos.y, Mathf.Abs(cam.transform.position.z)));
-            fallback.z = 0;
-            return fallback;
-        }
-    }
-
-    public void SetPosition(Vector3 worldPosition)
-    {
-        // ============================================================
-        //  ВСЕГДА Z = 0 ДЛЯ ПЛОСКОЙ ИГРЫ
-        // ============================================================
-        worldPosition.z = 0;
-        worldPosition.y = dragHeight;
-        transform.position = worldPosition;
+        rectTransform.position = newPosition;
 
         if (enableDebugLogs)
-            Debug.Log($"[DragWorldWindow] Установлена позиция: {worldPosition}");
+            Debug.Log($"DragWorldWindow: Dragging to {newPosition}");
+    }
+
+    public void OnEndDrag(PointerEventData eventData)
+    {
+        isDragging = false;
+
+        if (enableDebugLogs)
+            Debug.Log("DragWorldWindow: End drag");
+    }
+
+    private Vector3 GetMouseWorldPosition()
+    {
+        if (mainCamera == null) return Vector3.zero;
+
+        // Получаем позицию мыши в экранных координатах
+        Vector3 mouseScreenPos = Input.mousePosition;
+
+        // Конвертируем в мировые координаты на глубине окна
+        Vector3 worldPos = mainCamera.ScreenToWorldPoint(new Vector3(
+            mouseScreenPos.x,
+            mouseScreenPos.y,
+            Mathf.Abs(mainCamera.transform.position.z - rectTransform.position.z)
+        ));
+
+        return worldPos;
     }
 }
