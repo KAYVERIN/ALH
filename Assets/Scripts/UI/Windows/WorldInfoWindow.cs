@@ -1,24 +1,27 @@
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
-using TMPro; // ⬅️ ВАЖНО: добавить using для TextMeshPro
+using TMPro;
 
 /// <summary>
 /// Окно информации о карте в World Space
 /// Отображает данные из полей CardObject и позволяет перетаскивать окно
-/// Использует TextMeshPro для текста
 /// </summary>
 public class WorldInfoWindow : MonoBehaviour, IDragHandler, IBeginDragHandler
 {
     [Header("UI References")]
-    [SerializeField] private TextMeshProUGUI titleText;        // ⬅️ TextMeshProUGUI
-    [SerializeField] private TextMeshProUGUI contentText;      // ⬅️ TextMeshProUGUI
+    [SerializeField] private TextMeshProUGUI titleText;
+    [SerializeField] private TextMeshProUGUI contentText;
     [SerializeField] private Button closeButton;
     [SerializeField] private Image backgroundImage;
 
     [Header("Window Settings")]
-    [SerializeField] private bool enableDebugLogs = false;
+    [SerializeField] private bool enableDebugLogs = true; // Включим для отладки
     [SerializeField] private bool isDraggable = true;
+
+    [Header("Position Settings")]
+    [SerializeField] private float offsetAboveCard = 1.5f; // Смещение над картой
+    [SerializeField] private float offsetZ = -0.5f;        // Смещение по Z (ближе к камере)
 
     [Header("Adaptive Settings")]
     [SerializeField] private bool adaptToResolution = true;
@@ -30,17 +33,25 @@ public class WorldInfoWindow : MonoBehaviour, IDragHandler, IBeginDragHandler
     private Vector2 dragOffset;
     private CardObject currentCard;
     private Canvas canvas;
+    private Camera mainCamera;
 
     void Awake()
     {
         rectTransform = GetComponent<RectTransform>();
         canvas = GetComponent<Canvas>();
+        mainCamera = Camera.main;
 
         // Настраиваем Canvas для World Space
         if (canvas != null)
         {
             canvas.renderMode = RenderMode.WorldSpace;
             canvas.sortingOrder = 100;
+
+            // Важно: устанавливаем камеру
+            if (mainCamera != null)
+            {
+                canvas.worldCamera = mainCamera;
+            }
         }
 
         // Подписываемся на кнопку закрытия
@@ -72,6 +83,7 @@ public class WorldInfoWindow : MonoBehaviour, IDragHandler, IBeginDragHandler
         float heightRatio = screenHeight / baseResolution.y;
         float scale = Mathf.Clamp((widthRatio + heightRatio) / 2f, minScale, maxScale);
 
+        // Устанавливаем масштаб (базовый 0.01 для World Space)
         rectTransform.localScale = Vector3.one * scale * 0.01f;
 
         if (enableDebugLogs)
@@ -80,76 +92,21 @@ public class WorldInfoWindow : MonoBehaviour, IDragHandler, IBeginDragHandler
 
     /// <summary>
     /// Устанавливает карту для отображения информации
-    /// Использует прямые поля CardObject (cardName, cardType, cardTag, description и т.д.)
     /// </summary>
-    /// <param name="card">Карта, информацию о которой нужно показать</param>
     public void SetCard(CardObject card)
     {
         currentCard = card;
 
         if (card != null)
         {
-            // ---- ЗАГОЛОВОК: имя карты ----
-            if (titleText != null)
-            {
-                // Используем поле cardName из CardObject
-                string displayName = !string.IsNullOrEmpty(card.cardName) ? card.cardName : "Без имени";
-
-                // Добавляем количество, если это стопка
-                if (card.isStackable && card.stackSize > 1)
-                {
-                    displayName += $" (x{card.stackSize})";
-                }
-
-                titleText.text = displayName;
-            }
-
-            // ---- КОНТЕНТ: детальная информация ----
-            if (contentText != null)
-            {
-                string info = "=== ИНФОРМАЦИЯ О КАРТЕ ===\n\n";
-
-                // Основные поля из CardObject
-                info += $"📛 Название: {card.cardName}\n";
-                info += $"🏷️ Тег: {card.cardTag}\n";
-                info += $"🔖 ID: {card.cardID}\n";
-                info += $"📋 Тип: {card.cardType}\n";
-
-                // Описание (если есть)
-                if (!string.IsNullOrEmpty(card.description))
-                {
-                    info += $"\n📝 Описание:\n{card.description}\n";
-                }
-
-                // Информация о стопке
-                info += $"\n📦 Стопка: {(card.isStackable ? "Да" : "Нет")}";
-                if (card.isStackable)
-                {
-                    info += $"\n📊 Размер: {card.stackSize}/{card.maxStackSize}";
-                }
-
-                // Позиция в гриде
-                if (card.currentCell != null)
-                {
-                    info += $"\n📍 Позиция: ({card.currentCell.gridX}, {card.currentCell.gridY})";
-                }
-                else
-                {
-                    info += "\n📍 Позиция: Не в ячейке (перетаскивается)";
-                }
-
-                // Координаты в мире
-                info += $"\n🌍 Мир: ({transform.position.x:F2}, {transform.position.y:F2})";
-
-                contentText.text = info;
-            }
+            // Заполняем информацию
+            UpdateInfo(card);
 
             // Позиционируем окно над картой
             PositionAboveCard(card);
         }
         else
         {
-            // Если карта null - показываем заглушку
             if (titleText != null)
                 titleText.text = "Нет данных";
 
@@ -164,31 +121,110 @@ public class WorldInfoWindow : MonoBehaviour, IDragHandler, IBeginDragHandler
     }
 
     /// <summary>
-    /// Позиционирует окно над картой
+    /// Обновляет информацию в окне
     /// </summary>
-    /// <param name="card">Карта, над которой нужно расположить окно</param>
-    public void PositionAboveCard(CardObject card)
+    private void UpdateInfo(CardObject card)
     {
         if (card == null) return;
 
-        // Получаем размер карты для правильного позиционирования
-        float cardHeight = 1f;
+        // Заголовок
+        if (titleText != null)
+        {
+            string displayName = !string.IsNullOrEmpty(card.cardName) ? card.cardName : "Без имени";
+
+            if (card.isStackable && card.stackSize > 1)
+            {
+                displayName += $" (x{card.stackSize})";
+            }
+
+            titleText.text = displayName;
+        }
+
+        // Контент
+        if (contentText != null)
+        {
+            string info = "=== ИНФОРМАЦИЯ О КАРТЕ ===\n\n";
+
+            info += $"📛 Название: {card.cardName}\n";
+            info += $"🏷️ Тег: {card.cardTag}\n";
+            info += $"🔖 ID: {card.cardID}\n";
+            info += $"📋 Тип: {card.cardType}\n";
+
+            if (!string.IsNullOrEmpty(card.description))
+            {
+                info += $"\n📝 Описание:\n{card.description}\n";
+            }
+
+            info += $"\n📦 Стопка: {(card.isStackable ? "Да" : "Нет")}";
+            if (card.isStackable)
+            {
+                info += $"\n📊 Размер: {card.stackSize}/{card.maxStackSize}";
+            }
+
+            if (card.currentCell != null)
+            {
+                info += $"\n📍 Позиция: ({card.currentCell.gridX}, {card.currentCell.gridY})";
+            }
+            else
+            {
+                info += "\n📍 Позиция: Не в ячейке (перетаскивается)";
+            }
+
+            contentText.text = info;
+        }
+    }
+
+    /// <summary>
+    /// Позиционирует окно над картой
+    /// </summary>
+    public void PositionAboveCard(CardObject card)
+    {
+        if (card == null || mainCamera == null) return;
+
+        // Получаем позицию карты в мире
+        Vector3 cardPos = card.transform.position;
+
+        // Получаем размер карты
+        float cardHeight = GetCardHeight(card);
+
+        // Вычисляем позицию окна: над картой
+        Vector3 windowPos = new Vector3(
+            cardPos.x,                          // По X - центр карты
+            cardPos.y + cardHeight + offsetAboveCard, // Над картой
+            cardPos.z + offsetZ                 // Чуть ближе к камере
+        );
+
+        // Устанавливаем позицию
+        transform.position = windowPos;
+
+        if (enableDebugLogs)
+        {
+            Debug.Log($"[WorldInfoWindow] Card pos: {cardPos}, Window pos: {windowPos}, Card height: {cardHeight}");
+        }
+    }
+
+    /// <summary>
+    /// Получает высоту карты
+    /// </summary>
+    private float GetCardHeight(CardObject card)
+    {
+        if (card == null) return 1f;
+
+        // Пробуем получить из BoxCollider
         BoxCollider boxCollider = card.GetComponent<BoxCollider>();
         if (boxCollider != null)
         {
-            cardHeight = boxCollider.size.y * card.transform.localScale.y;
+            return boxCollider.size.y * card.transform.localScale.y;
         }
 
-        Vector3 cardPos = card.transform.position;
-        Vector3 windowPos = new Vector3(
-            cardPos.x,
-            cardPos.y + cardHeight + 1.5f, // Смещение вверх
-            cardPos.z - 0.5f               // Чуть ближе к камере
-        );
+        // Пробуем получить из SpriteRenderer
+        SpriteRenderer spriteRenderer = card.GetComponent<SpriteRenderer>();
+        if (spriteRenderer != null && spriteRenderer.sprite != null)
+        {
+            return spriteRenderer.sprite.bounds.size.y * card.transform.localScale.y;
+        }
 
-        transform.position = windowPos;
-
-        if (enableDebugLogs) Debug.Log($"[WorldInfoWindow] Position: {windowPos}");
+        return 1f; // Значение по умолчанию
     }
 
     /// <summary>
@@ -203,7 +239,7 @@ public class WorldInfoWindow : MonoBehaviour, IDragHandler, IBeginDragHandler
     }
 
     /// <summary>
-    /// Обработчик начала перетаскивания (интерфейс IDragHandler)
+    /// Обработчик начала перетаскивания
     /// </summary>
     public void OnBeginDrag(PointerEventData eventData)
     {
@@ -222,7 +258,7 @@ public class WorldInfoWindow : MonoBehaviour, IDragHandler, IBeginDragHandler
     }
 
     /// <summary>
-    /// Обработчик перетаскивания (интерфейс IDragHandler)
+    /// Обработчик перетаскивания
     /// </summary>
     public void OnDrag(PointerEventData eventData)
     {
@@ -239,21 +275,17 @@ public class WorldInfoWindow : MonoBehaviour, IDragHandler, IBeginDragHandler
     /// </summary>
     private Vector3 GetWorldPosition(Vector3 screenPos)
     {
-        Camera cam = Camera.main;
-        if (cam == null) return transform.position;
+        if (mainCamera == null) return transform.position;
 
-        Ray ray = cam.ScreenPointToRay(screenPos);
-        Plane plane = new Plane(Vector3.forward, transform.position.z);
+        // Создаём луч от камеры через позицию мыши
+        Ray ray = mainCamera.ScreenPointToRay(screenPos);
 
-        float distance;
-        if (plane.Raycast(ray, out distance))
-        {
-            Vector3 worldPos = ray.GetPoint(distance);
-            worldPos.z = transform.position.z;
-            return worldPos;
-        }
+        // Используем плоскость на текущей глубине Z
+        float zDistance = Mathf.Abs(transform.position.z - mainCamera.transform.position.z);
+        Vector3 worldPos = mainCamera.ScreenToWorldPoint(new Vector3(screenPos.x, screenPos.y, zDistance));
+        worldPos.z = transform.position.z; // Сохраняем Z
 
-        return transform.position;
+        return worldPos;
     }
 
     /// <summary>
