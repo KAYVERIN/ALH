@@ -178,21 +178,53 @@ public class DragController : MonoBehaviour
         }
 
         // ============================================================
-        // 2. 3D RAYCAST (вместо 2D!)
+        // 2. ДИАГНОСТИКА - проверяем все коллайдеры на сцене
         // ============================================================
         Camera cam = Camera.main;
         if (cam == null) return;
 
         Ray ray = cam.ScreenPointToRay(Input.mousePosition);
-        RaycastHit hit;
 
         if (enableDebugLogs)
+        {
             Debug.Log($"DragController: Raycast от {ray.origin} в направлении {ray.direction}");
 
-        if (Physics.Raycast(ray, out hit, Mathf.Infinity, cardLayer))
+            // ДИАГНОСТИКА: проверяем коллайдеры на картах
+            CardObject[] allCards = FindObjectsOfType<CardObject>();
+            Debug.Log($"DragController: На сцене {allCards.Length} карт");
+
+            foreach (CardObject card in allCards)
+            {
+                BoxCollider collider = card.GetComponent<BoxCollider>();
+                if (collider != null)
+                {
+                    Debug.Log($"  - {card.cardName}: позиция {card.transform.position}, " +
+                              $"коллайдер {collider.enabled}, " +
+                              $"размер {collider.size}, " +
+                              $"слой {LayerMask.LayerToName(card.gameObject.layer)}");
+                }
+                else
+                {
+                    Debug.Log($"  - {card.cardName}: НЕТ 3D КОЛЛАЙДЕРА!");
+                }
+            }
+        }
+
+        // ============================================================
+        // 3. 3D RAYCAST
+        // ============================================================
+        RaycastHit[] hits = Physics.RaycastAll(ray, raycastDistance, cardLayer);
+
+        if (enableDebugLogs)
+            Debug.Log($"DragController: Raycast нашёл {hits.Length} объектов на слое {LayerMask.LayerToName(cardLayer)}");
+
+        // Сортируем по дистанции
+        System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
+
+        foreach (RaycastHit hit in hits)
         {
             if (enableDebugLogs)
-                Debug.Log($"DragController: Raycast попал в {hit.collider.gameObject.name}");
+                Debug.Log($"DragController: Попал в {hit.collider.gameObject.name} на дистанции {hit.distance}");
 
             CardObject card = hit.collider.GetComponent<CardObject>();
             if (card != null)
@@ -202,14 +234,14 @@ public class DragController : MonoBehaviour
                 {
                     if (enableDebugLogs)
                         Debug.Log($"Карта {card.cardName} заблокирована");
-                    return;
+                    continue;
                 }
 
                 if (card.isDragging)
                 {
                     if (enableDebugLogs)
                         Debug.Log($"Нажатие на уже поднятую карту: {card.cardName} - игнорируем");
-                    return;
+                    continue;
                 }
 
                 if (enableDebugLogs)
@@ -219,13 +251,12 @@ public class DragController : MonoBehaviour
                 clickedCard = card;
                 isMouseDownOnCard = true;
                 hasExceededThreshold = false;
+                return;
             }
         }
-        else
-        {
-            if (enableDebugLogs)
-                Debug.Log("DragController: Raycast не попал ни в одну карту");
-        }
+
+        if (enableDebugLogs)
+            Debug.Log("DragController: Raycast не попал ни в одну карту");
     }
 
     void HandleMouseUp()
