@@ -5,7 +5,8 @@ using TMPro;
 
 /// <summary>
 /// Окно информации о карте в World Space
-/// Отображает данные из полей CardObject и позволяет перетаскивать окно
+/// Открывается в позиции курсора, можно перетаскивать
+/// При закрытии - удаляется
 /// </summary>
 public class WorldInfoWindow : MonoBehaviour, IDragHandler, IBeginDragHandler
 {
@@ -16,12 +17,11 @@ public class WorldInfoWindow : MonoBehaviour, IDragHandler, IBeginDragHandler
     [SerializeField] private Image backgroundImage;
 
     [Header("Window Settings")]
-    [SerializeField] private bool enableDebugLogs = true; // Включим для отладки
+    [SerializeField] private bool enableDebugLogs = true;
     [SerializeField] private bool isDraggable = true;
 
     [Header("Position Settings")]
-    [SerializeField] private float offsetAboveCard = 1.5f; // Смещение над картой
-    [SerializeField] private float offsetZ = -0.5f;        // Смещение по Z (ближе к камере)
+    [SerializeField] private float offsetZ = -0.5f; // Смещение по Z (ближе к камере)
 
     [Header("Adaptive Settings")]
     [SerializeField] private bool adaptToResolution = true;
@@ -47,7 +47,6 @@ public class WorldInfoWindow : MonoBehaviour, IDragHandler, IBeginDragHandler
             canvas.renderMode = RenderMode.WorldSpace;
             canvas.sortingOrder = 100;
 
-            // Важно: устанавливаем камеру
             if (mainCamera != null)
             {
                 canvas.worldCamera = mainCamera;
@@ -57,7 +56,7 @@ public class WorldInfoWindow : MonoBehaviour, IDragHandler, IBeginDragHandler
         // Подписываемся на кнопку закрытия
         if (closeButton != null)
         {
-            closeButton.onClick.AddListener(Close);
+            closeButton.onClick.AddListener(CloseAndDestroy);
         }
 
         // Адаптируем размер под разрешение экрана
@@ -83,7 +82,6 @@ public class WorldInfoWindow : MonoBehaviour, IDragHandler, IBeginDragHandler
         float heightRatio = screenHeight / baseResolution.y;
         float scale = Mathf.Clamp((widthRatio + heightRatio) / 2f, minScale, maxScale);
 
-        // Устанавливаем масштаб (базовый 0.01 для World Space)
         rectTransform.localScale = Vector3.one * scale * 0.01f;
 
         if (enableDebugLogs)
@@ -91,7 +89,7 @@ public class WorldInfoWindow : MonoBehaviour, IDragHandler, IBeginDragHandler
     }
 
     /// <summary>
-    /// Устанавливает карту для отображения информации
+    /// Устанавливает карту и позиционирует окно в позиции курсора
     /// </summary>
     public void SetCard(CardObject card)
     {
@@ -102,8 +100,8 @@ public class WorldInfoWindow : MonoBehaviour, IDragHandler, IBeginDragHandler
             // Заполняем информацию
             UpdateInfo(card);
 
-            // Позиционируем окно над картой
-            PositionAboveCard(card);
+            // Позиционируем окно в позиции курсора
+            PositionAtCursor();
         }
         else
         {
@@ -118,6 +116,28 @@ public class WorldInfoWindow : MonoBehaviour, IDragHandler, IBeginDragHandler
         gameObject.SetActive(true);
 
         if (enableDebugLogs) Debug.Log($"[WorldInfoWindow] SetCard: {card?.cardName ?? "null"}");
+    }
+
+    /// <summary>
+    /// Позиционирует окно в позиции курсора мыши
+    /// </summary>
+    private void PositionAtCursor()
+    {
+        if (mainCamera == null) return;
+
+        // Получаем позицию курсора на экране
+        Vector3 mouseScreenPos = Input.mousePosition;
+
+        // Конвертируем в мировые координаты
+        Vector3 worldPos = GetWorldPosition(mouseScreenPos);
+
+        // Устанавливаем позицию
+        transform.position = worldPos;
+
+        if (enableDebugLogs)
+        {
+            Debug.Log($"[WorldInfoWindow] Window position at cursor: {worldPos}");
+        }
     }
 
     /// <summary>
@@ -175,67 +195,32 @@ public class WorldInfoWindow : MonoBehaviour, IDragHandler, IBeginDragHandler
     }
 
     /// <summary>
-    /// Позиционирует окно над картой
+    /// Закрывает и УДАЛЯЕТ окно
     /// </summary>
-    public void PositionAboveCard(CardObject card)
+    public void CloseAndDestroy()
     {
-        if (card == null || mainCamera == null) return;
+        if (enableDebugLogs) Debug.Log("[WorldInfoWindow] Close and Destroy");
 
-        // Получаем позицию карты в мире
-        Vector3 cardPos = card.transform.position;
-
-        // Получаем размер карты
-        float cardHeight = GetCardHeight(card);
-
-        // Вычисляем позицию окна: над картой
-        Vector3 windowPos = new Vector3(
-            cardPos.x,                          // По X - центр карты
-            cardPos.y + cardHeight + offsetAboveCard, // Над картой
-            cardPos.z + offsetZ                 // Чуть ближе к камере
-        );
-
-        // Устанавливаем позицию
-        transform.position = windowPos;
-
-        if (enableDebugLogs)
+        // Отписываемся от событий
+        if (closeButton != null)
         {
-            Debug.Log($"[WorldInfoWindow] Card pos: {cardPos}, Window pos: {windowPos}, Card height: {cardHeight}");
+            closeButton.onClick.RemoveListener(CloseAndDestroy);
         }
+
+        // Удаляем объект
+        Destroy(gameObject);
     }
 
     /// <summary>
-    /// Получает высоту карты
-    /// </summary>
-    private float GetCardHeight(CardObject card)
-    {
-        if (card == null) return 1f;
-
-        // Пробуем получить из BoxCollider
-        BoxCollider boxCollider = card.GetComponent<BoxCollider>();
-        if (boxCollider != null)
-        {
-            return boxCollider.size.y * card.transform.localScale.y;
-        }
-
-        // Пробуем получить из SpriteRenderer
-        SpriteRenderer spriteRenderer = card.GetComponent<SpriteRenderer>();
-        if (spriteRenderer != null && spriteRenderer.sprite != null)
-        {
-            return spriteRenderer.sprite.bounds.size.y * card.transform.localScale.y;
-        }
-
-        return 1f; // Значение по умолчанию
-    }
-
-    /// <summary>
-    /// Закрывает окно
+    /// Закрывает окно (просто скрывает) - для совместимости
     /// </summary>
     public void Close()
     {
+        // Просто скрываем, но лучше использовать CloseAndDestroy
         gameObject.SetActive(false);
         currentCard = null;
 
-        if (enableDebugLogs) Debug.Log("[WorldInfoWindow] Closed");
+        if (enableDebugLogs) Debug.Log("[WorldInfoWindow] Closed (hidden)");
     }
 
     /// <summary>
@@ -277,10 +262,7 @@ public class WorldInfoWindow : MonoBehaviour, IDragHandler, IBeginDragHandler
     {
         if (mainCamera == null) return transform.position;
 
-        // Создаём луч от камеры через позицию мыши
-        Ray ray = mainCamera.ScreenPointToRay(screenPos);
-
-        // Используем плоскость на текущей глубине Z
+        // Получаем позицию на глубине Z
         float zDistance = Mathf.Abs(transform.position.z - mainCamera.transform.position.z);
         Vector3 worldPos = mainCamera.ScreenToWorldPoint(new Vector3(screenPos.x, screenPos.y, zDistance));
         worldPos.z = transform.position.z; // Сохраняем Z
