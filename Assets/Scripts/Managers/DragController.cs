@@ -134,19 +134,12 @@ public class DragController : MonoBehaviour
     /// </summary>
     private Vector3 GetMouseWorldPosition()
     {
-        if (enableDebugLogs && Time.frameCount % 60 == 0)
-            Debug.Log("[DragController] GetMouseWorldPosition: начало");
-
         if (GridManager.Instance != null)
         {
-            Vector3 pos = GridManager.Instance.GetMouseWorldPositionOnGrid();
-            if (enableDebugLogs && Time.frameCount % 60 == 0)
-                Debug.Log($"[DragController] GetMouseWorldPosition: из GridManager → {pos}");
-            return pos;
+            return GridManager.Instance.GetMouseWorldPositionOnGrid();
         }
 
-        if (enableDebugLogs)
-            Debug.LogWarning("[DragController] GridManager.Instance == null, используем fallback");
+        Debug.LogWarning("[DragController] GridManager.Instance == null, используем fallback");
 
         Camera cam = Camera.main;
         if (cam == null) return Vector3.zero;
@@ -175,7 +168,7 @@ public class DragController : MonoBehaviour
     void HandleMouseDown()
     {
         // ============================================================
-        // 1. ПРОВЕРКА НА UI (новое!)
+        // 1. ПРОВЕРКА НА UI
         // ============================================================
         if (IsPointerOverUI())
         {
@@ -184,16 +177,23 @@ public class DragController : MonoBehaviour
             return;
         }
 
-        Vector3 mouseWorldPos = GetMouseWorldPosition();
+        // ============================================================
+        // 2. 3D RAYCAST (вместо 2D!)
+        // ============================================================
+        Camera cam = Camera.main;
+        if (cam == null) return;
 
-        // ============================================================
-        // ИСПОЛЬЗУЕМ 3D RAYCAST (для 3D коллайдеров)
-        // ============================================================
-        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+        Ray ray = cam.ScreenPointToRay(Input.mousePosition);
         RaycastHit hit;
+
+        if (enableDebugLogs)
+            Debug.Log($"DragController: Raycast от {ray.origin} в направлении {ray.direction}");
 
         if (Physics.Raycast(ray, out hit, Mathf.Infinity, cardLayer))
         {
+            if (enableDebugLogs)
+                Debug.Log($"DragController: Raycast попал в {hit.collider.gameObject.name}");
+
             CardObject card = hit.collider.GetComponent<CardObject>();
             if (card != null)
             {
@@ -223,22 +223,15 @@ public class DragController : MonoBehaviour
         }
         else
         {
-            // Если кликнули не по карте - сбрасываем состояние
             if (enableDebugLogs)
-                Debug.Log("Клик не по карте");
-
-            // Если есть перетаскивание - отменяем
-            if (isDragging && draggedCard != null)
-            {
-                // Не отменяем, просто игнорируем
-            }
+                Debug.Log("DragController: Raycast не попал ни в одну карту");
         }
     }
 
     void HandleMouseUp()
     {
         // ============================================================
-        // 1. ПРОВЕРКА НА UI (новое!)
+        // 1. ПРОВЕРКА НА UI
         // ============================================================
         if (IsPointerOverUI())
         {
