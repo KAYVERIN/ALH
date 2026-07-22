@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using UnityEngine.EventSystems;
 
 public class CardObject : MonoBehaviour
 {
@@ -69,6 +70,26 @@ public class CardObject : MonoBehaviour
     public int maxStackSize = 999;
 
     public StackCounterUI stackCounterUI;
+
+    private void OnMouseDown()
+    {
+        // Проверка UI
+        if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
+            return;
+
+        // Вызываем ЕДИНСТВЕННЫЙ DragController
+        DragController.Instance?.HandleMouseDown(this);
+    }
+
+    private void OnMouseUp()
+    {
+        // Проверка UI
+        if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
+            return;
+
+        // Вызываем ЕДИНСТВЕННЫЙ DragController
+        DragController.Instance?.HandleMouseUp(this);
+    }
 
     // ============================================================
     //  ПРИВАТНЫЕ ПЕРЕМЕННЫЕ
