@@ -18,6 +18,20 @@ public class DragController : MonoBehaviour
     private CardObject clickedCard = null;
     private bool isMouseDownOnCard = false;
     private bool hasExceededThreshold = false;
+    void Awake()
+    {
+        // ============================================================
+        // АВТОМАТИЧЕСКИ ПОЛУЧАЕМ СЛОЙ ИЗ ПРЕФАБА КАРТЫ
+        // ============================================================
+        if (cardLayer == 0) // Если слой не задан в инспекторе
+        {
+            // Получаем слой текущего объекта (префаба карты)
+            cardLayer = 1 << gameObject.layer; // Преобразуем индекс слоя в LayerMask
+
+            if (enableDebugLogs)
+                Debug.Log($"DragController: Автоматически установлен слой {LayerMask.LayerToName(gameObject.layer)} (index: {gameObject.layer})");
+        }
+    }
 
     void Start()
     {
