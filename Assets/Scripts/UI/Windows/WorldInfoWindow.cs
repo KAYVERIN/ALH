@@ -1,277 +1,147 @@
 using UnityEngine;
 using UnityEngine.UI;
-using UnityEngine.EventSystems;
 using TMPro;
 
 /// <summary>
-/// Окно информации о карте в World Space
-/// Открывается в позиции курсора, можно перетаскивать
-/// При закрытии - удаляется
+/// Окно информации в World Space
 /// </summary>
-public class WorldInfoWindow : MonoBehaviour, IDragHandler, IBeginDragHandler
+public class WorldInfoWindow : MonoBehaviour, ICardWindow
 {
-    [Header("UI References")]
-    [SerializeField] private TextMeshProUGUI titleText;
-    [SerializeField] private TextMeshProUGUI contentText;
+    [Header("UI Элементы")]
+    [SerializeField] private TextMeshProUGUI cardNameText;
+    [SerializeField] private TextMeshProUGUI typeText;
+    [SerializeField] private TextMeshProUGUI descriptionText;
+    [SerializeField] private Image iconImage;
     [SerializeField] private Button closeButton;
     [SerializeField] private Image backgroundImage;
+    [SerializeField] private TextMeshProUGUI titleText;
 
-    [Header("Window Settings")]
-    [SerializeField] private bool enableDebugLogs = true;
-    [SerializeField] private bool isDraggable = true;
+    [Header("Настройки")]
+    [SerializeField] private Color resourceColor = new Color(0.2f, 0.6f, 0.2f);
+    [SerializeField] private Color ingredientColor = new Color(0.2f, 0.6f, 0.6f);
+    [SerializeField] private Color npcColor = new Color(0.6f, 0.4f, 0.8f);
+    [SerializeField] private Color buildingColor = new Color(0.6f, 0.5f, 0.2f);
+    [SerializeField] private float heightAboveCard = 2f;
 
-    [Header("Position Settings")]
-    [SerializeField] private float offsetZ = -0.5f; // Смещение по Z (ближе к камере)
-
-    [Header("Adaptive Settings")]
-    [SerializeField] private bool adaptToResolution = true;
-    [SerializeField] private Vector2 baseResolution = new Vector2(1920, 1080);
-    [SerializeField] private float minScale = 0.5f;
-    [SerializeField] private float maxScale = 2f;
-
-    private RectTransform rectTransform;
-    private Vector2 dragOffset;
     private CardObject currentCard;
-    private Canvas canvas;
-    private Camera mainCamera;
 
-    void Awake()
+    private void Awake()
     {
-        rectTransform = GetComponent<RectTransform>();
-        canvas = GetComponent<Canvas>();
-        mainCamera = Camera.main;
-
-        // Настраиваем Canvas для World Space
-        if (canvas != null)
-        {
-            canvas.renderMode = RenderMode.WorldSpace;
-            canvas.sortingOrder = 100;
-
-            if (mainCamera != null)
-            {
-                canvas.worldCamera = mainCamera;
-            }
-        }
-
-        // Подписываемся на кнопку закрытия
         if (closeButton != null)
-        {
-            closeButton.onClick.AddListener(CloseAndDestroy);
-        }
-
-        // Адаптируем размер под разрешение экрана
-        if (adaptToResolution)
-        {
-            AdaptToResolution();
-        }
-
-        if (enableDebugLogs) Debug.Log("[WorldInfoWindow] Awake completed");
+            closeButton.onClick.AddListener(Close);
     }
 
-    /// <summary>
-    /// Адаптирует размер окна под текущее разрешение экрана
-    /// </summary>
-    private void AdaptToResolution()
-    {
-        if (rectTransform == null) return;
-
-        float screenWidth = Screen.width;
-        float screenHeight = Screen.height;
-
-        float widthRatio = screenWidth / baseResolution.x;
-        float heightRatio = screenHeight / baseResolution.y;
-        float scale = Mathf.Clamp((widthRatio + heightRatio) / 2f, minScale, maxScale);
-
-        rectTransform.localScale = Vector3.one * scale * 0.01f;
-
-        if (enableDebugLogs)
-            Debug.Log($"[WorldInfoWindow] Scale: {scale}, Screen: {screenWidth}x{screenHeight}");
-    }
-
-    /// <summary>
-    /// Устанавливает карту и позиционирует окно в позиции курсора
-    /// </summary>
     public void SetCard(CardObject card)
-    {
-        currentCard = card;
-
-        if (card != null)
-        {
-            // Заполняем информацию
-            UpdateInfo(card);
-
-            // Позиционируем окно в позиции курсора
-            PositionAtCursor();
-        }
-        else
-        {
-            if (titleText != null)
-                titleText.text = "Нет данных";
-
-            if (contentText != null)
-                contentText.text = "Карта не выбрана или не существует.";
-        }
-
-        // Показываем окно
-        gameObject.SetActive(true);
-
-        if (enableDebugLogs) Debug.Log($"[WorldInfoWindow] SetCard: {card?.cardName ?? "null"}");
-    }
-
-    /// <summary>
-    /// Позиционирует окно в позиции курсора мыши
-    /// </summary>
-    private void PositionAtCursor()
-    {
-        if (mainCamera == null) return;
-
-        // Получаем позицию курсора на экране
-        Vector3 mouseScreenPos = Input.mousePosition;
-
-        // Конвертируем в мировые координаты
-        Vector3 worldPos = GetWorldPosition(mouseScreenPos);
-
-        // Устанавливаем позицию
-        transform.position = worldPos;
-
-        if (enableDebugLogs)
-        {
-            Debug.Log($"[WorldInfoWindow] Window position at cursor: {worldPos}");
-        }
-    }
-
-    /// <summary>
-    /// Обновляет информацию в окне
-    /// </summary>
-    private void UpdateInfo(CardObject card)
     {
         if (card == null) return;
 
-        // Заголовок
+        currentCard = card;
+
+        // Название карты
+        if (cardNameText != null)
+            cardNameText.text = card.cardName;
+
+        // Заголовок окна
         if (titleText != null)
+            titleText.text = $"📜 {card.cardName}";
+
+        // Тип
+        if (typeText != null)
+            typeText.text = $"Тип: {card.cardType}";
+
+        // Описание
+        if (descriptionText != null)
         {
-            string displayName = !string.IsNullOrEmpty(card.cardName) ? card.cardName : "Без имени";
-
-            if (card.isStackable && card.stackSize > 1)
-            {
-                displayName += $" (x{card.stackSize})";
-            }
-
-            titleText.text = displayName;
+            CardData data = CardLibrary.Instance?.GetCard(card.cardID);
+            if (data != null && !string.IsNullOrEmpty(data.description))
+                descriptionText.text = data.description;
+            else
+                descriptionText.text = card.description ?? "Нет описания";
         }
 
-        // Контент
-        if (contentText != null)
+        // Иконка
+        if (iconImage != null)
         {
-            string info = "=== ИНФОРМАЦИЯ О КАРТЕ ===\n\n";
-
-            info += $"📛 Название: {card.cardName}\n";
-            info += $"🏷️ Тег: {card.cardTag}\n";
-            info += $"🔖 ID: {card.cardID}\n";
-            info += $"📋 Тип: {card.cardType}\n";
-
-            if (!string.IsNullOrEmpty(card.description))
+            CardData data = CardLibrary.Instance?.GetCard(card.cardID);
+            if (data != null && data.cardIcon != null)
             {
-                info += $"\n📝 Описание:\n{card.description}\n";
-            }
-
-            info += $"\n📦 Стопка: {(card.isStackable ? "Да" : "Нет")}";
-            if (card.isStackable)
-            {
-                info += $"\n📊 Размер: {card.stackSize}/{card.maxStackSize}";
-            }
-
-            if (card.currentCell != null)
-            {
-                info += $"\n📍 Позиция: ({card.currentCell.gridX}, {card.currentCell.gridY})";
+                iconImage.sprite = data.cardIcon;
+                iconImage.gameObject.SetActive(true);
             }
             else
             {
-                info += "\n📍 Позиция: Не в ячейке (перетаскивается)";
+                iconImage.gameObject.SetActive(false);
             }
-
-            contentText.text = info;
         }
-    }
 
-    /// <summary>
-    /// Закрывает и УДАЛЯЕТ окно
-    /// </summary>
-    public void CloseAndDestroy()
-    {
-        if (enableDebugLogs) Debug.Log("[WorldInfoWindow] Close and Destroy");
-
-        // Отписываемся от событий
-        if (closeButton != null)
+        // Цвет фона
+        if (backgroundImage != null)
         {
-            closeButton.onClick.RemoveListener(CloseAndDestroy);
+            switch (card.cardType)
+            {
+                case CardType.Resource:
+                    backgroundImage.color = resourceColor;
+                    break;
+                case CardType.Ingredient:
+                    backgroundImage.color = ingredientColor;
+                    break;
+                case CardType.Npc:
+                    backgroundImage.color = npcColor;
+                    break;
+                case CardType.Building:
+                    backgroundImage.color = buildingColor;
+                    break;
+                default:
+                    backgroundImage.color = new Color(0.3f, 0.3f, 0.3f);
+                    break;
+            }
         }
 
-        // Удаляем объект
-        Destroy(gameObject);
+        // Позиционируем окно над картой
+        PositionAboveCard(card);
     }
 
-    /// <summary>
-    /// Закрывает окно (просто скрывает) - для совместимости
-    /// </summary>
+    // WorldInfoWindow.cs
+
+    private void PositionAboveCard(CardObject card)
+    {
+        if (card == null) return;
+
+        // ============================================================
+        //  БЕРЁМ КООРДИНАТЫ КАРТЫ НА СЕТКЕ (Z = 0)
+        // ============================================================
+        Vector3 cardPos;
+
+        if (card.currentCell != null)
+        {
+            cardPos = card.currentCell.worldPosition;
+        }
+        else
+        {
+            cardPos = card.transform.position;
+        }
+
+        // Фиксируем Z = 0
+        cardPos.z = 0;
+
+        // Поднимаем над картой
+        cardPos.y += heightAboveCard;
+
+        Debug.Log($"[WorldInfoWindow] Позиционируем над картой: {cardPos}");
+
+        DragWorldWindow dragWindow = GetComponent<DragWorldWindow>();
+        if (dragWindow != null)
+        {
+            dragWindow.SetPosition(cardPos);
+        }
+        else
+        {
+            transform.position = cardPos;
+        }
+    }
+
     public void Close()
     {
-        // Просто скрываем, но лучше использовать CloseAndDestroy
-        gameObject.SetActive(false);
-        currentCard = null;
-
-        if (enableDebugLogs) Debug.Log("[WorldInfoWindow] Closed (hidden)");
+        Destroy(gameObject);
     }
-
-    /// <summary>
-    /// Обработчик начала перетаскивания
-    /// </summary>
-    public void OnBeginDrag(PointerEventData eventData)
-    {
-        if (!isDraggable) return;
-
-        Vector2 mousePos;
-        RectTransformUtility.ScreenPointToLocalPointInRectangle(
-            rectTransform,
-            eventData.position,
-            eventData.pressEventCamera,
-            out mousePos
-        );
-        dragOffset = rectTransform.anchoredPosition - mousePos;
-
-        if (enableDebugLogs) Debug.Log("[WorldInfoWindow] Begin Drag");
-    }
-
-    /// <summary>
-    /// Обработчик перетаскивания
-    /// </summary>
-    public void OnDrag(PointerEventData eventData)
-    {
-        if (!isDraggable) return;
-
-        Vector3 worldPos = GetWorldPosition(eventData.position);
-        transform.position = worldPos;
-
-        if (enableDebugLogs) Debug.Log($"[WorldInfoWindow] Drag: {worldPos}");
-    }
-
-    /// <summary>
-    /// Получает позицию в мире из позиции мыши на экране
-    /// </summary>
-    private Vector3 GetWorldPosition(Vector3 screenPos)
-    {
-        if (mainCamera == null) return transform.position;
-
-        // Получаем позицию на глубине Z
-        float zDistance = Mathf.Abs(transform.position.z - mainCamera.transform.position.z);
-        Vector3 worldPos = mainCamera.ScreenToWorldPoint(new Vector3(screenPos.x, screenPos.y, zDistance));
-        worldPos.z = transform.position.z; // Сохраняем Z
-
-        return worldPos;
-    }
-
-    /// <summary>
-    /// Проверяет, открыто ли окно
-    /// </summary>
-    public bool IsOpen() => gameObject.activeSelf;
 }
