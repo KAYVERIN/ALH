@@ -71,14 +71,9 @@ public class CardData : ScriptableObject
 	[Tooltip("Расходный материал")]
     public bool isConsumable = true;
     
-    // ============================================================
-    //  ВАЖНО: isStackable ПЕРЕНЕСЁН В СЕКЦИЮ СТОПОК (ниже)
-    //  УДАЛИТЕ ЕГО ОТСЮДА!
-    // ============================================================
-    
     [Header("=== НАСТРОЙКИ СТОПОК ===")]
     [Tooltip("Можно ли складывать эту карту в стопку")]
-    public bool isStackable = false;  // ← ТОЛЬКО ОДИН РАЗ!
+    public bool isStackable = false; 
     
     [Tooltip("Максимальный размер стопки")]
     public int maxStackSize = 999;
