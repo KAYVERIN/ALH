@@ -6,8 +6,8 @@ using System.Collections.Generic;
 public class CardSpawnData
 {
     [Header("Параметры карты")]
-    [Tooltip("ID карты из CardLibrary")]
-    public string cardId = "grass_01";
+    [Tooltip("Перетащите сюда CardData (ScriptableObject)")]
+    public CardData cardData;
 
     [Tooltip("Количество карт в стопке")]
     public int count = 1;
@@ -82,28 +82,36 @@ public class TestCardSpawner : MonoBehaviour
 
         foreach (var spawnData in cardsToSpawn)
         {
-            if (string.IsNullOrEmpty(spawnData.cardId))
+            // Проверяем, что CardData назначен
+            if (spawnData.cardData == null)
             {
-                Debug.LogWarning("Пропущен элемент с пустым cardId");
+                Debug.LogWarning("Пропущен элемент с пустым CardData");
+                continue;
+            }
+
+            // Проверяем, что CardData имеет валидный cardID
+            if (string.IsNullOrEmpty(spawnData.cardData.cardID))
+            {
+                Debug.LogWarning($"Пропущен элемент с CardData '{spawnData.cardData.name}' (cardID пустой)");
                 continue;
             }
 
             if (spawnData.count <= 0)
             {
-                Debug.LogWarning($"Пропущен элемент с cardId '{spawnData.cardId}' (count = {spawnData.count})");
+                Debug.LogWarning($"Пропущен элемент с CardData '{spawnData.cardData.cardID}' (count = {spawnData.count})");
                 continue;
             }
 
-            // Создаём карту
+            // Создаём карту используя cardID из CardData
             CardObject card = CardLibrary.CreateCard(
-                spawnData.cardId,
+                spawnData.cardData.cardID,
                 spawnData.position,
                 spawnData.count
             );
 
             if (card == null)
             {
-                Debug.LogError($"Не удалось создать карту '{spawnData.cardId}'");
+                Debug.LogError($"Не удалось создать карту '{spawnData.cardData.cardID}' (CardData: {spawnData.cardData.name})");
                 continue;
             }
 
@@ -112,14 +120,14 @@ public class TestCardSpawner : MonoBehaviour
             {
                 CardLibrary.PlaceCardSmart(card);
                 if (logSpawnInfo)
-                    Debug.Log($"Создана карта: {spawnData.cardId} x{spawnData.count} (умное размещение)");
+                    Debug.Log($"Создана карта: {spawnData.cardData.cardName} ({spawnData.cardData.cardID}) x{spawnData.count} (умное размещение)");
             }
             else
             {
                 // Просто размещаем в указанной позиции
                 card.transform.position = spawnData.position;
                 if (logSpawnInfo)
-                    Debug.Log($"Создана карта: {spawnData.cardId} x{spawnData.count} (фиксированная позиция)");
+                    Debug.Log($"Создана карта: {spawnData.cardData.cardName} ({spawnData.cardData.cardID}) x{spawnData.count} (фиксированная позиция)");
             }
         }
 
@@ -128,11 +136,17 @@ public class TestCardSpawner : MonoBehaviour
     }
 
     // Метод для добавления карты из кода (опционально)
-    public void AddCardToSpawn(string cardId, Vector3 position, int count = 1, bool useSmartPlacement = true)
+    public void AddCardToSpawn(CardData cardData, Vector3 position, int count = 1, bool useSmartPlacement = true)
     {
+        if (cardData == null)
+        {
+            Debug.LogError("Нельзя добавить null CardData");
+            return;
+        }
+
         CardSpawnData data = new CardSpawnData
         {
-            cardId = cardId,
+            cardData = cardData,
             position = position,
             count = count,
             useSmartPlacement = useSmartPlacement
@@ -144,5 +158,18 @@ public class TestCardSpawner : MonoBehaviour
     public void ClearSpawnList()
     {
         cardsToSpawn.Clear();
+    }
+
+    // Метод для получения информации о всех картах в списке (опционально)
+    public void LogSpawnList()
+    {
+        Debug.Log($"=== СПИСОК КАРТ ДЛЯ СПАВНА ({cardsToSpawn.Count}) ===");
+        foreach (var data in cardsToSpawn)
+        {
+            if (data.cardData != null)
+                Debug.Log($"- {data.cardData.cardName} ({data.cardData.cardID}) x{data.count} at {data.position}");
+            else
+                Debug.Log("- NULL CardData");
+        }
     }
 }
