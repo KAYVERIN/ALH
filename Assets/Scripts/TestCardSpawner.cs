@@ -1,6 +1,9 @@
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 [System.Serializable]
 public class CardSpawnData
@@ -173,3 +176,91 @@ public class TestCardSpawner : MonoBehaviour
         }
     }
 }
+
+#if UNITY_EDITOR
+[CustomEditor(typeof(TestCardSpawner))]
+public class TestCardSpawnerEditor : Editor
+{
+    public override void OnInspectorGUI()
+    {
+        // Рисуем стандартный инспектор
+        DrawDefaultInspector();
+        
+        // Получаем доступ к целевой переменной
+        TestCardSpawner spawner = (TestCardSpawner)target;
+        
+        // Добавляем кнопку для вывода списка в консоль
+        GUILayout.Space(10);
+        if (GUILayout.Button("Log Spawn List to Console"))
+        {
+            spawner.LogSpawnList();
+        }
+        
+        // Добавляем кнопку для очистки списка
+        if (GUILayout.Button("Clear Spawn List"))
+        {
+            if (EditorUtility.DisplayDialog("Очистка списка", 
+                "Вы уверены, что хотите очистить список карт для спавна?", 
+                "Очистить", "Отмена"))
+            {
+                spawner.ClearSpawnList();
+                EditorUtility.SetDirty(spawner);
+            }
+        }
+    }
+}
+
+// Кастомный PropertyDrawer для отображения названия карты в списке
+[CustomPropertyDrawer(typeof(CardSpawnData))]
+public class CardSpawnDataDrawer : PropertyDrawer
+{
+    public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
+    {
+        // Находим поле cardData
+        SerializedProperty cardDataProp = property.FindPropertyRelative("cardData");
+        
+        // Создаем новый label с названием карты
+        string displayName = "Element";
+        
+        if (cardDataProp.objectReferenceValue != null)
+        {
+            CardData cardData = (CardData)cardDataProp.objectReferenceValue;
+            if (!string.IsNullOrEmpty(cardData.cardName))
+            {
+                displayName = cardData.cardName;
+            }
+            else
+            {
+                displayName = cardData.name;
+            }
+        }
+        else
+        {
+            // Если cardData не назначен, показываем индекс элемента
+            string path = property.propertyPath;
+            int startIndex = path.LastIndexOf('[');
+            int endIndex = path.LastIndexOf(']');
+            if (startIndex != -1 && endIndex != -1 && startIndex < endIndex)
+            {
+                string indexStr = path.Substring(startIndex + 1, endIndex - startIndex - 1);
+                if (int.TryParse(indexStr, out int index))
+                {
+                    displayName = $"Element {index} (пусто)";
+                }
+            }
+        }
+        
+        // Создаем новый GUIContent с обновленным названием
+        GUIContent newLabel = new GUIContent(displayName, label.tooltip);
+        
+        // Рисуем свойства с новым label
+        EditorGUI.PropertyField(position, property, newLabel, true);
+    }
+
+    public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
+    {
+        // Используем стандартную высоту
+        return EditorGUI.GetPropertyHeight(property, label, true);
+    }
+}
+#endif
