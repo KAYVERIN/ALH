@@ -295,6 +295,8 @@ public class CardObject : MonoBehaviour
     // ============================================================
     //  ОБНОВЛЕНИЕ ВИЗУАЛА ИЗ CardData
     // ============================================================
+    // В CardObject.cs замени метод LoadFromCardData на этот:
+
     public void LoadFromCardData(CardData data)
     {
         if (data == null)
@@ -303,7 +305,7 @@ public class CardObject : MonoBehaviour
                 LogWarning("Попытка загрузить пустые данные!");
             return;
         }
-        
+
         // Загружаем основную информацию
         cardID = data.cardID;
         cardName = data.cardName;
@@ -311,17 +313,17 @@ public class CardObject : MonoBehaviour
         cardType = data.cardType;
         cardTag = data.cardTag;
         cardColor = data.cardColor;
-        
+
         // Очищаем старые визуальные слои
         ClearVisualLayers();
-        
+
         // Создаём контейнер если его нет
         if (visualContainer == null)
         {
             CreateVisualContainer();
         }
-        
-        // 1. Фон для иконки
+
+        // 1. Фон для иконки (используем Order in Layer из CardData)
         if (data.iconBackground != null)
         {
             CreateLayerFromData(
@@ -330,12 +332,12 @@ public class CardObject : MonoBehaviour
                 data.iconBackgroundScale,
                 data.iconBackgroundRotation,
                 data.iconBackgroundColor,
-                iconBackgroundSortingOrder,
+                data.iconBackgroundOrderInLayer, // <-- ИЗМЕНЕНО
                 "IconBackground"
             );
         }
-        
-        // 2. Основная иконка
+
+        // 2. Основная иконка (используем Order in Layer из CardData)
         if (data.cardIcon != null)
         {
             CreateLayerFromData(
@@ -344,12 +346,12 @@ public class CardObject : MonoBehaviour
                 data.iconScale,
                 data.iconRotation,
                 Color.white,
-                iconSortingOrder,
+                data.iconOrderInLayer, // <-- ИЗМЕНЕНО
                 "IconSprite"
             );
         }
-        
-        // 3. Дополнительный слой
+
+        // 3. Дополнительный слой (используем Order in Layer из CardData)
         if (data.extraSprite != null)
         {
             CreateLayerFromData(
@@ -358,16 +360,17 @@ public class CardObject : MonoBehaviour
                 data.extraScale,
                 data.extraRotation,
                 data.extraColor,
-                extraSortingOrder,
+                data.extraLayerOrderInLayer, // <-- ИЗМЕНЕНО
                 "ExtraLayer"
             );
         }
-        
+
         // Обновляем цвет рамки
         UpdateFrameColor();
-        
+
         // Загружаем настройки стопок
         LoadStackSettings(data);
+
         if (enableDebugLogs)
             Log($"Карта загружена: {cardName} (ID: {cardID})");
     }
@@ -375,7 +378,7 @@ public class CardObject : MonoBehaviour
     // ============================================================
     //  ОЧИСТКА ВИЗУАЛЬНЫХ СЛОЁВ
     // ============================================================
-    
+
     private void ClearVisualLayers()
     {
         if (visualContainer == null) return;
