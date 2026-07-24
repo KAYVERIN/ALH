@@ -131,7 +131,8 @@ public class StackUpdateService : MonoBehaviour
 	{
 		if (counterPrefab == null)
 		{
-			Debug.LogError("StackUpdateService: нет префаба счётчика!");
+            if (enableDebugLogs)
+                Debug.LogError("StackUpdateService: нет префаба счётчика!");
 			return;
 		}
 		
@@ -151,11 +152,13 @@ public class StackUpdateService : MonoBehaviour
 			counterCanvas.sortingLayerName = "Default";
 			counterCanvas.sortingOrder = CardLibrary.Instance != null ? 
 				CardLibrary.Instance.stackSortingOrder : 100;
-			Debug.Log($"[StackUpdateService] Счётчику включён override sorting, sortingOrder = {counterCanvas.sortingOrder}");
+            if (enableDebugLogs)
+                Debug.Log($"[StackUpdateService] Счётчику включён override sorting, sortingOrder = {counterCanvas.sortingOrder}");
 		}
 		else
 		{
-			Debug.LogWarning("[StackUpdateService] У префаба счётчика нет Canvas!");
+            if (enableDebugLogs)
+                Debug.LogWarning("[StackUpdateService] У префаба счётчика нет Canvas!");
 		}
 		
 		ApplyGlobalSettings(counterObj);
