@@ -98,6 +98,7 @@ public static class DropLogic
         Debug.Log($"[DropLogic] {card.cardName} помещена в ячейку ({cell.gridX}, {cell.gridY})");
     }
 
+
     private static bool HandleStackMerge(CardObject target, CardObject source)
     {
         int space = target.maxStackSize - target.stackSize;
@@ -111,6 +112,7 @@ public static class DropLogic
 
         if (cardsToAdd == source.stackSize)
         {
+            // ВСЯ карта поместилась - уничтожаем её
             target.stackSize += source.stackSize;
 
             if (source.currentCell != null)
@@ -119,26 +121,34 @@ public static class DropLogic
             Object.Destroy(source.gameObject);
 
             Debug.Log($"[DropLogic] {target.cardName}: стопка увеличена до {target.stackSize}");
-
             GridManager.Instance.HideHighlight();
             return true;
         }
         else
         {
+            // ЧАСТИЧНОЕ добавление - остаток ищет новое место
             target.stackSize += cardsToAdd;
             source.stackSize -= cardsToAdd;
 
-            source.transform.localScale = source.originalScale * 1.1f;
+            Debug.Log($"[DropLogic] {target.cardName}: стопка заполнена ({target.stackSize}), остаток {source.stackSize} ищет новое место");
 
-            if (StackUpdateService.Instance != null)
+            // Убираем из текущей ячейки
+            if (source.currentCell != null)
             {
-                StackUpdateService.Instance.UpdateCard(source);
+                source.currentCell.RemoveCard();
+                source.currentCell = null;
             }
 
-            Debug.Log($"[DropLogic] {target.cardName}: стопка заполнена ({target.stackSize}), остаток {source.stackSize} остаётся под курсором");
+            // Сбрасываем состояние
+            source.isDragging = false;
+            source.LowerCardVisuals();
+            source.transform.localScale = source.originalScale;
+
+            // ИСПОЛЬЗУЕМ УМНОЕ РАЗМЕЩЕНИЕ для остатка
+            CardLibrary.PlaceCardSmart(source);
 
             GridManager.Instance.HideHighlight();
-            return false;
+            return true;
         }
     }
 
