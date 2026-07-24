@@ -99,25 +99,41 @@ public static class DropLogic
     }
 
 
+    // DropLogic.cs - добавляем логи в начало HandleStackMerge
+
     private static bool HandleStackMerge(CardObject target, CardObject source)
     {
+        Debug.Log($"[DropLogic] ===== НАЧАЛО HandleStackMerge =====");
+        Debug.Log($"[DropLogic] target: {target.cardName} (стопка: {target.stackSize}/{target.maxStackSize}, ячейка: {(target.currentCell != null ? $"{target.currentCell.gridX},{target.currentCell.gridY}" : "null")})");
+        Debug.Log($"[DropLogic] source: {source.cardName} (стопка: {source.stackSize}/{source.maxStackSize}, ячейка: {(source.currentCell != null ? $"{source.currentCell.gridX},{source.currentCell.gridY}" : "null")})");
+        Debug.Log($"[DropLogic] source.gameObject: {source.gameObject.name}, instanceID: {source.gameObject.GetInstanceID()}");
+
         int space = target.maxStackSize - target.stackSize;
         int cardsToAdd = Mathf.Min(source.stackSize, space);
 
+        Debug.Log($"[DropLogic] space = {space}, cardsToAdd = {cardsToAdd}");
+
         if (cardsToAdd <= 0)
         {
+            Debug.Log($"[DropLogic] cardsToAdd <= 0 → SwapCards");
             SwapCards(source, target, target.currentCell);
             return false;
         }
 
         if (cardsToAdd == source.stackSize)
         {
-            // ВСЯ карта поместилась - уничтожаем её
+            Debug.Log($"[DropLogic] ВСЯ карта поместилась ({cardsToAdd} == {source.stackSize})");
             target.stackSize += source.stackSize;
+            Debug.Log($"[DropLogic] target.stackSize теперь {target.stackSize}");
 
             if (source.currentCell != null)
+            {
+                Debug.Log($"[DropLogic] Удаляем source из ячейки ({source.currentCell.gridX}, {source.currentCell.gridY})");
                 source.currentCell.RemoveCard();
+                source.currentCell = null;
+            }
 
+            Debug.Log($"[DropLogic] Уничтожаем source.gameObject (instanceID: {source.gameObject.GetInstanceID()})");
             Object.Destroy(source.gameObject);
 
             Debug.Log($"[DropLogic] {target.cardName}: стопка увеличена до {target.stackSize}");
@@ -126,15 +142,17 @@ public static class DropLogic
         }
         else
         {
-            // ЧАСТИЧНОЕ добавление - остаток ищет новое место
+            Debug.Log($"[DropLogic] ЧАСТИЧНОЕ добавление ({cardsToAdd} < {source.stackSize})");
             target.stackSize += cardsToAdd;
             source.stackSize -= cardsToAdd;
 
-            Debug.Log($"[DropLogic] {target.cardName}: стопка заполнена ({target.stackSize}), остаток {source.stackSize} ищет новое место");
+            Debug.Log($"[DropLogic] target.stackSize теперь {target.stackSize}");
+            Debug.Log($"[DropLogic] source.stackSize теперь {source.stackSize}");
 
             // Убираем из текущей ячейки
             if (source.currentCell != null)
             {
+                Debug.Log($"[DropLogic] Удаляем source из ячейки ({source.currentCell.gridX}, {source.currentCell.gridY})");
                 source.currentCell.RemoveCard();
                 source.currentCell = null;
             }
@@ -144,9 +162,10 @@ public static class DropLogic
             source.LowerCardVisuals();
             source.transform.localScale = source.originalScale;
 
-            // ИСПОЛЬЗУЕМ УМНОЕ РАЗМЕЩЕНИЕ для остатка
+            Debug.Log($"[DropLogic] ВЫЗЫВАЕМ PlaceCardSmart для остатка (instanceID: {source.gameObject.GetInstanceID()})");
             CardLibrary.PlaceCardSmart(source);
 
+            Debug.Log($"[DropLogic] КОНЕЦ HandleStackMerge");
             GridManager.Instance.HideHighlight();
             return true;
         }
