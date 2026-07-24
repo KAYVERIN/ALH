@@ -9,6 +9,7 @@ public class CardVisualController : MonoBehaviour
     [Header("Настройки слоёв")]
     [SerializeField] private int baseSortingOrder = 0;
     [SerializeField] private int dragSortingOrder = 100;
+    [SerializeField] private int counterSortingOrder = 110;
 
     [Header("Отладка")]
     [SerializeField] private bool enableDebugLogs = false;
@@ -224,6 +225,21 @@ public class CardVisualController : MonoBehaviour
             cardFrame.sortingOrder = originalFrameOrder + dragSortingOrder;
             Log($"Рамка поднята: {originalFrameOrder} → {cardFrame.sortingOrder}");
         }
+
+        // ============================================================
+        //  ПОДНИМАЕМ СЧЁТЧИК
+        // ============================================================
+        Transform counter = transform.Find("StackCounter");
+        if (counter != null)
+        {
+            Canvas counterCanvas = counter.GetComponent<Canvas>();
+            if (counterCanvas != null)
+            {
+                counterCanvas.overrideSorting = true;
+                counterCanvas.sortingOrder = counterSortingOrder + 10;
+                Log($"Счётчик поднят до {counterSortingOrder + 10}");
+            }
+        }
     }
 
     // ============================================================
@@ -281,6 +297,21 @@ public class CardVisualController : MonoBehaviour
         {
             cardFrame.sortingOrder = originalFrameOrder;
             Log($"Рамка восстановлена: {originalFrameOrder}");
+        }
+
+        // ============================================================
+        //  ВОССТАНАВЛИВАЕМ СЧЁТЧИК
+        // ============================================================
+        Transform counter = transform.Find("StackCounter");
+        if (counter != null)
+        {
+            Canvas counterCanvas = counter.GetComponent<Canvas>();
+            if (counterCanvas != null)
+            {
+                counterCanvas.overrideSorting = true;
+                counterCanvas.sortingOrder = counterSortingOrder;
+                Log($"Счётчик опущен до {counterSortingOrder}");
+            }
         }
     }
 
@@ -343,5 +374,21 @@ public class CardVisualController : MonoBehaviour
     public bool IsDragging()
     {
         return isDragging;
+    }
+
+    public void SetCounterSortingOrder(int newOrder)
+    {
+        counterSortingOrder = newOrder;
+
+        Transform counter = transform.Find("StackCounter");
+        if (counter != null)
+        {
+            Canvas counterCanvas = counter.GetComponent<Canvas>();
+            if (counterCanvas != null)
+            {
+                counterCanvas.overrideSorting = true;
+                counterCanvas.sortingOrder = counterSortingOrder;
+            }
+        }
     }
 }
