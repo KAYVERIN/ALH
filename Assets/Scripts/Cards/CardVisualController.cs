@@ -1,14 +1,14 @@
 using UnityEngine;
+using System.Collections.Generic;
 
 /// <summary>
-/// Управляет визуальными слоями карты (поднятие/опускание SpriteRenderer)
+/// Управляет визуальными слоями карты (поднятие/опускание SpriteRenderer и Canvas)
 /// </summary>
 public class CardVisualController : MonoBehaviour
 {
     [Header("Настройки слоёв")]
     [SerializeField] private int baseSortingOrder = 0;
     [SerializeField] private int dragSortingOrder = 100;
-    [SerializeField] private int counterSortingOrder = 110;
 
     [Header("Отладка")]
     [SerializeField] private bool enableDebugLogs = false;
@@ -22,9 +22,46 @@ public class CardVisualController : MonoBehaviour
     // Ссылка на VisualContainer
     private GameObject visualContainer;
 
+    // ============================================================
+    //  УПРАВЛЕНИЕ Canvas внутри VisualContainer
+    // ============================================================
+
+    private List<CanvasData> childCanvases = new List<CanvasData>();
+
+    /// <summary>
+    /// Данные Canvas для сохранения и восстановления
+    /// </summary>
+    private class CanvasData
+    {
+        public Canvas canvas;
+        public int originalSortingOrder;
+        public string originalSortingLayer;
+        public bool wasOverriding;
+    }
+
     // Рамка карты
     private SpriteRenderer cardFrame;
     private int originalFrameOrder = 0;
+
+    // ============================================================
+    //  МЕТОДЫ ЛОГИРОВАНИЯ
+    // ============================================================
+
+    private void Log(string message)
+    {
+        if (enableDebugLogs)
+            Debug.Log($"[CardVisualController] {message}");
+    }
+
+    private void LogWarning(string message)
+    {
+        if (enableDebugLogs)
+            Debug.LogWarning($"[CardVisualController] {message}");
+    }
+
+    // ============================================================
+    //  ЖИЗНЕННЫЙ ЦИКЛ
+    // ============================================================
 
     void Awake()
     {
@@ -33,11 +70,11 @@ public class CardVisualController : MonoBehaviour
         if (container != null)
         {
             visualContainer = container.gameObject;
-            //Debug.Log($"[CardVisualController] VisualContainer найден на {gameObject.name}");
+            Log($"VisualContainer найден на {gameObject.name}");
         }
         else
         {
-            //Debug.LogWarning($"[CardVisualController] VisualContainer НЕ найден на {gameObject.name}!");
+            LogWarning($"VisualContainer НЕ найден на {gameObject.name}!");
             return;
         }
 
@@ -47,11 +84,11 @@ public class CardVisualController : MonoBehaviour
         {
             containerCanvas.overrideSorting = true;
             containerCanvas.sortingOrder = baseSortingOrder;
-            //Debug.Log($"[CardVisualController] Canvas найден на VisualContainer, sortingOrder: {baseSortingOrder}");
+            Log($"Canvas найден на VisualContainer, sortingOrder: {baseSortingOrder}");
         }
         else
         {
-            //Debug.LogWarning($"[CardVisualController] Canvas НЕ найден на VisualContainer!");
+            LogWarning($"Canvas НЕ найден на VisualContainer!");
         }
 
         // Находим рамку
@@ -59,13 +96,25 @@ public class CardVisualController : MonoBehaviour
         if (cardFrame != null)
         {
             originalFrameOrder = cardFrame.sortingOrder;
-            //Debug.Log($"[CardVisualController] Рамка найдена, originalOrder: {originalFrameOrder}");
+            Log($"Рамка найдена, originalOrder: {originalFrameOrder}");
         }
 
-        // Сохраняем порядки всех спрайтов в VisualContainer
-        SaveOriginalOrders();
+        // Сохраняем все данные
+        SaveAllData();
     }
 
+    // ============================================================
+    //  СОХРАНЕНИЕ ВСЕХ ДАННЫХ
+    // ============================================================
+
+    /// <summary>
+    /// Сохраняет все данные: SpriteRenderer и Canvas внутри VisualContainer
+    /// </summary>
+    private void SaveAllData()
+    {
+        SaveOriginalOrders();
+        SaveChildCanvases();
+    }
 
     /// <summary>
     /// Сохраняет оригинальные Sorting Order всех SpriteRenderer внутри VisualContainer
@@ -82,10 +131,45 @@ public class CardVisualController : MonoBehaviour
             if (allRenderers[i] != null)
             {
                 originalOrders[i] = allRenderers[i].sortingOrder;
-                //Debug.Log($"[CardVisualController] {allRenderers[i].gameObject.name} - originalOrder: {originalOrders[i]}");
+                Log($"{allRenderers[i].gameObject.name} - originalOrder: {originalOrders[i]}");
             }
         }
     }
+
+    /// <summary>
+    /// Сохраняет данные всех Canvas внутри VisualContainer (кроме основного)
+    /// </summary>
+    private void SaveChildCanvases()
+    {
+        if (visualContainer == null) return;
+
+        childCanvases.Clear();
+
+        // Находим все Canvas в VisualContainer
+        Canvas[] canvases = visualContainer.GetComponentsInChildren<Canvas>(true);
+
+        foreach (Canvas canvas in canvases)
+        {
+            // Пропускаем основной Canvas на VisualContainer
+            if (canvas == containerCanvas) continue;
+
+            // Сохраняем данные
+            CanvasData data = new CanvasData
+            {
+                canvas = canvas,
+                originalSortingOrder = canvas.sortingOrder,
+                originalSortingLayer = canvas.sortingLayerName,
+                wasOverriding = canvas.overrideSorting
+            };
+
+            childCanvases.Add(data);
+            Log($"Сохранён Canvas: {canvas.gameObject.name}, Order={data.originalSortingOrder}, Layer={data.originalSortingLayer}");
+        }
+    }
+
+    // ============================================================
+    //  ПОДНЯТИЕ КАРТЫ
+    // ============================================================
 
     /// <summary>
     /// Поднимает карту на верхний слой (при перетаскивании)
@@ -95,18 +179,17 @@ public class CardVisualController : MonoBehaviour
         if (isDragging) return;
         isDragging = true;
 
-        //Debug.Log($"[CardVisualController] Поднимаем карту на слой {dragSortingOrder}");
+        Log($"Поднимаем карту на слой {dragSortingOrder}");
 
         // Поднимаем Canvas на VisualContainer
         if (containerCanvas != null)
         {
             containerCanvas.sortingOrder = dragSortingOrder;
-            //Debug.Log($"[CardVisualController] VisualContainer Canvas поднят до {dragSortingOrder}");
+            Log($"VisualContainer Canvas поднят до {dragSortingOrder}");
         }
 
         // ============================================================
         //  ПОДНИМАЕМ ВСЕ SPRITERENDERER ВНУТРИ VISUALCONTAINER
-        //  Сохраняем их относительный порядок (10, 5, 15 и т.д.)
         // ============================================================
         if (allRenderers != null && originalOrders != null)
         {
@@ -116,8 +199,22 @@ public class CardVisualController : MonoBehaviour
                 {
                     int newOrder = originalOrders[i] + dragSortingOrder;
                     allRenderers[i].sortingOrder = newOrder;
-                    //Debug.Log($"[CardVisualController] {allRenderers[i].gameObject.name}: {originalOrders[i]} → {newOrder}");
+                    Log($"{allRenderers[i].gameObject.name}: {originalOrders[i]} → {newOrder}");
                 }
+            }
+        }
+
+        // ============================================================
+        //  ПОДНИМАЕМ ВСЕ Canvas внутри VisualContainer (кроме основного)
+        // ============================================================
+        foreach (CanvasData data in childCanvases)
+        {
+            if (data.canvas != null)
+            {
+                data.canvas.overrideSorting = true;
+                int newOrder = data.originalSortingOrder + dragSortingOrder;
+                data.canvas.sortingOrder = newOrder;
+                Log($"Canvas {data.canvas.gameObject.name}: {data.originalSortingOrder} → {newOrder}");
             }
         }
 
@@ -125,22 +222,13 @@ public class CardVisualController : MonoBehaviour
         if (cardFrame != null)
         {
             cardFrame.sortingOrder = originalFrameOrder + dragSortingOrder;
-            //Debug.Log($"[CardVisualController] Рамка поднята: {originalFrameOrder} → {cardFrame.sortingOrder}");
-        }
-
-        // Поднимаем счётчик
-        Transform counter = transform.Find("StackCounter");
-        if (counter != null)
-        {
-            Canvas counterCanvas = counter.GetComponent<Canvas>();
-            if (counterCanvas != null)
-            {
-                counterCanvas.overrideSorting = true;
-                counterCanvas.sortingOrder = counterSortingOrder + 10;
-                //Debug.Log($"[CardVisualController] Счётчик поднят до {counterSortingOrder + 10}");
-            }
+            Log($"Рамка поднята: {originalFrameOrder} → {cardFrame.sortingOrder}");
         }
     }
+
+    // ============================================================
+    //  ОПУСКАНИЕ КАРТЫ
+    // ============================================================
 
     /// <summary>
     /// Опускает карту на исходный слой (после отпускания)
@@ -150,13 +238,13 @@ public class CardVisualController : MonoBehaviour
         if (!isDragging) return;
         isDragging = false;
 
-        //Debug.Log($"[CardVisualController] Опускаем карту на исходный слой");
+        Log($"Опускаем карту на исходный слой");
 
         // Восстанавливаем Canvas на VisualContainer
         if (containerCanvas != null)
         {
             containerCanvas.sortingOrder = baseSortingOrder;
-            //Debug.Log($"[CardVisualController] VisualContainer Canvas опущен до {baseSortingOrder}");
+            Log($"VisualContainer Canvas опущен до {baseSortingOrder}");
         }
 
         // ============================================================
@@ -169,8 +257,22 @@ public class CardVisualController : MonoBehaviour
                 if (allRenderers[i] != null)
                 {
                     allRenderers[i].sortingOrder = originalOrders[i];
-                    //Debug.Log($"[CardVisualController] {allRenderers[i].gameObject.name}: восстановлен → {originalOrders[i]}");
+                    Log($"{allRenderers[i].gameObject.name}: восстановлен → {originalOrders[i]}");
                 }
+            }
+        }
+
+        // ============================================================
+        //  ВОССТАНАВЛИВАЕМ ВСЕ Canvas внутри VisualContainer (кроме основного)
+        // ============================================================
+        foreach (CanvasData data in childCanvases)
+        {
+            if (data.canvas != null)
+            {
+                data.canvas.overrideSorting = data.wasOverriding;
+                data.canvas.sortingOrder = data.originalSortingOrder;
+                data.canvas.sortingLayerName = data.originalSortingLayer;
+                Log($"Canvas {data.canvas.gameObject.name}: восстановлен → {data.originalSortingOrder}");
             }
         }
 
@@ -178,22 +280,13 @@ public class CardVisualController : MonoBehaviour
         if (cardFrame != null)
         {
             cardFrame.sortingOrder = originalFrameOrder;
-            //Debug.Log($"[CardVisualController] Рамка восстановлена: {originalFrameOrder}");
-        }
-
-        // Восстанавливаем счётчик
-        Transform counter = transform.Find("StackCounter");
-        if (counter != null)
-        {
-            Canvas counterCanvas = counter.GetComponent<Canvas>();
-            if (counterCanvas != null)
-            {
-                counterCanvas.overrideSorting = true;
-                counterCanvas.sortingOrder = counterSortingOrder;
-                //Debug.Log($"[CardVisualController] Счётчик опущен до {counterSortingOrder}");
-            }
+            Log($"Рамка восстановлена: {originalFrameOrder}");
         }
     }
+
+    // ============================================================
+    //  ОБНОВЛЕНИЕ ДАННЫХ
+    // ============================================================
 
     /// <summary>
     /// Обновляет ссылку на VisualContainer и пересоздаёт Canvas если нужно
@@ -213,7 +306,7 @@ public class CardVisualController : MonoBehaviour
                 canvas.overrideSorting = true;
                 canvas.sortingLayerName = "Default";
                 canvas.sortingOrder = baseSortingOrder;
-                //Debug.Log($"[CardVisualController] Создан Canvas на VisualContainer для {gameObject.name}");
+                Log($"Создан Canvas на VisualContainer для {gameObject.name}");
             }
             else
             {
@@ -222,20 +315,20 @@ public class CardVisualController : MonoBehaviour
             }
 
             containerCanvas = canvas;
-            SaveOriginalOrders();
+            SaveAllData();
         }
         else
         {
-            //Debug.LogWarning($"[CardVisualController] VisualContainer не найден для {gameObject.name}");
+            LogWarning($"VisualContainer не найден для {gameObject.name}");
         }
     }
 
     /// <summary>
-    /// Обновляет список спрайтов (вызывать после добавления новых слоёв)
+    /// Обновляет список спрайтов и Canvas (вызывать после добавления новых слоёв)
     /// </summary>
     public void RefreshRenderers()
     {
-        SaveOriginalOrders();
+        SaveAllData();
 
         if (isDragging)
         {
@@ -243,24 +336,12 @@ public class CardVisualController : MonoBehaviour
         }
     }
 
+    // ============================================================
+    //  ДОПОЛНИТЕЛЬНЫЕ МЕТОДЫ
+    // ============================================================
+
     public bool IsDragging()
     {
         return isDragging;
-    }
-
-    public void SetCounterSortingOrder(int newOrder)
-    {
-        counterSortingOrder = newOrder;
-
-        Transform counter = transform.Find("StackCounter");
-        if (counter != null)
-        {
-            Canvas counterCanvas = counter.GetComponent<Canvas>();
-            if (counterCanvas != null)
-            {
-                counterCanvas.overrideSorting = true;
-                counterCanvas.sortingOrder = counterSortingOrder;
-            }
-        }
     }
 }
