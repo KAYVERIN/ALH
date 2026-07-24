@@ -2,6 +2,7 @@
 
 using UnityEngine;
 using System.Collections.Generic;
+using TMPro;
 
 /// <summary>
 /// Управляет отображением точек архетипов на префабе карты
@@ -12,17 +13,29 @@ public class ArchetypeDotVisualizer : MonoBehaviour
     [SerializeField] private bool enableDebugLogs = false;
     [SerializeField] private bool showArchetypeDots = true;
 
-    [Header("Точки архетипов (родительский объект со SpriteRenderer)")]
+    [Header("Точки архетипов")]
     [SerializeField] private GameObject dotBlack;
+    [SerializeField] private TextMeshPro textBlack;
+
     [SerializeField] private GameObject dotYellow;
+    [SerializeField] private TextMeshPro textYellow;
+
     [SerializeField] private GameObject dotGreen;
+    [SerializeField] private TextMeshPro textGreen;
+
     [SerializeField] private GameObject dotRed;
+    [SerializeField] private TextMeshPro textRed;
+
     [SerializeField] private GameObject dotBlue;
+    [SerializeField] private TextMeshPro textBlue;
+
     [SerializeField] private GameObject dotSandal;
+    [SerializeField] private TextMeshPro textSandal;
+
     [SerializeField] private GameObject dotWhite;
+    [SerializeField] private TextMeshPro textWhite;
 
     private CardObject cardObject;
-    private Dictionary<CardData.Archetype, GameObject> dotMap;
 
     // Цвета для каждого архетипа
     private static readonly Color[] ArchetypeColors = new Color[]
@@ -45,18 +58,6 @@ public class ArchetypeDotVisualizer : MonoBehaviour
             if (enableDebugLogs)
                 Debug.LogWarning("[ArchetypeDotVisualizer] CardObject не найден!");
         }
-
-        // Инициализируем словарь
-        dotMap = new Dictionary<CardData.Archetype, GameObject>
-        {
-            { CardData.Archetype.Black, dotBlack },
-            { CardData.Archetype.Yellow, dotYellow },
-            { CardData.Archetype.Green, dotGreen },
-            { CardData.Archetype.Red, dotRed },
-            { CardData.Archetype.Blue, dotBlue },
-            { CardData.Archetype.Sandal, dotSandal },
-            { CardData.Archetype.White, dotWhite }
-        };
     }
 
     void Start()
@@ -94,28 +95,26 @@ public class ArchetypeDotVisualizer : MonoBehaviour
         }
 
         // Обновляем каждую точку
-        UpdateDot(CardData.Archetype.Black, data.blackValue);
-        UpdateDot(CardData.Archetype.Yellow, data.yellowValue);
-        UpdateDot(CardData.Archetype.Green, data.greenValue);
-        UpdateDot(CardData.Archetype.Red, data.redValue);
-        UpdateDot(CardData.Archetype.Blue, data.blueValue);
-        UpdateDot(CardData.Archetype.Sandal, data.sandalValue);
-        UpdateDot(CardData.Archetype.White, data.whiteValue);
+        UpdateDot(dotBlack, textBlack, CardData.Archetype.Black, data.blackValue);
+        UpdateDot(dotYellow, textYellow, CardData.Archetype.Yellow, data.yellowValue);
+        UpdateDot(dotGreen, textGreen, CardData.Archetype.Green, data.greenValue);
+        UpdateDot(dotRed, textRed, CardData.Archetype.Red, data.redValue);
+        UpdateDot(dotBlue, textBlue, CardData.Archetype.Blue, data.blueValue);
+        UpdateDot(dotSandal, textSandal, CardData.Archetype.Sandal, data.sandalValue);
+        UpdateDot(dotWhite, textWhite, CardData.Archetype.White, data.whiteValue);
 
         if (enableDebugLogs)
             Debug.Log($"[ArchetypeDotVisualizer] Точки обновлены для {cardObject.cardName}");
     }
 
-    private void UpdateDot(CardData.Archetype archetype, int value)
+    private void UpdateDot(GameObject dot, TextMeshPro text, CardData.Archetype archetype, int value)
     {
-        if (!dotMap.TryGetValue(archetype, out GameObject dot))
+        if (dot == null)
         {
             if (enableDebugLogs)
                 Debug.LogWarning($"[ArchetypeDotVisualizer] Точка для {archetype} не назначена!");
             return;
         }
-
-        if (dot == null) return;
 
         // Если значение 0 - скрываем точку
         if (value == 0)
@@ -127,32 +126,29 @@ public class ArchetypeDotVisualizer : MonoBehaviour
         // Показываем точку
         dot.SetActive(true);
 
-        // Настраиваем цвет (SpriteRenderer на родителе)
+        // Настраиваем цвет точки
         SpriteRenderer sr = dot.GetComponent<SpriteRenderer>();
         if (sr != null)
         {
             sr.color = ArchetypeColors[(int)archetype];
         }
 
-        // Настраиваем текст (TextMesh на дочернем объекте "Text")
-        Transform textTransform = dot.transform.Find("Text");
-        if (textTransform != null)
+        // Настраиваем текст
+        if (text != null)
         {
-            TextMesh text = textTransform.GetComponent<TextMesh>();
-            if (text != null)
-            {
-                text.text = Mathf.Abs(value).ToString();
-                text.color = value < 0 ? Color.red : Color.green;
-            }
+            text.text = Mathf.Abs(value).ToString();
+            text.color = value < 0 ? Color.red : Color.green;
         }
     }
 
     private void HideAllDots()
     {
-        foreach (var kvp in dotMap)
-        {
-            if (kvp.Value != null)
-                kvp.Value.SetActive(false);
-        }
+        if (dotBlack != null) dotBlack.SetActive(false);
+        if (dotYellow != null) dotYellow.SetActive(false);
+        if (dotGreen != null) dotGreen.SetActive(false);
+        if (dotRed != null) dotRed.SetActive(false);
+        if (dotBlue != null) dotBlue.SetActive(false);
+        if (dotSandal != null) dotSandal.SetActive(false);
+        if (dotWhite != null) dotWhite.SetActive(false);
     }
 }
