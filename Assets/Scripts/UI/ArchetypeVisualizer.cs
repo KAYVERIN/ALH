@@ -56,7 +56,7 @@ public class ArchetypeVisualizer : MonoBehaviour
         if (!showArchetypeDots) return;
         if (cardObject == null) return;
 
-        // Получаем CardData через метод GetCardData()
+        // Получаем CardData
         CardData data = cardObject.GetCardData();
         if (data == null)
         {
@@ -90,34 +90,48 @@ public class ArchetypeVisualizer : MonoBehaviour
     {
         if (value == 0) return;
 
-        // Создаём GameObject для точки
-        GameObject dot = new GameObject($"ArchetypeDot_{value}_{color}");
-        dot.transform.parent = transform;
-        dot.transform.localPosition = new Vector3(
+        // ============================================================
+        //  СОЗДАЁМ КОНТЕЙНЕР ДЛЯ ТОЧКИ
+        // ============================================================
+        GameObject dotContainer = new GameObject($"ArchetypeDot_{value}_{color}");
+        dotContainer.transform.parent = transform;
+        dotContainer.transform.localPosition = new Vector3(
             offset.x + dotObjects.Count * dotSpacing,
             offset.y,
             0
         );
-        dot.transform.localScale = Vector3.one * dotRadius * 2;
+        dotContainer.transform.localScale = Vector3.one;
 
-        // Добавляем SpriteRenderer
-        SpriteRenderer sr = dot.AddComponent<SpriteRenderer>();
+        // ============================================================
+        //  1. СОЗДАЁМ СПРАЙТ (точку)
+        // ============================================================
+        GameObject dotSprite = new GameObject("Sprite");
+        dotSprite.transform.parent = dotContainer.transform;
+        dotSprite.transform.localPosition = Vector3.zero;
+        dotSprite.transform.localScale = Vector3.one * dotRadius * 2;
 
-        // Создаём круглый спрайт
+        SpriteRenderer sr = dotSprite.AddComponent<SpriteRenderer>();
         Texture2D texture = CreateCircleTexture(64, color);
         sr.sprite = Sprite.Create(texture, new Rect(0, 0, 64, 64), new Vector2(0.5f, 0.5f), 100);
         sr.sortingOrder = sortingOrder;
 
-        // Добавляем текст со значением
-        TextMesh text = dot.AddComponent<TextMesh>();
+        // ============================================================
+        //  2. СОЗДАЁМ ТЕКСТ (значение)
+        // ============================================================
+        GameObject dotText = new GameObject("Text");
+        dotText.transform.parent = dotContainer.transform;
+        dotText.transform.localPosition = new Vector3(0, 0, -0.01f);
+        dotText.transform.localScale = Vector3.one * 0.01f; // TextMesh использует свой масштаб
+
+        TextMesh text = dotText.AddComponent<TextMesh>();
         text.text = Mathf.Abs(value).ToString();
         text.fontSize = 30;
         text.color = value < 0 ? Color.red : Color.green;
         text.characterSize = 0.1f;
         text.anchor = TextAnchor.MiddleCenter;
-        text.transform.localPosition = new Vector3(0, 0, -0.01f);
+        text.alignment = TextAlignment.Center;
 
-        dotObjects.Add(dot);
+        dotObjects.Add(dotContainer);
     }
 
     private Texture2D CreateCircleTexture(int size, Color color)
