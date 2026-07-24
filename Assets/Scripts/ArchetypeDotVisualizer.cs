@@ -59,6 +59,8 @@ public class ArchetypeDotVisualizer : MonoBehaviour
         UpdateVisuals();
     }
 
+    // ArchetypeDotVisualizer.cs - обновленный UpdateVisuals()
+
     public void UpdateVisuals()
     {
         Log("===== UpdateVisuals START =====");
@@ -87,13 +89,29 @@ public class ArchetypeDotVisualizer : MonoBehaviour
 
         Log($"CardData: {data.cardName}, archetype: {data.primaryArchetype}, power: {data.archetypePower}");
 
-        if (!data.HasArchetype())
+        // ============================================================
+        //  ПРОВЕРКА: показывать ли архетипы
+        // ============================================================
+        bool shouldShow = false;
+
+        // Проверяем глобальное состояние
+        if (ArchetypeDisplayController.Instance != null && ArchetypeDisplayController.Instance.IsArchetypesVisible)
         {
-            Log($"Архетип None для {cardObject.cardName}, отключаем контейнер");
+            // Глобально включено - проверяем наличие архетипа у карты
+            if (data.HasArchetype())
+            {
+                shouldShow = true;
+            }
+        }
+
+        if (!shouldShow)
+        {
+            Log($"Архетипы скрыты для {cardObject.cardName}");
             archetypeDotsContainer.SetActive(false);
             return;
         }
 
+        // Включаем контейнер
         archetypeDotsContainer.SetActive(true);
         Log("Контейнер включен");
 
