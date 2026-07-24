@@ -6,7 +6,7 @@ using TMPro;
 public class CardObject : MonoBehaviour
 {
     // ============================================================
-    //  НОВОЕ СОБЫТИЕ ДЛЯ ОПОВЕЩЕНИЯ О ПОДНЯТИИ КАРТЫ
+    //  СОБЫТИЯ
     // ============================================================
     public static System.Action<CardObject> OnCardPickedUp;
     public static System.Action<CardObject> OnCardClicked;
@@ -26,13 +26,13 @@ public class CardObject : MonoBehaviour
     // ============================================================
     [Header("Визуал")]
     public Color cardColor = Color.white;
-    
+
     // Основной фон карты (рамка)
     private SpriteRenderer frameRenderer;
-    
+
     // Контейнер для всех визуальных слоёв
     private GameObject visualContainer;
-    
+
     // Список всех визуальных слоёв
     private List<CardVisualLayer> visualLayers = new List<CardVisualLayer>();
 
@@ -53,21 +53,14 @@ public class CardObject : MonoBehaviour
     //  НАСТРОЙКИ
     // ============================================================
     [Header("Настройки управления слоями")]
-    [SerializeField] private int dragLayerBoost = 98;
     [SerializeField] private float dragScaleMultiplier = 1.1f;
-
-    [Header("Настройки визуальных слоёв")]
-    [SerializeField] private int baseSortingOrder = 0;
-    [SerializeField] private int iconSortingOrder = 10;
-    [SerializeField] private int iconBackgroundSortingOrder = 5;
-    [SerializeField] private int extraSortingOrder = 15;
 
     [Header("=== UI ЭЛЕМЕНТЫ ===")]
     [SerializeField] private TextMeshProUGUI cardNameText;
 
     [Header("Отладка")]
     [SerializeField] private bool enableDebugLogs = true;
-    
+
     [Header("=== НАСТРОЙКИ СТОПОК ===")]
     public bool isStackable = false;
     public int stackSize = 1;
@@ -75,31 +68,9 @@ public class CardObject : MonoBehaviour
 
     public StackCounterUI stackCounterUI;
 
-    private void OnMouseDown()
-    {
-        // Проверка UI
-        if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
-            return;
-
-        // Вызываем ЕДИНСТВЕННЫЙ DragController
-        DragController.Instance?.HandleMouseDown(this);
-    }
-
-    private void OnMouseUp()
-    {
-        // Проверка UI
-        if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
-            return;
-
-        // Вызываем ЕДИНСТВЕННЫЙ DragController
-        DragController.Instance?.HandleMouseUp(this);
-    }
-
-    // ============================================================
-    //  ПРИВАТНЫЕ ПЕРЕМЕННЫЕ
-    // ============================================================
+    // Приватные переменные
     public Vector3 originalScale;
-    
+
     // ============================================================
     //  МЕТОДЫ ЛОГИРОВАНИЯ
     // ============================================================
@@ -118,48 +89,46 @@ public class CardObject : MonoBehaviour
     // ============================================================
     //  ЖИЗНЕННЫЙ ЦИКЛ
     // ============================================================
-    
+
     void Awake()
     {
-        // ============================================================
-        //  1. СНАЧАЛА СОЗДАЁМ VISUAL CONTAINER
-        // ============================================================
-        ForceCreateVisualContainer();
-        ForceCreateVisualContainerCanvas();
-        
-        // ============================================================
-        //  2. ПОТОМ ИНИЦИАЛИЗИРУЕМ КОМПОНЕНТЫ
-        // ============================================================
-        
+        // Находим VisualContainer (должен быть в префабе)
+        Transform existingContainer = transform.Find("VisualContainer");
+        if (existingContainer != null)
+        {
+            visualContainer = existingContainer.gameObject;
+            Log("Найден VisualContainer из префаба");
+        }
+        else
+        {
+            LogWarning("VisualContainer не найден в префабе!");
+        }
+
         // Находим фон (рамку)
         frameRenderer = GetComponent<SpriteRenderer>();
-        
         if (frameRenderer == null)
         {
             frameRenderer = gameObject.AddComponent<SpriteRenderer>();
             frameRenderer.sprite = CreateSquareSprite();
             frameRenderer.sortingOrder = 0;
         }
-        
+
         // Сохраняем масштаб
         originalScale = transform.localScale;
         if (originalScale == Vector3.zero)
         {
             originalScale = Vector3.one;
         }
-        
-        // ============================================================
-        //  3. ДОБАВЛЯЕМ VISUAL CONTROLLER ПОСЛЕ СОЗДАНИЯ VISUALCONTAINER
-        // ============================================================
+
+        // Добавляем VisualController
         visualController = GetComponent<CardVisualController>();
         if (visualController == null)
         {
             visualController = gameObject.AddComponent<CardVisualController>();
-            if (enableDebugLogs)
-                Debug.Log($"[CardObject] Добавлен CardVisualController для {cardName}");
+            Log("Добавлен CardVisualController");
         }
-        if (enableDebugLogs)
-            Log($"Карта {cardName} инициализирована");
+
+        Log($"Карта {cardName} инициализирована");
     }
 
     void Start()
@@ -168,137 +137,129 @@ public class CardObject : MonoBehaviour
     }
 
     // ============================================================
-    //  ПРИНУДИТЕЛЬНОЕ СОЗДАНИЕ VISUALCONTAINER
+    //  ОБРАБОТЧИКИ МЫШИ
     // ============================================================
-    
-    /// <summary>
-    /// ПРИНУДИТЕЛЬНО создаёт VisualContainer, если его нет
-    /// </summary>
-    public void ForceCreateVisualContainer()
+
+    private void OnMouseDown()
     {
-        Transform existingContainer = transform.Find("VisualContainer");
-        if (existingContainer != null)
-        {
-            visualContainer = existingContainer.gameObject;
+        if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
             return;
-        }
-        
-        // Создаём контейнер
-        visualContainer = new GameObject("VisualContainer");
-        visualContainer.transform.parent = transform;
-        visualContainer.transform.localPosition = Vector3.zero;
-        visualContainer.transform.localScale = Vector3.one;
-        if (enableDebugLogs)
-            Debug.Log($"[CardObject] Принудительно создан VisualContainer для {cardName}");
+
+        DragController.Instance?.HandleMouseDown(this);
     }
+
+    private void OnMouseUp()
+    {
+        if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
+            return;
+
+        DragController.Instance?.HandleMouseUp(this);
+    }
+
+    // ============================================================
+    //  УПРАВЛЕНИЕ ВИЗУАЛЬНЫМИ СЛОЯМИ
+    // ============================================================
 
     /// <summary>
-    /// ПРИНУДИТЕЛЬНО создаёт Canvas на VisualContainer
+    /// Добавляет визуальный слой
     /// </summary>
-    public void ForceCreateVisualContainerCanvas()
-    {
-        if (visualContainer == null)
-        {
-            ForceCreateVisualContainer();
-        }
-        
-        // Проверяем Canvas
-        Canvas canvas = visualContainer.GetComponent<Canvas>();
-        if (canvas == null)
-        {
-            canvas = visualContainer.AddComponent<Canvas>();
-            canvas.renderMode = RenderMode.WorldSpace;
-            canvas.overrideSorting = true;
-            canvas.sortingLayerName = "Default";
-            canvas.sortingOrder = 0;
-            if (enableDebugLogs)
-                Debug.Log($"[CardObject] Добавлен Canvas на VisualContainer для {cardName}");
-        }
-        else
-        {
-            // Включаем override sorting
-            canvas.overrideSorting = true;
-        }
-        
-        // Обновляем ссылку в CardVisualController
-        CardVisualController visualController = GetComponent<CardVisualController>();
-        if (visualController != null)
-        {
-            visualController.RefreshVisualContainer();
-        }
-    }
-
-    // ============================================================
-    //  СОЗДАНИЕ КОНТЕЙНЕРА ДЛЯ ВИЗУАЛЬНЫХ СЛОЁВ (используется в LoadFromCardData)
-    // ============================================================
-    
-    private void CreateVisualContainer()
-    {
-        // Проверяем, нет ли уже контейнера
-        Transform existingContainer = transform.Find("VisualContainer");
-        if (existingContainer != null)
-        {
-            visualContainer = existingContainer.gameObject;
-            if (enableDebugLogs)
-                Log("Найден существующий VisualContainer");
-            return;
-        }
-
-        // Создаём новый контейнер
-        visualContainer = new GameObject("VisualContainer");
-        visualContainer.transform.parent = transform;
-        visualContainer.transform.localPosition = Vector3.zero;
-        visualContainer.transform.localScale = Vector3.one;
-        if (enableDebugLogs)
-            Log("Создан новый VisualContainer");
-    }
-
-    // ============================================================
-    //  ДОБАВЛЕНИЕ ВИЗУАЛЬНЫХ СЛОЁВ
-    // ============================================================
-    
     public void AddVisualLayer(CardVisualLayer layer)
     {
         if (layer == null || layer.sprite == null) return;
-        
+
         visualLayers.Add(layer);
-        if (enableDebugLogs)
-            Log($"Добавлен слой: {layer.objectName}");
-        
+        Log($"Добавлен слой: {layer.objectName}");
+
         if (visualController != null)
         {
             visualController.RefreshRenderers();
         }
     }
 
+    /// <summary>
+    /// Создаёт слой из данных
+    /// </summary>
     private void CreateLayerFromData(Sprite sprite, Vector2 offset, float scale, float rotation, Color color, int sortingOrder, string name)
     {
         if (sprite == null) return;
-        
+        if (visualContainer == null)
+        {
+            LogWarning("VisualContainer не найден!");
+            return;
+        }
+
         // Создаём объект слоя
         GameObject layerObj = new GameObject(name);
         layerObj.transform.parent = visualContainer.transform;
         layerObj.transform.localPosition = offset;
         layerObj.transform.localScale = Vector3.one * scale;
         layerObj.transform.localRotation = Quaternion.Euler(0, 0, rotation);
-        
+
         // Добавляем SpriteRenderer
         SpriteRenderer renderer = layerObj.AddComponent<SpriteRenderer>();
         renderer.sprite = sprite;
         renderer.color = color;
         renderer.sortingOrder = sortingOrder;
-        if (enableDebugLogs)
-            Log($"Создан слой: {name} (позиция: {offset}, масштаб: {scale})");
-        
+
+        Log($"Создан слой: {name} (позиция: {offset}, масштаб: {scale})");
+
         if (visualController != null)
         {
             visualController.RefreshRenderers();
         }
     }
 
-    // ============================================================
-    //  ОБНОВЛЕНИЕ ВИЗУАЛА ИЗ CardData
-    // ============================================================
+    /// <summary>
+    /// Очищает все визуальные слои (кроме текста)
+    /// </summary>
+    private void ClearVisualLayers()
+    {
+        if (visualContainer == null) return;
+
+        // Проходим по всем дочерним объектам
+        for (int i = visualContainer.transform.childCount - 1; i >= 0; i--)
+        {
+            Transform child = visualContainer.transform.GetChild(i);
+
+            // Пропускаем текстовый объект
+            if (child.GetComponent<TextMeshProUGUI>() != null)
+            {
+                Log($"Сохраняем текст: {child.name}");
+                continue;
+            }
+
+            // Удаляем всё остальное
+            DestroyImmediate(child.gameObject);
+            Log($"Удалён слой: {child.name}");
+        }
+
+        visualLayers.Clear();
+
+        if (visualController != null)
+        {
+            visualController.RefreshRenderers();
+        }
+    }
+
+    /// <summary>
+    /// Обновляет цвет рамки
+    /// </summary>
+    private void UpdateFrameColor()
+    {
+        if (frameRenderer != null)
+        {
+            frameRenderer.color = cardColor;
+            Log($"Обновлён цвет рамки: {cardColor}");
+        }
+    }
+
+    /// <summary>
+    /// Обновляет все визуальные элементы
+    /// </summary>
+    public void UpdateVisuals()
+    {
+        UpdateFrameColor();
+    }
 
     /// <summary>
     /// Обновляет отображение имени карты
@@ -307,30 +268,43 @@ public class CardObject : MonoBehaviour
     {
         if (cardNameText == null)
         {
-            // Пытаемся найти компонент в дочерних объектах
-            cardNameText = GetComponentInChildren<TextMeshProUGUI>();
+            // Ищем в VisualContainer
+            if (visualContainer != null)
+            {
+                cardNameText = visualContainer.GetComponentInChildren<TextMeshProUGUI>();
+            }
+
+            // Если не нашли - ищем везде
+            if (cardNameText == null)
+            {
+                cardNameText = GetComponentInChildren<TextMeshProUGUI>();
+            }
 
             if (cardNameText == null)
             {
-                if (enableDebugLogs)
-                    LogWarning("TextMeshProUGUI не найден на карте!");
+                LogWarning("TextMeshProUGUI не найден на карте!");
                 return;
             }
         }
 
+        // Отключаем Raycast чтобы клики проходили сквозь текст
+        cardNameText.raycastTarget = false;
+
         // Устанавливаем имя карты
         cardNameText.text = cardName;
 
-        if (enableDebugLogs)
-            Log($"Обновлено имя карты: {cardName}");
+        Log($"Обновлено имя карты: {cardName}");
     }
+
+    // ============================================================
+    //  ЗАГРУЗКА ДАННЫХ ИЗ CardData
+    // ============================================================
 
     public void LoadFromCardData(CardData data)
     {
         if (data == null)
         {
-            if (enableDebugLogs)
-                LogWarning("Попытка загрузить пустые данные!");
+            LogWarning("Попытка загрузить пустые данные!");
             return;
         }
 
@@ -342,16 +316,26 @@ public class CardObject : MonoBehaviour
         cardTag = data.cardTag;
         cardColor = data.cardColor;
 
-        // Очищаем старые визуальные слои
+        // Очищаем старые визуальные слои (текст сохраняется)
         ClearVisualLayers();
 
-        // Создаём контейнер если его нет
+        // Проверяем наличие VisualContainer
         if (visualContainer == null)
         {
-            CreateVisualContainer();
+            Transform existingContainer = transform.Find("VisualContainer");
+            if (existingContainer != null)
+            {
+                visualContainer = existingContainer.gameObject;
+                Log("Найден VisualContainer из префаба");
+            }
+            else
+            {
+                LogWarning("VisualContainer не найден!");
+                return;
+            }
         }
 
-        // 1. Фон для иконки (используем Order in Layer из CardData)
+        // 1. Фон для иконки
         if (data.iconBackground != null)
         {
             CreateLayerFromData(
@@ -360,12 +344,12 @@ public class CardObject : MonoBehaviour
                 data.iconBackgroundScale,
                 data.iconBackgroundRotation,
                 data.iconBackgroundColor,
-                data.iconBackgroundOrderInLayer, // <-- ИЗМЕНЕНО
+                data.iconBackgroundOrderInLayer,
                 "IconBackground"
             );
         }
 
-        // 2. Основная иконка (используем Order in Layer из CardData)
+        // 2. Основная иконка
         if (data.cardIcon != null)
         {
             CreateLayerFromData(
@@ -374,12 +358,12 @@ public class CardObject : MonoBehaviour
                 data.iconScale,
                 data.iconRotation,
                 Color.white,
-                data.iconOrderInLayer, // <-- ИЗМЕНЕНО
+                data.iconOrderInLayer,
                 "IconSprite"
             );
         }
 
-        // 3. Дополнительный слой (используем Order in Layer из CardData)
+        // 3. Дополнительный слой
         if (data.extraSprite != null)
         {
             CreateLayerFromData(
@@ -388,7 +372,7 @@ public class CardObject : MonoBehaviour
                 data.extraScale,
                 data.extraRotation,
                 data.extraColor,
-                data.extraLayerOrderInLayer, // <-- ИЗМЕНЕНО
+                data.extraLayerOrderInLayer,
                 "ExtraLayer"
             );
         }
@@ -398,56 +382,16 @@ public class CardObject : MonoBehaviour
 
         // Загружаем настройки стопок
         LoadStackSettings(data);
+
+        // Обновляем имя карты
         UpdateCardNameText();
-        if (enableDebugLogs)
-            Log($"Карта загружена: {cardName} (ID: {cardID})");
+
+        Log($"Карта загружена: {cardName} (ID: {cardID})");
     }
 
     // ============================================================
-    //  ОЧИСТКА ВИЗУАЛЬНЫХ СЛОЁВ
+    //  ПОЛУЧЕНИЕ ДАННЫХ КАРТЫ
     // ============================================================
-
-    private void ClearVisualLayers()
-    {
-        if (visualContainer == null) return;
-        
-        foreach (Transform child in visualContainer.transform)
-        {
-            Destroy(child.gameObject);
-        }
-        
-        visualLayers.Clear();
-        if (enableDebugLogs)
-            Log("Визуальные слои очищены");
-        
-        if (visualController != null)
-        {
-            visualController.RefreshRenderers();
-        }
-    }
-
-    // ============================================================
-    //  ОБНОВЛЕНИЕ ЦВЕТА РАМКИ
-    // ============================================================
-    
-    private void UpdateFrameColor()
-    {
-        if (frameRenderer != null)
-        {
-            frameRenderer.color = cardColor;
-            if (enableDebugLogs)
-                Log($"Обновлён цвет рамки: {cardColor}");
-        }
-    }
-
-    // ============================================================
-    //  ОБНОВЛЕНИЕ ВСЕХ ВИЗУАЛЬНЫХ СЛОЁВ
-    // ============================================================
-    
-    public void UpdateVisuals()
-    {
-        UpdateFrameColor();
-    }
 
     public CardData GetCardData()
     {
@@ -472,10 +416,37 @@ public class CardObject : MonoBehaviour
         return Sprite.Create(tex, new Rect(0, 0, 64, 64), new Vector2(0.5f, 0.5f), 64);
     }
 
+    public void LoadStackSettings(CardData data)
+    {
+        if (data == null) return;
+
+        isStackable = data.isStackable;
+        maxStackSize = data.maxStackSize;
+
+        if (!isStackable)
+        {
+            stackSize = 1;
+        }
+    }
+
+    public void Setup(string name, string tag, Sprite icon, Color color)
+    {
+        cardName = name;
+        cardTag = tag;
+        cardColor = color;
+        UpdateVisuals();
+    }
+
+    public void SetDebugMode(bool enable)
+    {
+        enableDebugLogs = enable;
+        Log($"Режим отладки: {(enable ? "Включен" : "Выключен")}");
+    }
+
     // ============================================================
     //  МЕТОДЫ ДЛЯ ИЗМЕНЕНИЯ ПАРАМЕТРОВ В РЕАЛЬНОМ ВРЕМЕНИ
     // ============================================================
-    
+
     public void UpdateIconOffset(Vector2 newOffset)
     {
         Transform icon = visualContainer?.transform.Find("IconSprite");
@@ -484,7 +455,7 @@ public class CardObject : MonoBehaviour
             icon.localPosition = newOffset;
         }
     }
-    
+
     public void UpdateIconScale(float newScale)
     {
         Transform icon = visualContainer?.transform.Find("IconSprite");
@@ -494,86 +465,90 @@ public class CardObject : MonoBehaviour
         }
     }
 
+    public void UpdateCounterSortingOrder()
+    {
+        if (visualController != null)
+        {
+            visualController.SetCounterSortingOrder(110);
+        }
+    }
+
     // ============================================================
     //  МЕТОДЫ ПЕРЕТАСКИВАНИЯ
     // ============================================================
-    
+
     public void PickUp()
     {
         if (isDragging) return;
         if (currentCell == null)
         {
-            if (enableDebugLogs)
-                LogWarning($"Карта {cardName} не находится в ячейке!");
+            LogWarning($"Карта {cardName} не находится в ячейке!");
             return;
         }
 
         bool shiftPressed = InputHandler.Instance != null && InputHandler.Instance.GetKey("TakeAll");
-        
+
         if (isStackable && stackSize > 1)
         {
             if (!shiftPressed)
             {
-                if (enableDebugLogs)
-                    Log($"Берём 1 карту из стопки {cardName}. Осталось: {stackSize - 1}");
-                
+                Log($"Берём 1 карту из стопки {cardName}. Осталось: {stackSize - 1}");
+
                 stackSize--;
-                
+
                 CardObject newCard = StackManager.Instance.CreateSingleCardFromStack(this);
-                
+
                 if (newCard != null)
                 {
                     newCard.isDragging = true;
                     newCard.currentCell = null;
                     newCard.originalGridPos = new Vector2Int(currentCell.gridX, currentCell.gridY);
-                    
+
                     newCard.LiftCardVisuals();
-                    
+
                     if (GridManager.Instance != null)
                     {
                         newCard.transform.SetParent(GridManager.Instance.transform.parent);
                     }
-                    
+
                     this.isDragging = false;
                     this.LowerCardVisuals();
                     this.transform.localScale = this.originalScale;
-                    
+
                     OnCardPickedUp?.Invoke(newCard);
                     return;
                 }
             }
             else
             {
-                if (enableDebugLogs)
-                    Log($"Берём всю стопку {cardName}: {stackSize} шт.");
-                
+                Log($"Берём всю стопку {cardName}: {stackSize} шт.");
+
                 Cell currentCellCopy = currentCell;
                 int fullStackSize = stackSize;
-                
+
                 CardObject newCard = StackManager.Instance.CreateCardFromStack(this, fullStackSize);
-                
+
                 if (newCard != null)
                 {
                     newCard.isDragging = true;
                     newCard.currentCell = null;
                     newCard.originalGridPos = new Vector2Int(currentCellCopy.gridX, currentCellCopy.gridY);
-                    
+
                     newCard.LiftCardVisuals();
-                    
+
                     if (GridManager.Instance != null)
                     {
                         newCard.transform.SetParent(GridManager.Instance.transform.parent);
                     }
-                    
+
                     if (currentCellCopy != null)
                     {
                         currentCellCopy.RemoveCard();
                     }
                     Destroy(gameObject);
-                    
+
                     OnCardPickedUp?.Invoke(newCard);
-                    if (enableDebugLogs)
-                        Log($"Взята вся стопка: {fullStackSize} шт.");
+                    Log($"Взята вся стопка: {fullStackSize} шт.");
                     return;
                 }
             }
@@ -582,40 +557,37 @@ public class CardObject : MonoBehaviour
         PickUpSingle();
     }
 
-	// В конце PickUp() добавь принудительную установку позиции
-	private void PickUpSingle()
-	{
-		isDragging = true;
-		
-		if (currentCell != null)
-		{
-			originalGridPos = new Vector2Int(currentCell.gridX, currentCell.gridY);
-			currentCell.RemoveCard();
-			currentCell = null;
-		}
+    private void PickUpSingle()
+    {
+        isDragging = true;
 
-		if (originalScale == Vector3.zero)
-		{
-			originalScale = Vector3.one;
-		}
-		transform.localScale = originalScale * dragScaleMultiplier;
-		
-		if (GridManager.Instance != null)
-		{
-			transform.SetParent(GridManager.Instance.transform.parent);
-		}
-		
-		LiftCardVisuals();
-		
-		// ============================================================
-		//  ВАЖНО: СРАЗУ УСТАНАВЛИВАЕМ ПОЗИЦИЮ ПОД КУРСОРОМ
-		// ============================================================
-		Vector3 mouseWorldPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-		mouseWorldPos.z = 0;
-		transform.position = mouseWorldPos;
-        if (enableDebugLogs)
-            Log($"Карта {cardName} поднята. Масштаб: {transform.localScale}");
-	}
+        if (currentCell != null)
+        {
+            originalGridPos = new Vector2Int(currentCell.gridX, currentCell.gridY);
+            currentCell.RemoveCard();
+            currentCell = null;
+        }
+
+        if (originalScale == Vector3.zero)
+        {
+            originalScale = Vector3.one;
+        }
+        transform.localScale = originalScale * dragScaleMultiplier;
+
+        if (GridManager.Instance != null)
+        {
+            transform.SetParent(GridManager.Instance.transform.parent);
+        }
+
+        LiftCardVisuals();
+
+        // Устанавливаем позицию под курсором
+        Vector3 mouseWorldPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+        mouseWorldPos.z = 0;
+        transform.position = mouseWorldPos;
+
+        Log($"Карта {cardName} поднята. Масштаб: {transform.localScale}");
+    }
 
     public void LiftCardVisuals()
     {
@@ -625,8 +597,7 @@ public class CardObject : MonoBehaviour
         }
         else
         {
-            if (enableDebugLogs)
-                LogWarning("CardVisualController не найден!");
+            LogWarning("CardVisualController не найден!");
         }
     }
 
@@ -638,49 +609,35 @@ public class CardObject : MonoBehaviour
         }
         else
         {
-            if (enableDebugLogs)
-                LogWarning("CardVisualController не найден!");
+            LogWarning("CardVisualController не найден!");
         }
     }
 
-    // ============================================================
-    //  ОСНОВНОЙ МЕТОД DROP (с параметром)
-    // ============================================================
     public bool Drop(Vector3 mouseWorldPos)
     {
         if (!isDragging) return false;
 
-        if (enableDebugLogs)
-            Debug.Log($"[CardObject] Drop: позиция мыши в мире = {mouseWorldPos}");
+        Log($"Drop: позиция мыши в мире = {mouseWorldPos}");
 
         bool wasProcessed = DropLogic.ProcessDrop(this, mouseWorldPos);
 
-        // Если карта обработана (помещена или уничтожена)
         if (wasProcessed)
         {
             isDragging = false;
             GridManager.Instance?.HideHighlight();
-            if (enableDebugLogs)
-                Debug.Log($"[CardObject] {cardName} обработана (помещена или уничтожена)");
-            return false; // Карта больше не под курсором
+            Log($"{cardName} обработана (помещена или уничтожена)");
+            return false;
         }
         else
         {
-            // Карта осталась под курсором (остаток стопки)
-            if (enableDebugLogs)
-                Debug.Log($"[CardObject] {cardName} осталась под курсором (остаток стопки)");
-            return true; // Карта всё ещё под курсором
+            Log($"{cardName} осталась под курсором (остаток стопки)");
+            return true;
         }
     }
 
-    // ============================================================
-    //  СТАРЫЙ МЕТОД DROP (без параметров) - ДЛЯ СОВМЕСТИМОСТИ
-    // ============================================================
     public bool Drop()
     {
-        if (enableDebugLogs)
-            Debug.LogWarning("[CardObject] Используйте Drop(Vector3) вместо Drop()");
-
+        LogWarning("Используйте Drop(Vector3) вместо Drop()");
         Vector3 mouseWorldPos = Camera.main?.ScreenToWorldPoint(Input.mousePosition) ?? Vector3.zero;
         mouseWorldPos.z = 0;
         return Drop(mouseWorldPos);
@@ -695,11 +652,10 @@ public class CardObject : MonoBehaviour
         else
         {
             transform.localScale = Vector3.one;
-            if (enableDebugLogs)
-                LogWarning($"Карта {cardName} имела нулевой масштаб! Установлен 1");
+            LogWarning($"Карта {cardName} имела нулевой масштаб! Установлен 1");
         }
-        if (enableDebugLogs)
-            Log($"Возврат {cardName} на исходную позицию");
+
+        Log($"Возврат {cardName} на исходную позицию");
 
         if (currentCell != null)
         {
@@ -712,8 +668,7 @@ public class CardObject : MonoBehaviour
         {
             originalCell.PlaceCard(this);
             currentCell = originalCell;
-            if (enableDebugLogs)
-                Log($"Карта {cardName} возвращена в ячейку ({originalGridPos.x}, {originalGridPos.y})");
+            Log($"Карта {cardName} возвращена в ячейку ({originalGridPos.x}, {originalGridPos.y})");
         }
         else
         {
@@ -726,17 +681,15 @@ public class CardObject : MonoBehaviour
                     {
                         freeCell.PlaceCard(this);
                         currentCell = freeCell;
-                        if (enableDebugLogs)
-                            Log($"Карта {cardName} помещена в свободную ячейку ({x}, {y})");
+                        Log($"Карта {cardName} помещена в свободную ячейку ({x}, {y})");
                         break;
                     }
                 }
             }
-            
+
             if (currentCell == null)
             {
-                if (enableDebugLogs)
-                    LogWarning($"Нет свободных ячеек для {cardName}!");
+                LogWarning($"Нет свободных ячеек для {cardName}!");
             }
         }
 
@@ -748,41 +701,5 @@ public class CardObject : MonoBehaviour
     {
         if (!isDragging) return;
         transform.position = new Vector3(mouseWorldPos.x, mouseWorldPos.y, 0);
-    }
-
-    public void Setup(string name, string tag, Sprite icon, Color color)
-    {
-        cardName = name;
-        cardTag = tag;
-        cardColor = color;
-        UpdateVisuals();
-    }
-
-    public void SetDebugMode(bool enable)
-    {
-        enableDebugLogs = enable;
-        if (enableDebugLogs)
-            Debug.Log($"Режим отладки для {cardName}: {(enable ? "Включен" : "Выключен")}");
-    }
-
-    public void LoadStackSettings(CardData data)
-    {
-        if (data == null) return;
-        
-        isStackable = data.isStackable;
-        maxStackSize = data.maxStackSize;
-        
-        if (!isStackable)
-        {
-            stackSize = 1;
-        }
-    }
-
-    public void UpdateCounterSortingOrder()
-    {
-        if (visualController != null)
-        {
-            visualController.SetCounterSortingOrder(110);
-        }
     }
 }
