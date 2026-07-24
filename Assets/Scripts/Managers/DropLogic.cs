@@ -14,7 +14,7 @@ public static class DropLogic
 
         if (targetCell == null)
         {
-            ReturnToNearestFreeCell(draggedCard);
+            CardLibrary.PlaceCardSmart(draggedCard);
             return true;
         }
 
