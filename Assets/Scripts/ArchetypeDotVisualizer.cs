@@ -1,7 +1,6 @@
 // ArchetypeDotVisualizer.cs
 
 using UnityEngine;
-using System.Collections.Generic;
 using TMPro;
 
 /// <summary>
@@ -9,46 +8,21 @@ using TMPro;
 /// </summary>
 public class ArchetypeDotVisualizer : MonoBehaviour
 {
+    [System.Serializable]
+    public class ArchetypeDot
+    {
+        public CardData.Archetype archetype;
+        public TextMeshPro text;
+    }
+
     [Header("Настройки")]
     [SerializeField] private bool enableDebugLogs = false;
-    [SerializeField] private bool showArchetypeDots = true;
 
     [Header("Точки архетипов")]
-    [SerializeField] private GameObject dotBlack;
-    [SerializeField] private TextMeshPro textBlack;
-
-    [SerializeField] private GameObject dotYellow;
-    [SerializeField] private TextMeshPro textYellow;
-
-    [SerializeField] private GameObject dotGreen;
-    [SerializeField] private TextMeshPro textGreen;
-
-    [SerializeField] private GameObject dotRed;
-    [SerializeField] private TextMeshPro textRed;
-
-    [SerializeField] private GameObject dotBlue;
-    [SerializeField] private TextMeshPro textBlue;
-
-    [SerializeField] private GameObject dotSandal;
-    [SerializeField] private TextMeshPro textSandal;
-
-    [SerializeField] private GameObject dotWhite;
-    [SerializeField] private TextMeshPro textWhite;
+    [SerializeField] private GameObject archetypeDotsContainer;
+    [SerializeField] private ArchetypeDot[] archetypeDots;
 
     private CardObject cardObject;
-
-    // Цвета для каждого архетипа
-    private static readonly Color[] ArchetypeColors = new Color[]
-    {
-        Color.white,                                    // None
-        new Color(0.1f, 0.1f, 0.1f),                   // Black
-        new Color(1f, 0.9f, 0f),                       // Yellow
-        new Color(0f, 0.8f, 0.2f),                     // Green
-        new Color(0.9f, 0.1f, 0.1f),                   // Red
-        new Color(0f, 0.3f, 0.9f),                     // Blue
-        new Color(0.8f, 0.5f, 0.2f),                   // Sandal
-        new Color(0.9f, 0.9f, 0.9f)                    // White
-    };
 
     void Awake()
     {
@@ -67,9 +41,10 @@ public class ArchetypeDotVisualizer : MonoBehaviour
 
     public void UpdateVisuals()
     {
-        if (!showArchetypeDots)
+        if (archetypeDotsContainer == null)
         {
-            HideAllDots();
+            if (enableDebugLogs)
+                Debug.LogWarning("[ArchetypeDotVisualizer] Контейнер ArchetypeDots не назначен!");
             return;
         }
 
@@ -81,74 +56,42 @@ public class ArchetypeDotVisualizer : MonoBehaviour
         {
             if (enableDebugLogs)
                 Debug.Log("[ArchetypeDotVisualizer] CardData не найдена");
-            HideAllDots();
+            archetypeDotsContainer.SetActive(false);
             return;
         }
 
-        // Если архетип None - скрываем все точки
+        // Если архетип None - отключаем весь контейнер
         if (!data.HasArchetype())
         {
             if (enableDebugLogs)
-                Debug.Log($"[ArchetypeDotVisualizer] Архетип None для {cardObject.cardName}");
-            HideAllDots();
+                Debug.Log($"[ArchetypeDotVisualizer] Архетип None для {cardObject.cardName}, отключаем контейнер");
+            archetypeDotsContainer.SetActive(false);
             return;
         }
 
-        // Обновляем каждую точку
-        UpdateDot(dotBlack, textBlack, CardData.Archetype.Black, data.blackValue);
-        UpdateDot(dotYellow, textYellow, CardData.Archetype.Yellow, data.yellowValue);
-        UpdateDot(dotGreen, textGreen, CardData.Archetype.Green, data.greenValue);
-        UpdateDot(dotRed, textRed, CardData.Archetype.Red, data.redValue);
-        UpdateDot(dotBlue, textBlue, CardData.Archetype.Blue, data.blueValue);
-        UpdateDot(dotSandal, textSandal, CardData.Archetype.Sandal, data.sandalValue);
-        UpdateDot(dotWhite, textWhite, CardData.Archetype.White, data.whiteValue);
+        // Включаем контейнер
+        archetypeDotsContainer.SetActive(true);
+
+        // Обновляем тексты
+        foreach (var dotData in archetypeDots)
+        {
+            if (dotData.text == null) continue;
+
+            int value = data.GetArchetypeValue(dotData.archetype);
+
+            if (value == 0)
+            {
+                dotData.text.gameObject.SetActive(false);
+            }
+            else
+            {
+                dotData.text.gameObject.SetActive(true);
+                dotData.text.text = Mathf.Abs(value).ToString();
+                dotData.text.color = value < 0 ? Color.red : Color.green;
+            }
+        }
 
         if (enableDebugLogs)
             Debug.Log($"[ArchetypeDotVisualizer] Точки обновлены для {cardObject.cardName}");
-    }
-
-    private void UpdateDot(GameObject dot, TextMeshPro text, CardData.Archetype archetype, int value)
-    {
-        if (dot == null)
-        {
-            if (enableDebugLogs)
-                Debug.LogWarning($"[ArchetypeDotVisualizer] Точка для {archetype} не назначена!");
-            return;
-        }
-
-        // Если значение 0 - скрываем точку
-        if (value == 0)
-        {
-            dot.SetActive(false);
-            return;
-        }
-
-        // Показываем точку
-        dot.SetActive(true);
-
-        // Настраиваем цвет точки
-        SpriteRenderer sr = dot.GetComponent<SpriteRenderer>();
-        if (sr != null)
-        {
-            sr.color = ArchetypeColors[(int)archetype];
-        }
-
-        // Настраиваем текст
-        if (text != null)
-        {
-            text.text = Mathf.Abs(value).ToString();
-            text.color = value < 0 ? Color.red : Color.green;
-        }
-    }
-
-    private void HideAllDots()
-    {
-        if (dotBlack != null) dotBlack.SetActive(false);
-        if (dotYellow != null) dotYellow.SetActive(false);
-        if (dotGreen != null) dotGreen.SetActive(false);
-        if (dotRed != null) dotRed.SetActive(false);
-        if (dotBlue != null) dotBlue.SetActive(false);
-        if (dotSandal != null) dotSandal.SetActive(false);
-        if (dotWhite != null) dotWhite.SetActive(false);
     }
 }
