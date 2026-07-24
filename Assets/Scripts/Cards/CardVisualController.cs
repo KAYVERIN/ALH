@@ -66,16 +66,7 @@ public class CardVisualController : MonoBehaviour
         SaveOriginalOrders();
     }
 
-    public void RefreshArchetypeVisuals()
-    {
-        ArchetypeVisualizer visualizer = GetComponent<ArchetypeVisualizer>();
-        if (visualizer != null)
-        {
-            visualizer.UpdateVisuals();
-            if (enableDebugLogs)
-                Debug.Log($"[CardVisualController] Архетипы обновлены для {gameObject.name}");
-        }
-    }
+
     /// <summary>
     /// Сохраняет оригинальные Sorting Order всех SpriteRenderer внутри VisualContainer
     /// </summary>

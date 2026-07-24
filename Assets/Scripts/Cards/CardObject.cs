@@ -416,10 +416,6 @@ public class CardObject : MonoBehaviour
     public void UpdateVisuals()
     {
         UpdateFrameColor();
-        if (visualController != null)
-        {
-            visualController.RefreshArchetypeVisuals();
-        }
     }
 
     public CardData GetCardData()
