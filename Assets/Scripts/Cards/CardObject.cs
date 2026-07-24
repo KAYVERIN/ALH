@@ -297,23 +297,16 @@ public class CardObject : MonoBehaviour
     /// </summary>
     public void UpdateCardNameText()
     {
+        if (visualContainer == null) return;
+
+        // Ищем текст в VisualContainer
         if (cardNameText == null)
         {
-            // Ищем в VisualContainer
-            if (visualContainer != null)
-            {
-                cardNameText = visualContainer.GetComponentInChildren<TextMeshProUGUI>();
-            }
-
-            // Если не нашли - ищем везде
-            if (cardNameText == null)
-            {
-                cardNameText = GetComponentInChildren<TextMeshProUGUI>();
-            }
+            cardNameText = visualContainer.GetComponentInChildren<TextMeshProUGUI>();
 
             if (cardNameText == null)
             {
-                LogWarning("TextMeshProUGUI не найден на карте!");
+                LogWarning("TextMeshProUGUI не найден в VisualContainer!");
                 return;
             }
         }
@@ -326,6 +319,14 @@ public class CardObject : MonoBehaviour
 
             // Устанавливаем имя карты
             cardNameText.text = cardName;
+
+            // Убеждаемся, что Canvas правильно настроен
+            Canvas canvas = cardNameText.GetComponent<Canvas>();
+            if (canvas != null)
+            {
+                canvas.overrideSorting = true;
+                canvas.sortingOrder = 20;
+            }
 
             Log($"Обновлено имя карты: {cardName}");
         }
