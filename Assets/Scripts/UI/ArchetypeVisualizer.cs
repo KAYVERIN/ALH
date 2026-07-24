@@ -1,6 +1,146 @@
 using UnityEngine;
+using System.Collections.Generic;
 
-public class ArchetypeVisualizer
+/// <summary>
+/// Отображает архетипы карты в виде цветных точек со значениями
+/// </summary>
+public class ArchetypeVisualizer : MonoBehaviour
 {
-    
+    [Header("Настройки")]
+    [SerializeField] private bool enableDebugLogs = false;
+
+    [Header("Визуал")]
+    [SerializeField] private bool showArchetypeDots = true;
+    [SerializeField] private float dotRadius = 0.15f;
+    [SerializeField] private float dotSpacing = 0.35f;
+    [SerializeField] private Vector2 offset = new Vector2(1.2f, 0f);
+    [SerializeField] private int sortingOrder = 90;
+
+    private CardObject cardObject;
+    private List<GameObject> dotObjects = new List<GameObject>();
+
+    // Цвета для каждого архетипа
+    private static readonly Color[] ArchetypeColors = new Color[]
+    {
+        Color.white,                                    // None
+        new Color(0.1f, 0.1f, 0.1f),                   // Black
+        new Color(1f, 0.9f, 0f),                       // Yellow
+        new Color(0f, 0.8f, 0.2f),                     // Green
+        new Color(0.9f, 0.1f, 0.1f),                   // Red
+        new Color(0f, 0.3f, 0.9f),                     // Blue
+        new Color(0.8f, 0.5f, 0.2f),                   // Sandal
+        new Color(0.9f, 0.9f, 0.9f)                    // White
+    };
+
+    void Awake()
+    {
+        cardObject = GetComponent<CardObject>();
+        if (cardObject == null)
+        {
+            if (enableDebugLogs)
+                Debug.LogWarning("[ArchetypeVisualizer] CardObject не найден!");
+        }
+    }
+
+    void Start()
+    {
+        UpdateVisuals();
+    }
+
+    public void UpdateVisuals()
+    {
+        ClearDots();
+
+        if (!showArchetypeDots) return;
+        if (cardObject == null) return;
+        if (cardObject.cardData == null) return;
+
+        CardData data = cardObject.cardData;
+
+        // Если архетип None - ничего не показываем
+        if (!data.HasArchetype()) return;
+
+        // Создаём точки для каждого цвета с ненулевым значением
+        CreateArchetypeDot(data.blackValue, ArchetypeColors[1]);
+        CreateArchetypeDot(data.yellowValue, ArchetypeColors[2]);
+        CreateArchetypeDot(data.greenValue, ArchetypeColors[3]);
+        CreateArchetypeDot(data.redValue, ArchetypeColors[4]);
+        CreateArchetypeDot(data.blueValue, ArchetypeColors[5]);
+        CreateArchetypeDot(data.sandalValue, ArchetypeColors[6]);
+        CreateArchetypeDot(data.whiteValue, ArchetypeColors[7]);
+    }
+
+    private void CreateArchetypeDot(int value, Color color)
+    {
+        if (value == 0) return;
+
+        // Создаём GameObject для точки
+        GameObject dot = new GameObject($"ArchetypeDot_{value}_{color}");
+        dot.transform.parent = transform;
+        dot.transform.localPosition = new Vector3(
+            offset.x + dotObjects.Count * dotSpacing,
+            offset.y,
+            0
+        );
+        dot.transform.localScale = Vector3.one * dotRadius * 2;
+
+        // Добавляем SpriteRenderer
+        SpriteRenderer sr = dot.AddComponent<SpriteRenderer>();
+
+        // Создаём круглый спрайт
+        Texture2D texture = CreateCircleTexture(64, color);
+        sr.sprite = Sprite.Create(texture, new Rect(0, 0, 64, 64), new Vector2(0.5f, 0.5f), 100);
+        sr.sortingOrder = sortingOrder;
+
+        // Добавляем текст со значением
+        TextMesh text = dot.AddComponent<TextMesh>();
+        text.text = Mathf.Abs(value).ToString();
+        text.fontSize = 30;
+        text.color = value < 0 ? Color.red : Color.green;
+        text.characterSize = 0.1f;
+        text.anchor = TextAnchor.MiddleCenter;
+        text.transform.localPosition = new Vector3(0, 0, -0.01f);
+
+        dotObjects.Add(dot);
+    }
+
+    private Texture2D CreateCircleTexture(int size, Color color)
+    {
+        Texture2D texture = new Texture2D(size, size);
+        Color[] colors = new Color[size * size];
+
+        Vector2 center = new Vector2(size / 2f, size / 2f);
+        float radius = size / 2f;
+
+        for (int i = 0; i < colors.Length; i++)
+        {
+            int x = i % size;
+            int y = i / size;
+
+            float dist = Vector2.Distance(new Vector2(x, y), center);
+
+            if (dist < radius)
+            {
+                float alpha = 1f - (dist / radius) * 0.2f;
+                colors[i] = new Color(color.r, color.g, color.b, alpha);
+            }
+            else
+            {
+                colors[i] = Color.clear;
+            }
+        }
+
+        texture.SetPixels(colors);
+        texture.Apply();
+        return texture;
+    }
+
+    private void ClearDots()
+    {
+        foreach (GameObject dot in dotObjects)
+        {
+            Destroy(dot);
+        }
+        dotObjects.Clear();
+    }
 }
