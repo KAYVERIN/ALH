@@ -12,7 +12,7 @@ public class ArchetypeDotVisualizer : MonoBehaviour
     public class ArchetypeDot
     {
         public CardData.Archetype archetype;
-        public TextMeshPro text;
+        public TextMeshProUGUI text;
     }
 
     [Header("Настройки")]
