@@ -1,3 +1,5 @@
+// ArchetypeVisualizer.cs - исправленная версия
+
 using UnityEngine;
 using System.Collections.Generic;
 
@@ -53,12 +55,23 @@ public class ArchetypeVisualizer : MonoBehaviour
 
         if (!showArchetypeDots) return;
         if (cardObject == null) return;
-        if (cardObject.cardData == null) return;
 
-        CardData data = cardObject.cardData;
+        // Получаем CardData через метод GetCardData()
+        CardData data = cardObject.GetCardData();
+        if (data == null)
+        {
+            if (enableDebugLogs)
+                Debug.Log("[ArchetypeVisualizer] CardData не найдена");
+            return;
+        }
 
         // Если архетип None - ничего не показываем
-        if (!data.HasArchetype()) return;
+        if (!data.HasArchetype())
+        {
+            if (enableDebugLogs)
+                Debug.Log($"[ArchetypeVisualizer] Архетип None для {cardObject.cardName}");
+            return;
+        }
 
         // Создаём точки для каждого цвета с ненулевым значением
         CreateArchetypeDot(data.blackValue, ArchetypeColors[1]);
@@ -68,6 +81,9 @@ public class ArchetypeVisualizer : MonoBehaviour
         CreateArchetypeDot(data.blueValue, ArchetypeColors[5]);
         CreateArchetypeDot(data.sandalValue, ArchetypeColors[6]);
         CreateArchetypeDot(data.whiteValue, ArchetypeColors[7]);
+
+        if (enableDebugLogs)
+            Debug.Log($"[ArchetypeVisualizer] Обновлено {dotObjects.Count} точек для {cardObject.cardName}");
     }
 
     private void CreateArchetypeDot(int value, Color color)

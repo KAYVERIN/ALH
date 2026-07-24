@@ -10,6 +10,9 @@ public class CardVisualController : MonoBehaviour
     [SerializeField] private int dragSortingOrder = 100;
     [SerializeField] private int counterSortingOrder = 110;
 
+    [Header("Отладка")]
+    [SerializeField] private bool enableDebugLogs = false;
+
     // Компоненты
     private Canvas containerCanvas;
     private SpriteRenderer[] allRenderers;
@@ -63,6 +66,16 @@ public class CardVisualController : MonoBehaviour
         SaveOriginalOrders();
     }
 
+    public void RefreshArchetypeVisuals()
+    {
+        ArchetypeVisualizer visualizer = GetComponent<ArchetypeVisualizer>();
+        if (visualizer != null)
+        {
+            visualizer.UpdateVisuals();
+            if (enableDebugLogs)
+                Debug.Log($"[CardVisualController] Архетипы обновлены для {gameObject.name}");
+        }
+    }
     /// <summary>
     /// Сохраняет оригинальные Sorting Order всех SpriteRenderer внутри VisualContainer
     /// </summary>

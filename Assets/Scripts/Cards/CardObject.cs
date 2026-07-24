@@ -416,12 +416,22 @@ public class CardObject : MonoBehaviour
     public void UpdateVisuals()
     {
         UpdateFrameColor();
+        if (visualController != null)
+        {
+            visualController.RefreshArchetypeVisuals();
+        }
+    }
+
+    public CardData GetCardData()
+    {
+        if (string.IsNullOrEmpty(cardID)) return null;
+        return CardLibrary.Instance?.GetCard(cardID);
     }
 
     // ============================================================
     //  ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ
     // ============================================================
-    
+
     private Sprite CreateSquareSprite()
     {
         Texture2D tex = new Texture2D(64, 64);
