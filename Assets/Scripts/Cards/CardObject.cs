@@ -61,6 +61,9 @@ public class CardObject : MonoBehaviour
     [SerializeField] private int iconBackgroundSortingOrder = 5;
     [SerializeField] private int extraSortingOrder = 15;
 
+    [Header("=== UI ЭЛЕМЕНТЫ ===")]
+    [SerializeField] private TextMeshProUGUI cardNameText;
+
     [Header("Отладка")]
     [SerializeField] private bool enableDebugLogs = true;
     
@@ -295,7 +298,31 @@ public class CardObject : MonoBehaviour
     // ============================================================
     //  ОБНОВЛЕНИЕ ВИЗУАЛА ИЗ CardData
     // ============================================================
-    // В CardObject.cs замени метод LoadFromCardData на этот:
+
+    /// <summary>
+    /// Обновляет отображение имени карты
+    /// </summary>
+    public void UpdateCardNameText()
+    {
+        if (cardNameText == null)
+        {
+            // Пытаемся найти компонент в дочерних объектах
+            cardNameText = GetComponentInChildren<TextMeshProUGUI>();
+
+            if (cardNameText == null)
+            {
+                if (enableDebugLogs)
+                    LogWarning("TextMeshProUGUI не найден на карте!");
+                return;
+            }
+        }
+
+        // Устанавливаем имя карты
+        cardNameText.text = cardName;
+
+        if (enableDebugLogs)
+            Log($"Обновлено имя карты: {cardName}");
+    }
 
     public void LoadFromCardData(CardData data)
     {
@@ -370,7 +397,7 @@ public class CardObject : MonoBehaviour
 
         // Загружаем настройки стопок
         LoadStackSettings(data);
-
+        UpdateCardNameText();
         if (enableDebugLogs)
             Log($"Карта загружена: {cardName} (ID: {cardID})");
     }
