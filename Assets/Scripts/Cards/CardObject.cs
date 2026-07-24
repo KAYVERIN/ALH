@@ -151,10 +151,11 @@ public class CardObject : MonoBehaviour
         if (visualController == null)
         {
             visualController = gameObject.AddComponent<CardVisualController>();
-            Debug.Log($"[CardObject] Добавлен CardVisualController для {cardName}");
+            if (enableDebugLogs)
+                Debug.Log($"[CardObject] Добавлен CardVisualController для {cardName}");
         }
-        
-        Log($"Карта {cardName} инициализирована");
+        if (enableDebugLogs)
+            Log($"Карта {cardName} инициализирована");
     }
 
     void Start()
@@ -183,8 +184,8 @@ public class CardObject : MonoBehaviour
         visualContainer.transform.parent = transform;
         visualContainer.transform.localPosition = Vector3.zero;
         visualContainer.transform.localScale = Vector3.one;
-        
-        Debug.Log($"[CardObject] Принудительно создан VisualContainer для {cardName}");
+        if (enableDebugLogs)
+            Debug.Log($"[CardObject] Принудительно создан VisualContainer для {cardName}");
     }
 
     /// <summary>
@@ -206,8 +207,8 @@ public class CardObject : MonoBehaviour
             canvas.overrideSorting = true;
             canvas.sortingLayerName = "Default";
             canvas.sortingOrder = 0;
-            
-            Debug.Log($"[CardObject] Добавлен Canvas на VisualContainer для {cardName}");
+            if (enableDebugLogs)
+                Debug.Log($"[CardObject] Добавлен Canvas на VisualContainer для {cardName}");
         }
         else
         {
@@ -234,7 +235,8 @@ public class CardObject : MonoBehaviour
         if (existingContainer != null)
         {
             visualContainer = existingContainer.gameObject;
-            Log("Найден существующий VisualContainer");
+            if (enableDebugLogs)
+                Log("Найден существующий VisualContainer");
             return;
         }
 
@@ -243,8 +245,8 @@ public class CardObject : MonoBehaviour
         visualContainer.transform.parent = transform;
         visualContainer.transform.localPosition = Vector3.zero;
         visualContainer.transform.localScale = Vector3.one;
-
-        Log("Создан новый VisualContainer");
+        if (enableDebugLogs)
+            Log("Создан новый VisualContainer");
     }
 
     // ============================================================
@@ -256,7 +258,8 @@ public class CardObject : MonoBehaviour
         if (layer == null || layer.sprite == null) return;
         
         visualLayers.Add(layer);
-        Log($"Добавлен слой: {layer.objectName}");
+        if (enableDebugLogs)
+            Log($"Добавлен слой: {layer.objectName}");
         
         if (visualController != null)
         {
@@ -280,8 +283,8 @@ public class CardObject : MonoBehaviour
         renderer.sprite = sprite;
         renderer.color = color;
         renderer.sortingOrder = sortingOrder;
-        
-        Log($"Создан слой: {name} (позиция: {offset}, масштаб: {scale})");
+        if (enableDebugLogs)
+            Log($"Создан слой: {name} (позиция: {offset}, масштаб: {scale})");
         
         if (visualController != null)
         {
@@ -296,7 +299,8 @@ public class CardObject : MonoBehaviour
     {
         if (data == null)
         {
-            LogWarning("Попытка загрузить пустые данные!");
+            if (enableDebugLogs)
+                LogWarning("Попытка загрузить пустые данные!");
             return;
         }
         
@@ -364,8 +368,8 @@ public class CardObject : MonoBehaviour
         
         // Загружаем настройки стопок
         LoadStackSettings(data);
-        
-        Log($"Карта загружена: {cardName} (ID: {cardID})");
+        if (enableDebugLogs)
+            Log($"Карта загружена: {cardName} (ID: {cardID})");
     }
 
     // ============================================================
@@ -382,7 +386,8 @@ public class CardObject : MonoBehaviour
         }
         
         visualLayers.Clear();
-        Log("Визуальные слои очищены");
+        if (enableDebugLogs)
+            Log("Визуальные слои очищены");
         
         if (visualController != null)
         {
@@ -399,7 +404,8 @@ public class CardObject : MonoBehaviour
         if (frameRenderer != null)
         {
             frameRenderer.color = cardColor;
-            Log($"Обновлён цвет рамки: {cardColor}");
+            if (enableDebugLogs)
+                Log($"Обновлён цвет рамки: {cardColor}");
         }
     }
 
@@ -460,7 +466,8 @@ public class CardObject : MonoBehaviour
         if (isDragging) return;
         if (currentCell == null)
         {
-            LogWarning($"Карта {cardName} не находится в ячейке!");
+            if (enableDebugLogs)
+                LogWarning($"Карта {cardName} не находится в ячейке!");
             return;
         }
 
@@ -470,7 +477,8 @@ public class CardObject : MonoBehaviour
         {
             if (!shiftPressed)
             {
-                Log($"Берём 1 карту из стопки {cardName}. Осталось: {stackSize - 1}");
+                if (enableDebugLogs)
+                    Log($"Берём 1 карту из стопки {cardName}. Осталось: {stackSize - 1}");
                 
                 stackSize--;
                 
@@ -499,7 +507,8 @@ public class CardObject : MonoBehaviour
             }
             else
             {
-                Log($"Берём всю стопку {cardName}: {stackSize} шт.");
+                if (enableDebugLogs)
+                    Log($"Берём всю стопку {cardName}: {stackSize} шт.");
                 
                 Cell currentCellCopy = currentCell;
                 int fullStackSize = stackSize;
@@ -526,8 +535,8 @@ public class CardObject : MonoBehaviour
                     Destroy(gameObject);
                     
                     OnCardPickedUp?.Invoke(newCard);
-                    
-                    Log($"Взята вся стопка: {fullStackSize} шт.");
+                    if (enableDebugLogs)
+                        Log($"Взята вся стопка: {fullStackSize} шт.");
                     return;
                 }
             }
@@ -567,8 +576,8 @@ public class CardObject : MonoBehaviour
 		Vector3 mouseWorldPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
 		mouseWorldPos.z = 0;
 		transform.position = mouseWorldPos;
-		
-		Log($"Карта {cardName} поднята. Масштаб: {transform.localScale}");
+        if (enableDebugLogs)
+            Log($"Карта {cardName} поднята. Масштаб: {transform.localScale}");
 	}
 
     public void LiftCardVisuals()
@@ -579,7 +588,8 @@ public class CardObject : MonoBehaviour
         }
         else
         {
-            LogWarning("CardVisualController не найден!");
+            if (enableDebugLogs)
+                LogWarning("CardVisualController не найден!");
         }
     }
 
@@ -591,7 +601,8 @@ public class CardObject : MonoBehaviour
         }
         else
         {
-            LogWarning("CardVisualController не найден!");
+            if (enableDebugLogs)
+                LogWarning("CardVisualController не найден!");
         }
     }
 
@@ -647,10 +658,11 @@ public class CardObject : MonoBehaviour
         else
         {
             transform.localScale = Vector3.one;
-            LogWarning($"Карта {cardName} имела нулевой масштаб! Установлен 1");
+            if (enableDebugLogs)
+                LogWarning($"Карта {cardName} имела нулевой масштаб! Установлен 1");
         }
-        
-        Log($"Возврат {cardName} на исходную позицию");
+        if (enableDebugLogs)
+            Log($"Возврат {cardName} на исходную позицию");
 
         if (currentCell != null)
         {
@@ -663,7 +675,8 @@ public class CardObject : MonoBehaviour
         {
             originalCell.PlaceCard(this);
             currentCell = originalCell;
-            Log($"Карта {cardName} возвращена в ячейку ({originalGridPos.x}, {originalGridPos.y})");
+            if (enableDebugLogs)
+                Log($"Карта {cardName} возвращена в ячейку ({originalGridPos.x}, {originalGridPos.y})");
         }
         else
         {
@@ -676,7 +689,8 @@ public class CardObject : MonoBehaviour
                     {
                         freeCell.PlaceCard(this);
                         currentCell = freeCell;
-                        Log($"Карта {cardName} помещена в свободную ячейку ({x}, {y})");
+                        if (enableDebugLogs)
+                            Log($"Карта {cardName} помещена в свободную ячейку ({x}, {y})");
                         break;
                     }
                 }
@@ -684,7 +698,8 @@ public class CardObject : MonoBehaviour
             
             if (currentCell == null)
             {
-                LogWarning($"Нет свободных ячеек для {cardName}!");
+                if (enableDebugLogs)
+                    LogWarning($"Нет свободных ячеек для {cardName}!");
             }
         }
 
