@@ -101,12 +101,14 @@ public static class DropLogic
 
     // DropLogic.cs - добавляем логи в начало HandleStackMerge
 
+    // DropLogic.cs - исправленный HandleStackMerge с логами
+
     private static bool HandleStackMerge(CardObject target, CardObject source)
     {
         Debug.Log($"[DropLogic] ===== НАЧАЛО HandleStackMerge =====");
         Debug.Log($"[DropLogic] target: {target.cardName} (стопка: {target.stackSize}/{target.maxStackSize}, ячейка: {(target.currentCell != null ? $"{target.currentCell.gridX},{target.currentCell.gridY}" : "null")})");
         Debug.Log($"[DropLogic] source: {source.cardName} (стопка: {source.stackSize}/{source.maxStackSize}, ячейка: {(source.currentCell != null ? $"{source.currentCell.gridX},{source.currentCell.gridY}" : "null")})");
-        Debug.Log($"[DropLogic] source.gameObject: {source.gameObject.name}, instanceID: {source.gameObject.GetInstanceID()}");
+        Debug.Log($"[DropLogic] source.gameObject: {source.gameObject.name}");
 
         int space = target.maxStackSize - target.stackSize;
         int cardsToAdd = Mathf.Min(source.stackSize, space);
@@ -133,7 +135,7 @@ public static class DropLogic
                 source.currentCell = null;
             }
 
-            Debug.Log($"[DropLogic] Уничтожаем source.gameObject (instanceID: {source.gameObject.GetInstanceID()})");
+            Debug.Log($"[DropLogic] Уничтожаем source.gameObject: {source.gameObject.name}");
             Object.Destroy(source.gameObject);
 
             Debug.Log($"[DropLogic] {target.cardName}: стопка увеличена до {target.stackSize}");
@@ -162,7 +164,7 @@ public static class DropLogic
             source.LowerCardVisuals();
             source.transform.localScale = source.originalScale;
 
-            Debug.Log($"[DropLogic] ВЫЗЫВАЕМ PlaceCardSmart для остатка (instanceID: {source.gameObject.GetInstanceID()})");
+            Debug.Log($"[DropLogic] ВЫЗЫВАЕМ PlaceCardSmart для остатка: {source.gameObject.name}");
             CardLibrary.PlaceCardSmart(source);
 
             Debug.Log($"[DropLogic] КОНЕЦ HandleStackMerge");

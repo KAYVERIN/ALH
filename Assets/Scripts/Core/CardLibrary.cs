@@ -248,11 +248,10 @@ public class CardLibrary : MonoBehaviour
     /// Размещает карту: сначала ищет ближайшую стопку таких же карт,
     /// если есть место — кладёт туда, иначе ищет ближайшую свободную ячейку
     /// </summary>
-
     public static void PlaceCardSmart(CardObject card)
     {
         Debug.Log($"[CardLibrary] ===== НАЧАЛО PlaceCardSmart =====");
-        Debug.Log($"[CardLibrary] card: {card.cardName} (стопка: {card.stackSize}, instanceID: {card.gameObject.GetInstanceID()})");
+        Debug.Log($"[CardLibrary] card: {card.cardName} (стопка: {card.stackSize})");
         Debug.Log($"[CardLibrary] card.currentCell: {(card.currentCell != null ? $"{card.currentCell.gridX},{card.currentCell.gridY}" : "null")}");
         Debug.Log($"[CardLibrary] card.transform.position: {card.transform.position}");
 
@@ -267,7 +266,7 @@ public class CardLibrary : MonoBehaviour
         // ============================================================
         CardObject nearestStack = FindNearestStack(card);
 
-        Debug.Log($"[CardLibrary] nearestStack: {(nearestStack != null ? $"{nearestStack.cardName} (стопка: {nearestStack.stackSize}/{nearestStack.maxStackSize}, instanceID: {nearestStack.gameObject.GetInstanceID()})" : "null")}");
+        Debug.Log($"[CardLibrary] nearestStack: {(nearestStack != null ? $"{nearestStack.cardName} (стопка: {nearestStack.stackSize}/{nearestStack.maxStackSize})" : "null")}");
 
         if (nearestStack != null)
         {
@@ -289,7 +288,7 @@ public class CardLibrary : MonoBehaviour
                 if (card.stackSize <= 0)
                 {
                     // Вся карта поместилась
-                    Debug.Log($"[CardLibrary] Вся карта поместилась в стопку, уничтожаем card (instanceID: {card.gameObject.GetInstanceID()})");
+                    Debug.Log($"[CardLibrary] Вся карта поместилась в стопку, уничтожаем card: {card.gameObject.name}");
                     if (card.currentCell != null)
                     {
                         Debug.Log($"[CardLibrary] Удаляем card из ячейки ({card.currentCell.gridX}, {card.currentCell.gridY})");
@@ -315,7 +314,7 @@ public class CardLibrary : MonoBehaviour
         // ============================================================
         //  ШАГ 2: ИЩЕМ БЛИЖАЙШУЮ СВОБОДНУЮ ЯЧЕЙКУ
         // ============================================================
-        Debug.Log($"[CardLibrary] Ищем ближайшую свободную ячейку для card (instanceID: {card.gameObject.GetInstanceID()})");
+        Debug.Log($"[CardLibrary] Ищем ближайшую свободную ячейку для card: {card.gameObject.name}");
         Cell nearestCell = FindNearestFreeCell(card.transform.position);
 
         Debug.Log($"[CardLibrary] nearestCell: {(nearestCell != null ? $"{nearestCell.gridX},{nearestCell.gridY}" : "null")}");
@@ -358,7 +357,7 @@ public class CardLibrary : MonoBehaviour
                 Debug.Log($"[CardLibrary] Удаляем card из ячейки ({card.currentCell.gridX}, {card.currentCell.gridY})");
                 card.currentCell.RemoveCard();
             }
-            Debug.Log($"[CardLibrary] Уничтожаем card (instanceID: {card.gameObject.GetInstanceID()})");
+            Debug.Log($"[CardLibrary] Уничтожаем card: {card.gameObject.name}");
             Object.Destroy(card.gameObject);
         }
     }
@@ -408,8 +407,6 @@ public class CardLibrary : MonoBehaviour
     /// <summary>
     /// Находит ближайшую свободную ячейку к указанной позиции
     /// </summary>
-    // CardLibrary.cs - добавляем логи
-
     private static Cell FindNearestFreeCell(Vector3 position)
     {
         if (GridManager.Instance == null) return null;
