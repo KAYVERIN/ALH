@@ -29,7 +29,7 @@ public class CardLibrary : MonoBehaviour
     public int stackSortingOrder = 100;
 
     [Header("Отладка")]
-    [SerializeField] private bool enableDebugLogs = false;
+    private static bool enableDebugLogs = false;
 
     private Dictionary<string, CardData> cardDictionary = new Dictionary<string, CardData>();
     private bool isReady = false;
