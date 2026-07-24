@@ -33,7 +33,8 @@ public class CardData : ScriptableObject
     public Color iconBackgroundColor = Color.white;
 
     [Tooltip("Смещение фона иконки относительно центра карты")]
-    public Vector2 iconBackgroundOffset = Vector2.zero;
+    public Vector2 iconBackgroundOffset = new Vector2(0f,0.52f);
+    
 
     [Tooltip("Масштаб фона иконки")]
     public float iconBackgroundScale = 0.8f;
