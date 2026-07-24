@@ -60,13 +60,13 @@ public class CardData : ScriptableObject
 
     [Header("=== НАСТРОЙКИ ORDER IN LAYER ===")]
     [Tooltip("Порядок слоя для основной иконки")]
-    public int iconOrderInLayer = 10;
+    public int iconOrderInLayer = 5;
 
     [Tooltip("Порядок слоя для фона иконки")]
-    public int iconBackgroundOrderInLayer = 5;
+    public int iconBackgroundOrderInLayer = 2;
 
     [Tooltip("Порядок слоя для дополнительного слоя")]
-    public int extraLayerOrderInLayer = 15;
+    public int extraLayerOrderInLayer = 1;
 
     [Header("=== ПРЕФАБ ===")]
     [Tooltip("Префаб карты (если не указан - используется дефолтный)")]
