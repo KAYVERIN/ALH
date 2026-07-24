@@ -35,6 +35,7 @@ public class InputHandler : MonoBehaviour
         keyBindings["Pause"] = GetSavedKey("Pause", KeyCode.Escape);
         keyBindings["Drag"] = GetSavedKey("Drag", KeyCode.Mouse0);
         keyBindings["TakeAll"] = GetSavedKey("TakeAll", KeyCode.LeftShift);
+
     }
 
     private KeyCode GetSavedKey(string action, KeyCode defaultKey)
