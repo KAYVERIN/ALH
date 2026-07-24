@@ -37,6 +37,9 @@ public class MenuManager : MonoBehaviour
     [SerializeField] private bool menuOpen = false;
     [SerializeField] private bool settingsOpen = false;
 
+    [Header("Отладка")]
+    [SerializeField] private bool enableDebugLogs = true;
+
     private void Start()
     {
         gameObject.GetComponentInParent<Canvas>().gameObject.SetActive(true);
@@ -124,7 +127,8 @@ public class MenuManager : MonoBehaviour
         settingsPanel.SetActive(false);
         settingsOpen = false;
         Time.timeScale = 0f;
-        Debug.Log("[MenuManager] Меню открыто");
+        if (enableDebugLogs)
+            Debug.Log("[MenuManager] Меню открыто");
     }
 
     public void CloseMenu()
@@ -134,18 +138,21 @@ public class MenuManager : MonoBehaviour
         settingsPanel.SetActive(false);
         settingsOpen = false;
         Time.timeScale = 1f;
-        Debug.Log("[MenuManager] Меню закрыто");
+        if (enableDebugLogs)
+            Debug.Log("[MenuManager] Меню закрыто");
     }
 
     private void OnPlayClicked()
     {
-        Debug.Log("[MenuManager] Игра начата!");
+        if (enableDebugLogs)
+            Debug.Log("[MenuManager] Игра начата!");
         CloseMenu();
     }
 
     private void OnSettingsClicked()
     {
-        Debug.Log("[MenuManager] Открыты настройки");
+        if (enableDebugLogs)
+            Debug.Log("[MenuManager] Открыты настройки");
         settingsPanel.SetActive(true);
         settingsOpen = true;
         ShowTab("Graphics");
@@ -155,12 +162,14 @@ public class MenuManager : MonoBehaviour
     {
         settingsPanel.SetActive(false);
         settingsOpen = false;
-        Debug.Log("[MenuManager] Настройки закрыты");
+        if (enableDebugLogs)
+            Debug.Log("[MenuManager] Настройки закрыты");
     }
 
     private void OnTabClicked(string tabName)
     {
-        Debug.Log($"[MenuManager] Вкладка: {tabName}");
+        if (enableDebugLogs)
+            Debug.Log($"[MenuManager] Вкладка: {tabName}");
         ShowTab(tabName);
     }
 
@@ -188,7 +197,8 @@ public class MenuManager : MonoBehaviour
 
     private void OnQuitClicked()
     {
-        Debug.Log("[MenuManager] Выход из игры");
+        if (enableDebugLogs)
+            Debug.Log("[MenuManager] Выход из игры");
 #if UNITY_EDITOR
         UnityEditor.EditorApplication.isPlaying = false;
 #else
@@ -221,13 +231,15 @@ public class MenuManager : MonoBehaviour
 
     private void OnResolutionChanged(int index)
     {
-        Debug.Log($"[MenuManager] Разрешение изменено: {index}");
+        if (enableDebugLogs)
+            Debug.Log($"[MenuManager] Разрешение изменено: {index}");
         // Здесь код для смены разрешения
     }
 
     private void OnFullscreenToggled(bool isOn)
     {
-        Debug.Log($"[MenuManager] Полноэкранный режим: {isOn}");
+        if (enableDebugLogs)
+            Debug.Log($"[MenuManager] Полноэкранный режим: {isOn}");
         Screen.fullScreen = isOn;
         PlayerPrefs.SetInt("Fullscreen", isOn ? 1 : 0);
         PlayerPrefs.Save();
@@ -235,7 +247,8 @@ public class MenuManager : MonoBehaviour
 
     private void OnQualityChanged(float value)
     {
-        Debug.Log($"[MenuManager] Качество: {value}");
+        if (enableDebugLogs)
+            Debug.Log($"[MenuManager] Качество: {value}");
         int qualityLevel = Mathf.RoundToInt(value * 5);
         QualitySettings.SetQualityLevel(qualityLevel);
         PlayerPrefs.SetFloat("Quality", value);
@@ -248,7 +261,8 @@ public class MenuManager : MonoBehaviour
 
     private void OnMasterVolumeChanged(float value)
     {
-        Debug.Log($"[MenuManager] Громкость мастера: {value}");
+        if (enableDebugLogs)
+            Debug.Log($"[MenuManager] Громкость мастера: {value}");
         PlayerPrefs.SetFloat("MasterVolume", value);
         PlayerPrefs.Save();
         // Здесь код для изменения громкости
@@ -256,15 +270,33 @@ public class MenuManager : MonoBehaviour
 
     private void OnMusicVolumeChanged(float value)
     {
-        Debug.Log($"[MenuManager] Громкость музыки: {value}");
+        if (enableDebugLogs)
+            Debug.Log($"[MenuManager] Громкость музыки: {value}");
         PlayerPrefs.SetFloat("MusicVolume", value);
         PlayerPrefs.Save();
     }
 
     private void OnSFXVolumeChanged(float value)
     {
-        Debug.Log($"[MenuManager] Громкость звуков: {value}");
+        if (enableDebugLogs)
+            Debug.Log($"[MenuManager] Громкость звуков: {value}");
         PlayerPrefs.SetFloat("SFXVolume", value);
         PlayerPrefs.Save();
+    }
+
+    // ============================================================
+    //  ПУБЛИЧНЫЙ МЕТОД ДЛЯ ВКЛЮЧЕНИЯ/ВЫКЛЮЧЕНИЯ ЛОГОВ
+    // ============================================================
+
+    /// <summary>
+    /// Включает/выключает логи во время выполнения
+    /// </summary>
+    public void SetDebugLogsEnabled(bool enabled)
+    {
+        enableDebugLogs = enabled;
+        if (enableDebugLogs)
+            Debug.Log("[MenuManager] Логи включены");
+        else
+            Debug.Log("[MenuManager] Логи выключены");
     }
 }
