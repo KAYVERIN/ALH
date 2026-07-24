@@ -10,17 +10,17 @@ public class CardLibrary : MonoBehaviour
     //  СИНГЛТОН
     // ============================================================
     public static CardLibrary Instance { get; private set; }
-    
+
     // ============================================================
     //  НАСТРОЙКИ
     // ============================================================
     [Header("Библиотека карт")]
     public List<CardData> allCards = new List<CardData>();
-    
+
     [Header("Настройки")]
     public bool autoFindCards = true;
     public GameObject defaultCardPrefab;
-    
+
     [Header("Настройки счётчика стопки")]
     public Color stackTextColor = Color.white;
     public Color stackBackgroundColor = new Color(0, 0, 0, 0.7f);
@@ -29,18 +29,20 @@ public class CardLibrary : MonoBehaviour
     public int stackSortingOrder = 100;
 
     [Header("Отладка")]
-    [SerializeField] private bool enableDebugLogsInspector = false;
-    private static bool enableDebugLogs = false;
+    [SerializeField] private bool enableDebugLogsInspector = false; // Видно в инспекторе
+    private static bool enableDebugLogs = false; // Используется в коде
 
     private Dictionary<string, CardData> cardDictionary = new Dictionary<string, CardData>();
     private bool isReady = false;
-    
+
     void Awake()
     {
         if (Instance == null)
         {
             Instance = this;
             DontDestroyOnLoad(gameObject);
+            // Синхронизируем статическую переменную с инспекторной
+            enableDebugLogs = enableDebugLogsInspector;
         }
         else
         {
@@ -48,38 +50,57 @@ public class CardLibrary : MonoBehaviour
             return;
         }
     }
-    
+
     void Start()
     {
         LoadAllCards();
         isReady = true;
     }
-    
+
+    // ============================================================
+    //  МЕТОД ДЛЯ ИЗМЕНЕНИЯ ЛОГОВ В РАБОЧЕМ РЕЖИМЕ
+    // ============================================================
+
+    /// <summary>
+    /// Включает/выключает логи во время выполнения
+    /// </summary>
+    public void SetDebugLogsEnabled(bool enabled)
+    {
+        enableDebugLogsInspector = enabled;
+        enableDebugLogs = enabled;
+        if (enableDebugLogs)
+            Debug.Log("[CardLibrary] Логи включены");
+        else
+            Debug.Log("[CardLibrary] Логи выключены");
+    }
+
     void LoadAllCards()
     {
         cardDictionary.Clear();
-        
+
         if (autoFindCards)
         {
             LoadCardsFromResources();
         }
-        
+
         foreach (CardData card in allCards)
         {
             AddCardToDictionary(card);
         }
         if (enableDebugLogs)
-            Debug.Log($"Загружено карт: {cardDictionary.Count}");
-        foreach (var pair in cardDictionary)
         {
-            Debug.Log($"  - {pair.Value.cardName} (ID: {pair.Key})");
+            Debug.Log($"Загружено карт: {cardDictionary.Count}");
+            foreach (var pair in cardDictionary)
+            {
+                Debug.Log($"  - {pair.Value.cardName} (ID: {pair.Key})");
+            }
         }
     }
-    
+
     void LoadCardsFromResources()
     {
         CardData[] foundCards = Resources.LoadAll<CardData>("Cards/Data");
-        
+
         if (foundCards.Length > 0)
         {
             if (enableDebugLogs)
@@ -95,7 +116,7 @@ public class CardLibrary : MonoBehaviour
                 Debug.LogWarning("Карты в Resources не найдены.");
         }
     }
-    
+
     void AddCardToDictionary(CardData card)
     {
         if (card == null)
@@ -104,34 +125,34 @@ public class CardLibrary : MonoBehaviour
                 Debug.LogWarning("Попытка добавить пустую карту!");
             return;
         }
-        
+
         if (string.IsNullOrEmpty(card.cardID))
         {
             if (enableDebugLogs)
                 Debug.LogWarning($"Карта {card.name} не имеет ID!");
             return;
         }
-        
+
         if (cardDictionary.ContainsKey(card.cardID))
         {
             if (enableDebugLogs)
                 Debug.LogWarning($"Карта с ID {card.cardID} уже существует!");
             return;
         }
-        
+
         cardDictionary.Add(card.cardID, card);
-        
+
         if (!allCards.Contains(card))
         {
             allCards.Add(card);
         }
     }
-    
+
     // ============================================================
     //  ЕДИНЫЙ МЕТОД СОЗДАНИЯ КАРТЫ
     //  НЕ ЗАНИМАЕТСЯ РАЗМЕЩЕНИЕМ В ЯЧЕЙКЕ!
     // ============================================================
-    
+
     /// <summary>
     /// ЕДИНЫЙ метод создания карты.
     /// Создаёт карту по указанным координатам.
@@ -149,7 +170,7 @@ public class CardLibrary : MonoBehaviour
                 Debug.LogError("CardLibrary.Instance == null!");
             return null;
         }
-        
+
         CardData data = Instance.GetCard(cardID);
         if (data == null)
         {
@@ -157,7 +178,7 @@ public class CardLibrary : MonoBehaviour
                 Debug.LogError($"CardData не найдена для ID: {cardID}");
             return null;
         }
-        
+
         GameObject prefab = data.cardPrefab != null ? data.cardPrefab : Instance.defaultCardPrefab;
         if (prefab == null)
         {
@@ -165,13 +186,13 @@ public class CardLibrary : MonoBehaviour
                 Debug.LogError($"Нет префаба для карты {cardID}!");
             return null;
         }
-        
+
         // ============================================================
         //  1. СОЗДАЁМ КАРТУ ПО УКАЗАННЫМ КООРДИНАТАМ
         // ============================================================
         GameObject cardObj = Object.Instantiate(prefab, position, Quaternion.identity);
         cardObj.name = prefab.name;
-        
+
         CardObject card = cardObj.GetComponent<CardObject>();
         if (card == null)
         {
@@ -180,24 +201,24 @@ public class CardLibrary : MonoBehaviour
             Object.Destroy(cardObj);
             return null;
         }
-        
+
         // ============================================================
         //  2. ЗАГРУЖАЕМ ДАННЫЕ
         // ============================================================
         card.LoadFromCardData(data);
-        
+
         // ============================================================
         //  3. НАСТРАИВАЕМ СТОПКУ
         // ============================================================
         card.stackSize = Mathf.Max(1, stackSize);
         card.isStackable = data.isStackable;
         card.maxStackSize = data.maxStackSize;
-        
+
         // ============================================================
         //  4. ОБНОВЛЯЕМ ВИЗУАЛ
         // ============================================================
         card.UpdateVisuals();
-        
+
         // ============================================================
         //  5. ОБНОВЛЯЕМ СЧЁТЧИК
         // ============================================================
@@ -207,21 +228,21 @@ public class CardLibrary : MonoBehaviour
         }
         if (enableDebugLogs)
             Debug.Log($"[CardLibrary] Создана карта: {card.cardName} (ID: {cardID}, стопка: {card.stackSize}) в позиции {position}");
-        
+
         return card;
     }
-    
+
     // ============================================================
     //  ВСПОМОГАТЕЛЬНЫЙ МЕТОД ДЛЯ ПОИСКА СВОБОДНОЙ ЯЧЕЙКИ
     // ============================================================
-    
+
     /// <summary>
     /// Находит первую свободную ячейку в сетке
     /// </summary>
     public static Cell FindFreeCell()
     {
         if (GridManager.Instance == null) return null;
-        
+
         for (int x = 0; x < GridManager.Instance.gridWidth; x++)
         {
             for (int y = 0; y < GridManager.Instance.gridHeight; y++)
@@ -235,14 +256,14 @@ public class CardLibrary : MonoBehaviour
         }
         return null;
     }
-    
+
     /// <summary>
     /// Размещает карту в ближайшей свободной ячейке
     /// </summary>
     public static void PlaceCardInFreeCell(CardObject card)
     {
         if (card == null) return;
-        
+
         Cell freeCell = FindFreeCell();
         if (freeCell != null)
         {
@@ -272,7 +293,7 @@ public class CardLibrary : MonoBehaviour
             Debug.Log($"[CardLibrary] card.currentCell: {(card.currentCell != null ? $"{card.currentCell.gridX},{card.currentCell.gridY}" : "null")}");
             Debug.Log($"[CardLibrary] card.transform.position: {card.transform.position}");
         }
-            
+
 
         if (card == null || GridManager.Instance == null)
         {
@@ -374,7 +395,8 @@ public class CardLibrary : MonoBehaviour
             nearestCell.PlaceCard(card);
             card.currentCell = nearestCell;
             card.originalGridPos = new Vector2Int(nearestCell.gridX, nearestCell.gridY);
-            Debug.Log($"[CardLibrary] Карта {card.cardName} размещена в ячейке ({nearestCell.gridX}, {nearestCell.gridY})");
+            if (enableDebugLogs)
+                Debug.Log($"[CardLibrary] Карта {card.cardName} размещена в ячейке ({nearestCell.gridX}, {nearestCell.gridY})");
         }
         else
         {
@@ -486,7 +508,7 @@ public class CardLibrary : MonoBehaviour
             Debug.LogWarning($"Карта с ID '{id}' не найдена!");
         return null;
     }
-    
+
     public List<CardData> GetCardsByType(CardType type)
     {
         List<CardData> result = new List<CardData>();
@@ -499,12 +521,12 @@ public class CardLibrary : MonoBehaviour
         }
         return result;
     }
-    
+
     public bool IsReady()
     {
         return isReady && cardDictionary.Count > 0;
     }
-    
+
     public bool HasCard(string id)
     {
         return cardDictionary.ContainsKey(id);
