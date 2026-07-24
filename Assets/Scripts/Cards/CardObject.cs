@@ -57,7 +57,8 @@ public class CardObject : MonoBehaviour
 
     [Header("=== UI ЭЛЕМЕНТЫ ===")]
     [SerializeField] private TextMeshProUGUI cardNameText;
-    [SerializeField] private StackCounterUI stackCounterUI; // Ссылка на счётчик
+    [Header("=== СЧЁТЧИК СТОПКИ ===")]
+    [SerializeField] private GameObject stackCounterObject;
 
     [Header("Отладка")]
     [SerializeField] private bool enableDebugLogs = true;
@@ -66,6 +67,8 @@ public class CardObject : MonoBehaviour
     public bool isStackable = false;
     public int stackSize = 1;
     public int maxStackSize = 999;
+
+    public StackCounterUI stackCounterUI;
 
     // Приватные переменные
     public Vector3 originalScale;
@@ -125,14 +128,6 @@ public class CardObject : MonoBehaviour
         {
             visualController = gameObject.AddComponent<CardVisualController>();
             Log("Добавлен CardVisualController");
-        }
-
-        // Находим счётчик в префабе
-        if (stackCounterUI == null)
-        {
-            stackCounterUI = GetComponentInChildren<StackCounterUI>();
-            if (stackCounterUI != null)
-                Log("Найден StackCounterUI в префабе");
         }
 
         Log($"Карта {cardName} инициализирована");
@@ -217,7 +212,7 @@ public class CardObject : MonoBehaviour
     }
 
     /// <summary>
-    /// Очищает только визуальные слои (иконки), НО СОХРАНЯЕТ текст и счётчик
+    /// Очищает только визуальные слои (иконки), НО СОХРАНЯЕТ текст и другие важные элементы
     /// </summary>
     private void ClearVisualLayers()
     {
@@ -226,8 +221,7 @@ public class CardObject : MonoBehaviour
         // Список имён элементов, которые нужно сохранить
         string[] preserveNames = new string[]
         {
-            "CardNameText",  // Текст с именем карты
-            "StackCounter"   // Счётчик стопки
+        "CardNameText"  // Текст с именем карты
         };
 
         // Собираем список детей для удаления
@@ -340,32 +334,6 @@ public class CardObject : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Обновляет отображение счётчика стопки
-    /// </summary>
-    public void UpdateStackCounter()
-    {
-        if (stackCounterUI == null)
-        {
-            // Пытаемся найти в VisualContainer
-            if (visualContainer != null)
-            {
-                stackCounterUI = visualContainer.GetComponentInChildren<StackCounterUI>();
-            }
-
-            if (stackCounterUI == null)
-            {
-                LogWarning("StackCounterUI не найден!");
-                return;
-            }
-        }
-
-        // Обновляем счётчик
-        stackCounterUI.UpdateCount(stackSize);
-
-        Log($"Обновлён счётчик: {stackSize}");
-    }
-
     // ============================================================
     //  ЗАГРУЗКА ДАННЫХ ИЗ CardData
     // ============================================================
@@ -386,7 +354,7 @@ public class CardObject : MonoBehaviour
         cardTag = data.cardTag;
         cardColor = data.cardColor;
 
-        // Очищаем старые визуальные слои (текст и счётчик сохраняются)
+        // Очищаем старые визуальные слои (текст сохраняется)
         ClearVisualLayers();
 
         // Проверяем наличие VisualContainer
@@ -455,9 +423,6 @@ public class CardObject : MonoBehaviour
 
         // Обновляем имя карты
         UpdateCardNameText();
-
-        // Обновляем счётчик
-        UpdateStackCounter();
 
         Log($"Карта загружена: {cardName} (ID: {cardID})");
     }
