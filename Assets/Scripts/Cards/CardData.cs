@@ -17,7 +17,7 @@ public class CardData : ScriptableObject
     public Sprite cardIcon;
 
     [Tooltip("Смещение иконки относительно центра карты")]
-    public Vector2 iconOffset = Vector2.zero;
+    public Vector2 iconOffset = new Vector2(0f, 0.52f);
 
     [Tooltip("Масштаб иконки")]
     public float iconScale = 0.6f;
@@ -47,7 +47,7 @@ public class CardData : ScriptableObject
     public Sprite extraSprite;
 
     [Tooltip("Смещение дополнительного спрайта")]
-    public Vector2 extraOffset = Vector2.zero;
+    public Vector2 extraOffset = new Vector2(0f, 0.52f);
 
     [Tooltip("Масштаб дополнительного спрайта")]
     public float extraScale = 0.5f;
