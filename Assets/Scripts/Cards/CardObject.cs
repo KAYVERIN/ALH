@@ -216,11 +216,11 @@ public class CardObject : MonoBehaviour
     {
         if (visualContainer == null) return;
 
-        // Проходим по всем дочерним объектам
-        for (int i = visualContainer.transform.childCount - 1; i >= 0; i--)
-        {
-            Transform child = visualContainer.transform.GetChild(i);
+        // Собираем список детей для удаления (чтобы избежать проблем с итерацией)
+        List<Transform> childrenToRemove = new List<Transform>();
 
+        foreach (Transform child in visualContainer.transform)
+        {
             // Пропускаем текстовый объект
             if (child.GetComponent<TextMeshProUGUI>() != null)
             {
@@ -228,9 +228,17 @@ public class CardObject : MonoBehaviour
                 continue;
             }
 
-            // Удаляем всё остальное
-            DestroyImmediate(child.gameObject);
-            Log($"Удалён слой: {child.name}");
+            childrenToRemove.Add(child);
+        }
+
+        // Удаляем все собранные объекты
+        foreach (Transform child in childrenToRemove)
+        {
+            if (child != null && child.gameObject != null)
+            {
+                Log($"Удалён слой: {child.name}");
+                DestroyImmediate(child.gameObject);
+            }
         }
 
         visualLayers.Clear();
@@ -287,13 +295,17 @@ public class CardObject : MonoBehaviour
             }
         }
 
-        // Отключаем Raycast чтобы клики проходили сквозь текст
-        cardNameText.raycastTarget = false;
+        // Проверяем, что объект всё ещё существует
+        if (cardNameText != null && cardNameText.gameObject != null)
+        {
+            // Отключаем Raycast чтобы клики проходили сквозь текст
+            cardNameText.raycastTarget = false;
 
-        // Устанавливаем имя карты
-        cardNameText.text = cardName;
+            // Устанавливаем имя карты
+            cardNameText.text = cardName;
 
-        Log($"Обновлено имя карты: {cardName}");
+            Log($"Обновлено имя карты: {cardName}");
+        }
     }
 
     // ============================================================
