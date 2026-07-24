@@ -12,7 +12,7 @@ public class ArchetypeDotVisualizer : MonoBehaviour
     public class ArchetypeDot
     {
         public CardData.Archetype archetype;
-        public TextMeshProUGUI text; // Для UI
+        public TextMeshProUGUI text;
     }
 
     [Header("Настройки")]
@@ -24,13 +24,30 @@ public class ArchetypeDotVisualizer : MonoBehaviour
 
     private CardObject cardObject;
 
+    private void Log(string message)
+    {
+        if (enableDebugLogs)
+            Debug.Log($"[ArchetypeDotVisualizer] {message}");
+    }
+
+    private void LogWarning(string message)
+    {
+        if (enableDebugLogs)
+            Debug.LogWarning($"[ArchetypeDotVisualizer] {message}");
+    }
+
+    private void LogError(string message)
+    {
+        if (enableDebugLogs)
+            Debug.LogError($"[ArchetypeDotVisualizer] {message}");
+    }
+
     void Awake()
     {
         cardObject = GetComponent<CardObject>();
         if (cardObject == null)
         {
-            if (enableDebugLogs)
-                Debug.LogWarning("[ArchetypeDotVisualizer] CardObject не найден!");
+            LogWarning("CardObject не найден!");
         }
     }
 
@@ -41,68 +58,81 @@ public class ArchetypeDotVisualizer : MonoBehaviour
 
     public void UpdateVisuals()
     {
+        Log("===== UpdateVisuals START =====");
+
         if (archetypeDotsContainer == null)
         {
-            if (enableDebugLogs)
-                Debug.LogWarning("[ArchetypeDotVisualizer] Контейнер ArchetypeDots не назначен!");
+            LogError("Контейнер ArchetypeDots не назначен!");
             return;
         }
 
-        if (cardObject == null) return;
+        if (cardObject == null)
+        {
+            LogError("CardObject = null!");
+            return;
+        }
+
+        Log($"cardObject: {cardObject.cardName}, cardID: {cardObject.cardID}");
 
         // Получаем CardData
         CardData data = cardObject.GetCardData();
         if (data == null)
         {
-            if (enableDebugLogs)
-                Debug.Log("[ArchetypeDotVisualizer] CardData не найдена");
+            LogError("CardData не найдена!");
             archetypeDotsContainer.SetActive(false);
             return;
         }
 
+        Log($"CardData: {data.cardName}, archetype: {data.primaryArchetype}, power: {data.archetypePower}");
+
         // Если архетип None - отключаем весь контейнер
         if (!data.HasArchetype())
         {
-            if (enableDebugLogs)
-                Debug.Log($"[ArchetypeDotVisualizer] Архетип None для {cardObject.cardName}, отключаем контейнер");
+            Log($"Архетип None для {cardObject.cardName}, отключаем контейнер");
             archetypeDotsContainer.SetActive(false);
             return;
         }
 
         // Включаем контейнер
         archetypeDotsContainer.SetActive(true);
+        Log("Контейнер включен");
+
+        Log($"archetypeDots.Length = {archetypeDots.Length}");
 
         // Обновляем тексты
         foreach (var dotData in archetypeDots)
         {
+            Log($"--- Обработка {dotData.archetype} ---");
+
             if (dotData.text == null)
             {
-                if (enableDebugLogs)
-                    Debug.LogWarning($"[ArchetypeDotVisualizer] Текст для {dotData.archetype} не назначен!");
+                LogError($"Текст для {dotData.archetype} не назначен!");
                 continue;
             }
 
-            int value = data.GetArchetypeValue(dotData.archetype);
+            Log($"text.gameObject: {dotData.text.gameObject.name}, активен: {dotData.text.gameObject.activeSelf}");
+            Log($"Текущий текст: '{dotData.text.text}'");
 
-            if (enableDebugLogs)
-                Debug.Log($"[ArchetypeDotVisualizer] {dotData.archetype} = {value}");
+            int value = data.GetArchetypeValue(dotData.archetype);
+            Log($"{dotData.archetype} = {value}");
 
             if (value == 0)
             {
                 dotData.text.gameObject.SetActive(false);
+                Log($"{dotData.archetype} = 0, текст скрыт");
             }
             else
             {
                 dotData.text.gameObject.SetActive(true);
-                dotData.text.text = Mathf.Abs(value).ToString();
+                string newText = Mathf.Abs(value).ToString();
+                dotData.text.text = newText;
                 dotData.text.color = value < 0 ? Color.red : Color.green;
 
-                if (enableDebugLogs)
-                    Debug.Log($"[ArchetypeDotVisualizer] Установлен текст: '{dotData.text.text}' цвет: {dotData.text.color}");
+                Log($"Установлен текст: '{newText}'");
+                Log($"После установки: text.text = '{dotData.text.text}'");
             }
         }
 
-        if (enableDebugLogs)
-            Debug.Log($"[ArchetypeDotVisualizer] Точки обновлены для {cardObject.cardName}");
+        Log("===== UpdateVisuals END =====");
     }
 }
