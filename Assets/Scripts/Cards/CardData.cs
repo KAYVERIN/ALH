@@ -77,6 +77,64 @@ public class CardData : ScriptableObject
     
     [Tooltip("Максимальный размер стопки")]
     public int maxStackSize = 999;
-    
+
+    // CardData.cs - добавляем в конец класса
+
+    [Header("=== АРХЕТИПЫ ===")]
+    public Archetype primaryArchetype = Archetype.None;
+    [Range(0, 7)] public int archetypePower = 1;
+
+    [Header("=== ЗНАЧЕНИЯ ЦВЕТОВ (ручной ввод) ===")]
+    public int blackValue;
+    public int yellowValue;
+    public int greenValue;
+    public int redValue;
+    public int blueValue;
+    public int sandalValue;
+    public int whiteValue;
+
+    [Header("=== НАСТРОЙКИ ВИЗУАЛА АРХЕТИПА ===")]
+    public bool showArchetypeValues = true;
+    public float archetypeDotSize = 0.15f;
+    public Vector2 archetypeOffset = new Vector2(1.2f, 0f);
+
+    /// <summary>
+    /// Проверяет, есть ли у карты архетип
+    /// </summary>
+    public bool HasArchetype()
+    {
+        return primaryArchetype != Archetype.None && archetypePower > 0;
+    }
+
+    /// <summary>
+    /// Возвращает значение цвета для данного архетипа
+    /// </summary>
+    public int GetArchetypeValue(Archetype archetype)
+    {
+        switch (archetype)
+        {
+            case Archetype.Black: return blackValue;
+            case Archetype.Yellow: return yellowValue;
+            case Archetype.Green: return greenValue;
+            case Archetype.Red: return redValue;
+            case Archetype.Blue: return blueValue;
+            case Archetype.Sandal: return sandalValue;
+            case Archetype.White: return whiteValue;
+            default: return 0;
+        }
+    }
+
+    public enum Archetype
+    {
+        None = 0,
+        Black = 1,
+        Yellow = 2,
+        Green = 3,
+        Red = 4,
+        Blue = 5,
+        Sandal = 6,
+        White = 7
+    }
+
 
 }
