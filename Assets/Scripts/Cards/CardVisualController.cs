@@ -30,11 +30,11 @@ public class CardVisualController : MonoBehaviour
         if (container != null)
         {
             visualContainer = container.gameObject;
-            Debug.Log($"[CardVisualController] VisualContainer найден на {gameObject.name}");
+            //Debug.Log($"[CardVisualController] VisualContainer найден на {gameObject.name}");
         }
         else
         {
-            Debug.LogWarning($"[CardVisualController] VisualContainer НЕ найден на {gameObject.name}!");
+            //Debug.LogWarning($"[CardVisualController] VisualContainer НЕ найден на {gameObject.name}!");
             return;
         }
 
@@ -44,11 +44,11 @@ public class CardVisualController : MonoBehaviour
         {
             containerCanvas.overrideSorting = true;
             containerCanvas.sortingOrder = baseSortingOrder;
-            Debug.Log($"[CardVisualController] Canvas найден на VisualContainer, sortingOrder: {baseSortingOrder}");
+            //Debug.Log($"[CardVisualController] Canvas найден на VisualContainer, sortingOrder: {baseSortingOrder}");
         }
         else
         {
-            Debug.LogWarning($"[CardVisualController] Canvas НЕ найден на VisualContainer!");
+            //Debug.LogWarning($"[CardVisualController] Canvas НЕ найден на VisualContainer!");
         }
 
         // Находим рамку
@@ -56,7 +56,7 @@ public class CardVisualController : MonoBehaviour
         if (cardFrame != null)
         {
             originalFrameOrder = cardFrame.sortingOrder;
-            Debug.Log($"[CardVisualController] Рамка найдена, originalOrder: {originalFrameOrder}");
+            //Debug.Log($"[CardVisualController] Рамка найдена, originalOrder: {originalFrameOrder}");
         }
 
         // Сохраняем порядки всех спрайтов в VisualContainer
@@ -78,7 +78,7 @@ public class CardVisualController : MonoBehaviour
             if (allRenderers[i] != null)
             {
                 originalOrders[i] = allRenderers[i].sortingOrder;
-                Debug.Log($"[CardVisualController] {allRenderers[i].gameObject.name} - originalOrder: {originalOrders[i]}");
+                //Debug.Log($"[CardVisualController] {allRenderers[i].gameObject.name} - originalOrder: {originalOrders[i]}");
             }
         }
     }
@@ -91,13 +91,13 @@ public class CardVisualController : MonoBehaviour
         if (isDragging) return;
         isDragging = true;
 
-        Debug.Log($"[CardVisualController] Поднимаем карту на слой {dragSortingOrder}");
+        //Debug.Log($"[CardVisualController] Поднимаем карту на слой {dragSortingOrder}");
 
         // Поднимаем Canvas на VisualContainer
         if (containerCanvas != null)
         {
             containerCanvas.sortingOrder = dragSortingOrder;
-            Debug.Log($"[CardVisualController] VisualContainer Canvas поднят до {dragSortingOrder}");
+            //Debug.Log($"[CardVisualController] VisualContainer Canvas поднят до {dragSortingOrder}");
         }
 
         // ============================================================
@@ -112,7 +112,7 @@ public class CardVisualController : MonoBehaviour
                 {
                     int newOrder = originalOrders[i] + dragSortingOrder;
                     allRenderers[i].sortingOrder = newOrder;
-                    Debug.Log($"[CardVisualController] {allRenderers[i].gameObject.name}: {originalOrders[i]} → {newOrder}");
+                    //Debug.Log($"[CardVisualController] {allRenderers[i].gameObject.name}: {originalOrders[i]} → {newOrder}");
                 }
             }
         }
@@ -121,7 +121,7 @@ public class CardVisualController : MonoBehaviour
         if (cardFrame != null)
         {
             cardFrame.sortingOrder = originalFrameOrder + dragSortingOrder;
-            Debug.Log($"[CardVisualController] Рамка поднята: {originalFrameOrder} → {cardFrame.sortingOrder}");
+            //Debug.Log($"[CardVisualController] Рамка поднята: {originalFrameOrder} → {cardFrame.sortingOrder}");
         }
 
         // Поднимаем счётчик
@@ -133,7 +133,7 @@ public class CardVisualController : MonoBehaviour
             {
                 counterCanvas.overrideSorting = true;
                 counterCanvas.sortingOrder = counterSortingOrder + 10;
-                Debug.Log($"[CardVisualController] Счётчик поднят до {counterSortingOrder + 10}");
+                //Debug.Log($"[CardVisualController] Счётчик поднят до {counterSortingOrder + 10}");
             }
         }
     }
@@ -146,13 +146,13 @@ public class CardVisualController : MonoBehaviour
         if (!isDragging) return;
         isDragging = false;
 
-        Debug.Log($"[CardVisualController] Опускаем карту на исходный слой");
+        //Debug.Log($"[CardVisualController] Опускаем карту на исходный слой");
 
         // Восстанавливаем Canvas на VisualContainer
         if (containerCanvas != null)
         {
             containerCanvas.sortingOrder = baseSortingOrder;
-            Debug.Log($"[CardVisualController] VisualContainer Canvas опущен до {baseSortingOrder}");
+            //Debug.Log($"[CardVisualController] VisualContainer Canvas опущен до {baseSortingOrder}");
         }
 
         // ============================================================
@@ -165,7 +165,7 @@ public class CardVisualController : MonoBehaviour
                 if (allRenderers[i] != null)
                 {
                     allRenderers[i].sortingOrder = originalOrders[i];
-                    Debug.Log($"[CardVisualController] {allRenderers[i].gameObject.name}: восстановлен → {originalOrders[i]}");
+                    //Debug.Log($"[CardVisualController] {allRenderers[i].gameObject.name}: восстановлен → {originalOrders[i]}");
                 }
             }
         }
@@ -174,7 +174,7 @@ public class CardVisualController : MonoBehaviour
         if (cardFrame != null)
         {
             cardFrame.sortingOrder = originalFrameOrder;
-            Debug.Log($"[CardVisualController] Рамка восстановлена: {originalFrameOrder}");
+            //Debug.Log($"[CardVisualController] Рамка восстановлена: {originalFrameOrder}");
         }
 
         // Восстанавливаем счётчик
@@ -186,7 +186,7 @@ public class CardVisualController : MonoBehaviour
             {
                 counterCanvas.overrideSorting = true;
                 counterCanvas.sortingOrder = counterSortingOrder;
-                Debug.Log($"[CardVisualController] Счётчик опущен до {counterSortingOrder}");
+                //Debug.Log($"[CardVisualController] Счётчик опущен до {counterSortingOrder}");
             }
         }
     }
@@ -209,7 +209,7 @@ public class CardVisualController : MonoBehaviour
                 canvas.overrideSorting = true;
                 canvas.sortingLayerName = "Default";
                 canvas.sortingOrder = baseSortingOrder;
-                Debug.Log($"[CardVisualController] Создан Canvas на VisualContainer для {gameObject.name}");
+                //Debug.Log($"[CardVisualController] Создан Canvas на VisualContainer для {gameObject.name}");
             }
             else
             {
@@ -222,7 +222,7 @@ public class CardVisualController : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning($"[CardVisualController] VisualContainer не найден для {gameObject.name}");
+            //Debug.LogWarning($"[CardVisualController] VisualContainer не найден для {gameObject.name}");
         }
     }
 
