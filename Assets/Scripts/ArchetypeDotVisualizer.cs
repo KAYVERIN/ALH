@@ -3,9 +3,6 @@
 using UnityEngine;
 using TMPro;
 
-/// <summary>
-/// Управляет отображением точек архетипов на префабе карты
-/// </summary>
 public class ArchetypeDotVisualizer : MonoBehaviour
 {
     [System.Serializable]
@@ -44,10 +41,16 @@ public class ArchetypeDotVisualizer : MonoBehaviour
 
     void Awake()
     {
+        // Ищем CardObject на этом объекте или на родителе
         cardObject = GetComponent<CardObject>();
         if (cardObject == null)
         {
-            LogWarning("CardObject не найден!");
+            cardObject = GetComponentInParent<CardObject>();
+        }
+
+        if (cardObject == null)
+        {
+            LogWarning("CardObject не найден ни на этом объекте, ни на родителе!");
         }
     }
 
@@ -74,7 +77,6 @@ public class ArchetypeDotVisualizer : MonoBehaviour
 
         Log($"cardObject: {cardObject.cardName}, cardID: {cardObject.cardID}");
 
-        // Получаем CardData
         CardData data = cardObject.GetCardData();
         if (data == null)
         {
@@ -85,7 +87,6 @@ public class ArchetypeDotVisualizer : MonoBehaviour
 
         Log($"CardData: {data.cardName}, archetype: {data.primaryArchetype}, power: {data.archetypePower}");
 
-        // Если архетип None - отключаем весь контейнер
         if (!data.HasArchetype())
         {
             Log($"Архетип None для {cardObject.cardName}, отключаем контейнер");
@@ -93,13 +94,11 @@ public class ArchetypeDotVisualizer : MonoBehaviour
             return;
         }
 
-        // Включаем контейнер
         archetypeDotsContainer.SetActive(true);
         Log("Контейнер включен");
 
         Log($"archetypeDots.Length = {archetypeDots.Length}");
 
-        // Обновляем тексты
         foreach (var dotData in archetypeDots)
         {
             Log($"--- Обработка {dotData.archetype} ---");
