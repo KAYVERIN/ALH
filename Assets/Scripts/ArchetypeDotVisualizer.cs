@@ -12,8 +12,7 @@ public class ArchetypeDotVisualizer : MonoBehaviour
     public class ArchetypeDot
     {
         public CardData.Archetype archetype;
-        public TextMeshProUGUI text; // Для UI (Canvas)
-        // или public TextMeshPro text; // Для 3D мира
+        public TextMeshProUGUI text; // Для UI
     }
 
     [Header("Настройки")]
@@ -76,9 +75,17 @@ public class ArchetypeDotVisualizer : MonoBehaviour
         // Обновляем тексты
         foreach (var dotData in archetypeDots)
         {
-            if (dotData.text == null) continue;
+            if (dotData.text == null)
+            {
+                if (enableDebugLogs)
+                    Debug.LogWarning($"[ArchetypeDotVisualizer] Текст для {dotData.archetype} не назначен!");
+                continue;
+            }
 
             int value = data.GetArchetypeValue(dotData.archetype);
+
+            if (enableDebugLogs)
+                Debug.Log($"[ArchetypeDotVisualizer] {dotData.archetype} = {value}");
 
             if (value == 0)
             {
@@ -89,6 +96,9 @@ public class ArchetypeDotVisualizer : MonoBehaviour
                 dotData.text.gameObject.SetActive(true);
                 dotData.text.text = Mathf.Abs(value).ToString();
                 dotData.text.color = value < 0 ? Color.red : Color.green;
+
+                if (enableDebugLogs)
+                    Debug.Log($"[ArchetypeDotVisualizer] Установлен текст: '{dotData.text.text}' цвет: {dotData.text.color}");
             }
         }
 
