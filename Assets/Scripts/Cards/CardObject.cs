@@ -58,7 +58,7 @@ public class CardObject : MonoBehaviour
     [Header("=== UI ЭЛЕМЕНТЫ ===")]
     [SerializeField] private TextMeshProUGUI cardNameText;
     [Header("=== СЧЁТЧИК СТОПКИ ===")]
-    [SerializeField] private GameObject stackCounterObject;
+    [SerializeField] public GameObject stackCounterObject;
 
     [Header("Отладка")]
     [SerializeField] private bool enableDebugLogs = true;

@@ -25,6 +25,21 @@ public class StackUpdateService : MonoBehaviour
     private float timer = 0f;
 
     // ============================================================
+    //  МЕТОДЫ ЛОГИРОВАНИЯ
+    // ============================================================
+    private void Log(string message)
+    {
+        if (enableDebugLogs)
+            Debug.Log($"[StackUpdateService] {message}");
+    }
+
+    private void LogWarning(string message)
+    {
+        if (enableDebugLogs)
+            Debug.LogWarning($"[StackUpdateService] {message}");
+    }
+
+    // ============================================================
     //  МЕТОДЫ ЖИЗНЕННОГО ЦИКЛА
     // ============================================================
 
@@ -58,7 +73,7 @@ public class StackUpdateService : MonoBehaviour
 
     public void RefreshAllStacks()
     {
-        CardObject[] cards = FindObjectsByType<CardObject>(FindObjectsSortMode.None);
+        CardObject[] cards = FindObjectsByType<CardObject>();
 
         foreach (CardObject card in cards)
         {
@@ -102,8 +117,7 @@ public class StackUpdateService : MonoBehaviour
         if (card.stackCounterObject.activeSelf != shouldShow)
         {
             card.stackCounterObject.SetActive(shouldShow);
-            if (enableDebugLogs)
-                Debug.Log($"StackUpdateService: {(shouldShow ? "показываем" : "скрываем")} счётчик у {card.cardName} (stackSize: {card.stackSize})");
+            Log($"{(shouldShow ? "показываем" : "скрываем")} счётчик у {card.cardName} (stackSize: {card.stackSize})");
         }
 
         // Если счётчик активен - обновляем текст
