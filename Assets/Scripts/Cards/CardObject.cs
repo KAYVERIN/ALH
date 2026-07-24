@@ -210,21 +210,44 @@ public class CardObject : MonoBehaviour
     }
 
     /// <summary>
-    /// Очищает все визуальные слои (кроме текста)
+    /// Очищает только визуальные слои (иконки), НО СОХРАНЯЕТ текст и другие важные элементы
     /// </summary>
     private void ClearVisualLayers()
     {
         if (visualContainer == null) return;
 
-        // Собираем список детей для удаления (чтобы избежать проблем с итерацией)
+        // Список имён элементов, которые нужно сохранить
+        string[] preserveNames = new string[]
+        {
+        "CardNameText"  // Текст с именем карты
+        };
+
+        // Собираем список детей для удаления
         List<Transform> childrenToRemove = new List<Transform>();
 
         foreach (Transform child in visualContainer.transform)
         {
-            // Пропускаем текстовый объект
+            bool shouldPreserve = false;
+
+            // Проверяем, нужно ли сохранить этот объект
+            foreach (string name in preserveNames)
+            {
+                if (child.name == name)
+                {
+                    shouldPreserve = true;
+                    break;
+                }
+            }
+
+            // Также сохраняем объекты с TextMeshProUGUI (на всякий случай)
             if (child.GetComponent<TextMeshProUGUI>() != null)
             {
-                Log($"Сохраняем текст: {child.name}");
+                shouldPreserve = true;
+            }
+
+            if (shouldPreserve)
+            {
+                Log($"Сохраняем: {child.name}");
                 continue;
             }
 
