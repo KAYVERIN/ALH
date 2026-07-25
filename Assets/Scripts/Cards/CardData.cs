@@ -73,8 +73,8 @@ public class CardData : ScriptableObject
     public GameObject cardPrefab;
 
     [Header("=== ИГРОВЫЕ ПАРАМЕТРЫ ===")]
-    public CardType cardType;
-    public string cardTag = "Ингредиент";
+    [Tooltip("Типы карты (может быть несколько)")]
+    public List<CardType> Types = new List<CardType>(); 
     public int cost = 0;
     public int value = 0;
 
