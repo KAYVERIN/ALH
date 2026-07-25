@@ -75,9 +75,11 @@ public class CardData : ScriptableObject
 
     [Header("=== ИГРОВЫЕ ПАРАМЕТРЫ ===")]
     [Tooltip("Типы карты (может быть несколько)")]
-    public List<CardType> Types = new List<CardType>(); 
-    public int cost = 0;
-    public int value = 0;
+    public List<CardType> Types = new List<CardType>();
+    [Tooltip("Ценность карты")]
+    public int cost = 5;
+    [Tooltip("Стоимость карты")]
+    public int value = 5;
 
     [Header("=== СВОЙСТВА ===")]
     [Tooltip("Расходный материал")]
