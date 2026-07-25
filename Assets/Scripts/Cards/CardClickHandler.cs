@@ -52,14 +52,14 @@ public class CardClickHandler : MonoBehaviour
         if (card == null) return;
 
         if (enableDebugLogs)
-            Debug.Log($"[CardClickHandler] Клик по карте: {card.cardName}, тип: {card.cardType}");
+            Debug.Log($"[CardClickHandler] Клик по карте: {card.cardName}");
 
         // Определяем, какое окно открывать
         GameObject windowPrefab = GetWindowPrefabForCard(card);
 
         if (windowPrefab == null)
         {
-            Debug.LogWarning($"[CardClickHandler] Нет префаба для карты {card.cardName} (тип: {card.cardType})");
+            Debug.LogWarning($"[CardClickHandler] Нет префаба для карты {card.cardName} ");
             return;
         }
 
@@ -82,10 +82,10 @@ public class CardClickHandler : MonoBehaviour
     /// </summary>
     private GameObject GetWindowPrefabForCard(CardObject card)
     {
-        if (windowPrefabs.TryGetValue(card.cardType, out GameObject prefab))
-        {
-            return prefab;
-        }
+       // if (windowPrefabs.TryGetValue(card.cardType, out GameObject prefab))
+       // {
+       //     return prefab;
+       // }
 
         return defaultWindowPrefab;
     }

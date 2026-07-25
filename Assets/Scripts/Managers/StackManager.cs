@@ -219,8 +219,6 @@ public class StackManager : MonoBehaviour
 		// Основные данные
 		target.cardID = source.cardID;
 		target.cardName = source.cardName;
-		target.cardType = source.cardType;
-		target.cardTag = source.cardTag;
 		target.description = source.description;
 		
 		// Настройки стопок

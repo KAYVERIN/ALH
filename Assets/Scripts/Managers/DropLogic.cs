@@ -223,14 +223,14 @@ public static class DropLogic
 
     private static bool TryInteraction(CardObject card1, CardObject card2)
     {
-        if (card1.cardTag == "Ингредиент" && card2.cardTag == "Котел")
-        {
+       // if (card1.cardTag == "Ингредиент" && card2.cardTag == "Котел")
+       // {
             //Debug.Log($"[DropLogic] КРАФТ: {card1.cardName} + {card2.cardName} = Зелье!");
-            ReturnToOriginalPosition(card1);
-            ReturnToOriginalPosition(card2);
-            GridManager.Instance.HideHighlight();
-            return true;
-        }
+      //      ReturnToOriginalPosition(card1);
+       //     ReturnToOriginalPosition(card2);
+       //     GridManager.Instance.HideHighlight();
+        //    return true;
+        //}
 
         return false;
     }

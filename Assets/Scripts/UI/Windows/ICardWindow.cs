@@ -30,9 +30,6 @@ public class DescriptionWindow : MonoBehaviour, ICardWindow
         if (descriptionText != null)
             descriptionText.text = card.description ?? "Нет описания";
 
-        if (typeText != null)
-            typeText.text = $"Тип: {card.cardType}";
-
         // Иконку нужно будет получать из CardData
         CardData data = CardLibrary.Instance?.GetCard(card.cardID);
         if (data != null && cardIcon != null && data.cardIcon != null)

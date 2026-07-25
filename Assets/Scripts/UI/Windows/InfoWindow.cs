@@ -35,9 +35,6 @@ public class InfoWindow : MonoBehaviour, ICardWindow
         if (cardNameText != null)
             cardNameText.text = card.cardName;
 
-        // Тип
-        if (typeText != null)
-            typeText.text = $"Тип: {card.cardType}";
 
         // Описание
         if (descriptionText != null)
@@ -65,28 +62,6 @@ public class InfoWindow : MonoBehaviour, ICardWindow
             }
         }
 
-        // Цвет фона в зависимости от типа
-        if (backgroundImage != null)
-        {
-            switch (card.cardType)
-            {
-                case CardType.Resource:
-                    backgroundImage.color = resourceColor;
-                    break;
-                case CardType.Ingredient:
-                    backgroundImage.color = ingredientColor;
-                    break;
-                case CardType.Npc:
-                    backgroundImage.color = npcColor;
-                    break;
-                case CardType.Building:
-                    backgroundImage.color = buildingColor;
-                    break;
-                default:
-                    backgroundImage.color = new Color(0.3f, 0.3f, 0.3f);
-                    break;
-            }
-        }
     }
 
     public void Close()

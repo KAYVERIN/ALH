@@ -514,7 +514,7 @@ public class CardLibrary : MonoBehaviour
         List<CardData> result = new List<CardData>();
         foreach (var card in cardDictionary.Values)
         {
-            if (card.cardType == type)
+            if (card.Types.Contains(type))  // <-- НОВАЯ ПРОВЕРКА
             {
                 result.Add(card);
             }

@@ -45,10 +45,6 @@ public class WorldInfoWindow : MonoBehaviour, ICardWindow
         if (titleText != null)
             titleText.text = $"📜 {card.cardName}";
 
-        // Тип
-        if (typeText != null)
-            typeText.text = $"Тип: {card.cardType}";
-
         // Описание
         if (descriptionText != null)
         {
@@ -74,28 +70,6 @@ public class WorldInfoWindow : MonoBehaviour, ICardWindow
             }
         }
 
-        // Цвет фона
-        if (backgroundImage != null)
-        {
-            switch (card.cardType)
-            {
-                case CardType.Resource:
-                    backgroundImage.color = resourceColor;
-                    break;
-                case CardType.Ingredient:
-                    backgroundImage.color = ingredientColor;
-                    break;
-                case CardType.Npc:
-                    backgroundImage.color = npcColor;
-                    break;
-                case CardType.Building:
-                    backgroundImage.color = buildingColor;
-                    break;
-                default:
-                    backgroundImage.color = new Color(0.3f, 0.3f, 0.3f);
-                    break;
-            }
-        }
 
         // Позиционируем окно над картой
         PositionAboveCard(card);

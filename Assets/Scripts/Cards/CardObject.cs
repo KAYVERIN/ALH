@@ -16,10 +16,8 @@ public class CardObject : MonoBehaviour
     // ============================================================
     [Header("Основные параметры")]
     public string cardName = "Карта";
-    public string cardTag = "Ингредиент";
     public string cardID;
     public string description;
-    public CardType cardType;
 
     // ============================================================
     //  ВИЗУАЛ
@@ -350,8 +348,6 @@ public class CardObject : MonoBehaviour
         cardID = data.cardID;
         cardName = data.cardName;
         description = data.description;
-        cardType = data.cardType;
-        cardTag = data.cardTag;
         cardColor = data.cardColor;
 
         // Очищаем старые визуальные слои (текст сохраняется)
@@ -467,10 +463,10 @@ public class CardObject : MonoBehaviour
         }
     }
 
-    public void Setup(string name, string tag, Sprite icon, Color color)
+    public void Setup(string name, Sprite icon, Color color)
     {
         cardName = name;
-        cardTag = tag;
+        //cardTag = tag;
         cardColor = color;
         UpdateVisuals();
     }
