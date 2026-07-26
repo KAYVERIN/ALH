@@ -167,6 +167,11 @@ public class CraftWindow : MonoBehaviour, ICardWindow
                     slot.ResetHighlight();
                 }
             }
+
+            // ============================================================
+            //  ПРОВЕРКА СБРОСА КАРТЫ В СЛОТ
+            // ============================================================
+            CheckDropOnSlot();
         }
         else
         {
