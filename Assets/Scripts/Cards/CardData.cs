@@ -127,6 +127,31 @@ public class CardData : ScriptableObject
         public CardData resultCard;
     }
 
+    [Header("=== СИСТЕМА КРАФТА ===")]
+    [Tooltip("Список взаимодействий для этой карты")]
+    public List<CraftInteraction> craftInteractions = new List<CraftInteraction>();
+
+    // метод для проверки, может ли карта открыть крафт-окно:
+    public bool HasCraftInteractions()
+    {
+        return craftInteractions != null && craftInteractions.Count > 0 &&
+               craftInteractions.Exists(i => i.slotCount > 0 && i.allowedCardTypes.Count > 0);
+    }
+
+    // Добавьте метод для получения взаимодействия по типу карты:
+    public CraftInteraction GetInteractionForCardType(CardType cardType)
+    {
+        if (craftInteractions == null) return null;
+
+        foreach (var interaction in craftInteractions)
+        {
+            if (interaction.allowedCardTypes.Contains(cardType))
+            {
+                return interaction;
+            }
+        }
+        return null;
+    }
     /// <summary>
     /// Проверяет, есть ли у карты архетип
     /// </summary>
