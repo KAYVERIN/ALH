@@ -110,6 +110,23 @@ public class CardData : ScriptableObject
     public float archetypeDotSize = 0.15f;
     public Vector2 archetypeOffset = new Vector2(1.2f, 0f);
 
+    [System.Serializable]
+    public class CraftInteraction
+    {
+        [Header("=== НАСТРОЙКИ ВЗАИМОДЕЙСТВИЯ ===")]
+        [Tooltip("Название взаимодействия (например: 'Переработка ресурсов')")]
+        public string interactionName = "Новое взаимодействие";
+
+        [Tooltip("Типы карт, которые можно поместить в ячейки")]
+        public List<CardType> allowedCardTypes = new List<CardType>();
+
+        [Tooltip("Количество слотов, которые откроются для этих типов карт")]
+        public int slotCount = 1;
+
+        [Tooltip("Результат крафта (опционально)")]
+        public CardData resultCard;
+    }
+
     /// <summary>
     /// Проверяет, есть ли у карты архетип
     /// </summary>
