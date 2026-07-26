@@ -73,14 +73,27 @@ public class CraftWindow : MonoBehaviour, ICardWindow
         return currentOpenWindow != null && currentOpenWindow.isOpen;
     }
 
+
+    // Статический метод для получения текущего окна
+    public static CraftWindow GetCurrentWindow()
+    {
+        return currentOpenWindow;
+    }
+
+    // Метод для проверки, находится ли мышь над окном
+    public bool IsMouseOverWindow(Vector3 mouseWorldPos)
+    {
+        if (backgroundCollider == null) return false;
+        return backgroundCollider.OverlapPoint(mouseWorldPos);
+    }
+
+
     // ============================================================
     //  ЖИЗНЕННЫЙ ЦИКЛ
     // ============================================================
     /// <summary>
     /// Определяет, над каким слотом находится мышь
     /// </summary>
-
-
     void Awake()
     {
         if (slotContainer == null)

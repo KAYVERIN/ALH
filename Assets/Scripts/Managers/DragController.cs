@@ -103,13 +103,38 @@ public class DragController : MonoBehaviour
             Vector3 mouseWorldPos = GetMouseWorldPosition();
             draggedCard.UpdateDragPosition(mouseWorldPos);
 
-            Cell nearestCell = GridManager.Instance?.GetCellAtWorldPosition(mouseWorldPos);
-            if (nearestCell != null)
+            // ============================================================
+            //  ПРОВЕРКА: НАД ОКНОМ КРАФТА ИЛИ НАД ПОЛЕМ
+            // ============================================================
+            bool isOverCraftWindow = false;
+
+            // Проверяем, открыто ли окно крафта и находится ли мышь над ним
+            if (CraftWindow.IsAnyOpen())
             {
-                GridManager.Instance.ShowHighlight(nearestCell.gridX, nearestCell.gridY);
+                // Получаем текущее открытое окно
+                CraftWindow window = CraftWindow.GetCurrentWindow();
+                if (window != null)
+                {
+                    isOverCraftWindow = window.IsMouseOverWindow(mouseWorldPos);
+                }
+            }
+
+            // Показываем подсветку ТОЛЬКО если мышь НЕ над окном крафта
+            if (!isOverCraftWindow)
+            {
+                Cell nearestCell = GridManager.Instance?.GetCellAtWorldPosition(mouseWorldPos);
+                if (nearestCell != null)
+                {
+                    GridManager.Instance.ShowHighlight(nearestCell.gridX, nearestCell.gridY);
+                }
+                else
+                {
+                    GridManager.Instance.HideHighlight();
+                }
             }
             else
             {
+                // Если мышь над окном - скрываем подсветку на поле
                 GridManager.Instance.HideHighlight();
             }
         }
