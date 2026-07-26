@@ -440,43 +440,41 @@ public class CraftWindow : MonoBehaviour, ICardWindow
 
     private void CheckDropOnSlot()
     {
-        if (currentDraggedCard == null) return;
-        if (!DragController.Instance.IsDragging) return;
+        Debug.Log("[CraftWindow] CheckDropOnSlot ВЫЗВАН");
+
+        if (currentDraggedCard == null)
+        {
+            Debug.Log("[CraftWindow] currentDraggedCard == null");
+            return;
+        }
+
+        if (!DragController.Instance.IsDragging)
+        {
+            Debug.Log("[CraftWindow] !DragController.Instance.IsDragging");
+            return;
+        }
 
         // Проверяем отпускание кнопки мыши
         if (Input.GetMouseButtonUp(0))
         {
+            Debug.Log("[CraftWindow] MouseButtonUp (0)");
             Vector3 mouseWorldPos = GetMouseWorldPosition();
             CraftSlotFilter targetSlot = GetSlotUnderMouse(mouseWorldPos);
 
+            Debug.Log($"[CraftWindow] targetSlot = {(targetSlot != null ? targetSlot.slotIndex.ToString() : "null")}");
+
             if (targetSlot != null && !targetSlot.IsOccupied())
             {
+                Debug.Log($"[CraftWindow] Слот {targetSlot.slotIndex} свободен, проверяем CanPlaceCard");
+
                 if (targetSlot.CanPlaceCard(currentDraggedCard))
                 {
-                    // Забираем карту с поля
-                    if (currentDraggedCard.currentCell != null)
-                    {
-                        currentDraggedCard.currentCell.RemoveCard();
-                        currentDraggedCard.currentCell = null;
-                    }
-
-                    // Помещаем в слот
-                    targetSlot.PlaceCard(currentDraggedCard);
-                    currentDraggedCard.isDragging = false;
-                    currentDraggedCard.LowerCardVisuals();
-
-                    // Сбрасываем состояние DragController
-                    DragController.Instance.ResetDragState();
-
-                    Log($"Карта {currentDraggedCard.cardName} помещена в слот");
-
-                    // Обновляем подсветку
-                    UpdateAllSlotsHighlight();
-                    currentDraggedCard = null;
-                    lastHighlightedSlot = null;
-
-                    // Скрываем подсветку на поле
-                    GridManager.Instance?.HideHighlight();
+                    Debug.Log($"[CraftWindow] CanPlaceCard = true, помещаем карту");
+                    // ... остальной код
+                }
+                else
+                {
+                    Debug.Log($"[CraftWindow] CanPlaceCard = false");
                 }
             }
         }
