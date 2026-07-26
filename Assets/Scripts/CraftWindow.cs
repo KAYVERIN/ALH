@@ -118,24 +118,31 @@ public class CraftWindow : MonoBehaviour, ICardWindow
     {
         if (!isOpen) return;
 
-        // Получаем перетаскиваемую карту
-        CardObject draggedCard = GetDraggedCard();
-
-        // Если карта изменилась - обновляем подсветку
-        if (draggedCard != currentDraggedCard)
+        // Проверяем состояние DragController
+        if (DragController.Instance != null)
         {
-            currentDraggedCard = draggedCard;
-            UpdateAllSlotsHighlight();
+            Debug.Log($"[CraftWindow] DragController.IsDragging = {DragController.Instance.IsDragging}");
+            if (DragController.Instance.IsDragging)
+            {
+                CardObject dragged = DragController.Instance.DraggedCard;
+                Debug.Log($"[CraftWindow] DraggedCard = {(dragged != null ? dragged.cardName : "null")}");
+            }
+        }
+        else
+        {
+            Debug.Log("[CraftWindow] DragController.Instance == null");
         }
 
-        // Если есть карта - обновляем подсветку под курсором
-        if (currentDraggedCard != null)
+        // Проверяем слоты
+        foreach (var slot in slots)
         {
-            UpdateSlotHighlightUnderMouse();
+            if (slot != null)
+            {
+                Collider2D col2d = slot.GetComponent<Collider2D>();
+                Collider col3d = slot.GetComponent<Collider>();
+                Debug.Log($"[CraftWindow] Слот {slot.slotIndex}: Collider2D={(col2d != null ? "есть" : "нет")}, Collider3D={(col3d != null ? "есть" : "нет")}");
+            }
         }
-
-        // Проверяем сброс карты на слот
-        CheckDropOnSlot();
     }
 
     void OnDestroy()
