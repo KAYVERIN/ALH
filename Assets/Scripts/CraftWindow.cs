@@ -118,29 +118,33 @@ public class CraftWindow : MonoBehaviour, ICardWindow
     {
         if (!isOpen) return;
 
-        // Проверяем состояние DragController
-        if (DragController.Instance != null)
+        // ТЕСТ: Проверяем, что мы получаем перетаскиваемую карту
+        if (DragController.Instance != null && DragController.Instance.IsDragging)
         {
-            Debug.Log($"[CraftWindow] DragController.IsDragging = {DragController.Instance.IsDragging}");
-            if (DragController.Instance.IsDragging)
+            CardObject draggedCard = DragController.Instance.DraggedCard;
+            if (draggedCard != null)
             {
-                CardObject dragged = DragController.Instance.DraggedCard;
-                Debug.Log($"[CraftWindow] DraggedCard = {(dragged != null ? dragged.cardName : "null")}");
+                Debug.Log($"[CraftWindow] Перетаскивается: {draggedCard.cardName}");
+
+                // ТЕСТ: Включаем подсветку всех слотов
+                foreach (var slot in slots)
+                {
+                    if (slot != null && !slot.IsOccupied())
+                    {
+                        slot.ShowAvailability(draggedCard);
+                    }
+                }
             }
         }
         else
         {
-            Debug.Log("[CraftWindow] DragController.Instance == null");
-        }
-
-        // Проверяем слоты
-        foreach (var slot in slots)
-        {
-            if (slot != null)
+            // ТЕСТ: Выключаем подсветку всех слотов
+            foreach (var slot in slots)
             {
-                Collider2D col2d = slot.GetComponent<Collider2D>();
-                Collider col3d = slot.GetComponent<Collider>();
-                Debug.Log($"[CraftWindow] Слот {slot.slotIndex}: Collider2D={(col2d != null ? "есть" : "нет")}, Collider3D={(col3d != null ? "есть" : "нет")}");
+                if (slot != null)
+                {
+                    slot.ResetHighlight();
+                }
             }
         }
     }
