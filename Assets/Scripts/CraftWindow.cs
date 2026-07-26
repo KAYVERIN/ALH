@@ -316,6 +316,11 @@ public class CraftWindow : MonoBehaviour, ICardWindow
                 continue;
             }
 
+            // ============================================================
+            //  УСТАНАВЛИВАЕМ ИНДЕКС СЛОТА!
+            // ============================================================
+            slotFilter.slotIndex = i;
+
             List<CardType> allowedTypes = cardData.GetAllowedTypesForSlot(i);
             slotFilter.Setup(allowedTypes);
 
@@ -328,6 +333,12 @@ public class CraftWindow : MonoBehaviour, ICardWindow
         }
 
         Log($"Создано {slots.Count} слотов");
+
+        if (craftButton != null)
+            craftButton.SetActive(false);
+    }
+
+    Log($"Создано {slots.Count} слотов");
 
         if (craftButton != null)
             craftButton.SetActive(false);
