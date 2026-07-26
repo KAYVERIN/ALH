@@ -1,4 +1,3 @@
-// DragWorldWindow.cs
 using UnityEngine;
 using UnityEngine.EventSystems;
 
