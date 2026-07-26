@@ -6,6 +6,10 @@ using System.Collections.Generic;
 /// </summary>
 public class CraftSlotFilter : MonoBehaviour
 {
+    [Header("=== НАСТРОЙКИ СЛОТА ===")]
+    [Tooltip("Индекс слота (для идентификации)")]
+    public int slotIndex = 0;
+
     [Header("=== ВИЗУАЛ ===")]
     [Tooltip("Объект подсветки (включается/выключается)")]
     public GameObject highlightObject;
@@ -58,11 +62,17 @@ public class CraftSlotFilter : MonoBehaviour
         }
 
         // Ищем зону для сброса
-        dropZoneCollider = GetComponentInChildren<Collider2D>();
+        dropZoneCollider = GetComponent<Collider2D>();
         if (dropZoneCollider == null)
         {
-            Log("Не найден Collider2D для зоны сброса!");
+            LogWarning("Не найден Collider2D для зоны сброса!");
         }
+    }
+
+    private void LogWarning(string message)
+    {
+        if (enableDebugLogs)
+            Debug.LogWarning($"[CraftSlotFilter] {message}");
     }
 
     /// <summary>
@@ -76,7 +86,7 @@ public class CraftSlotFilter : MonoBehaviour
             allowedTypes.AddRange(types);
         }
 
-        Log($"Слот настроен. Разрешены: {string.Join(", ", allowedTypes)}");
+        Log($"Слот {slotIndex} настроен. Разрешены: {string.Join(", ", allowedTypes)}");
     }
 
     /// <summary>
@@ -116,14 +126,14 @@ public class CraftSlotFilter : MonoBehaviour
         // Перемещаем карту в слот
         card.transform.SetParent(transform);
         card.transform.localPosition = Vector3.zero;
-        card.transform.localScale = Vector3.one * 0.9f; // Чуть меньше для визуала
+        card.transform.localScale = Vector3.one * 0.9f;
 
         // Обновляем визуал
         if (highlightObject != null)
             highlightObject.SetActive(false);
 
         OnCardPlaced?.Invoke(this, card);
-        Log($"Карта {card.cardName} помещена в слот");
+        Log($"Карта {card.cardName} помещена в слот {slotIndex}");
         return true;
     }
 
@@ -146,7 +156,7 @@ public class CraftSlotFilter : MonoBehaviour
         }
 
         OnCardRemoved?.Invoke(this);
-        Log($"Карта {removedCard.cardName} удалена из слота");
+        Log($"Карта {removedCard.cardName} удалена из слота {slotIndex}");
         return removedCard;
     }
 
@@ -165,7 +175,11 @@ public class CraftSlotFilter : MonoBehaviour
     /// </summary>
     public void ShowAvailability(CardObject card)
     {
-        if (highlightObject == null || highlightRenderer == null) return;
+        if (highlightObject == null || highlightRenderer == null)
+        {
+            Debug.LogWarning($"[CraftSlotFilter] Слот {slotIndex}: highlightObject или highlightRenderer == null!");
+            return;
+        }
 
         if (isOccupied)
         {
@@ -175,16 +189,19 @@ public class CraftSlotFilter : MonoBehaviour
 
         if (card != null && CanPlaceCard(card))
         {
+            Debug.Log($"[CraftSlotFilter] Слот {slotIndex} ДОСТУПЕН для {card.cardName}");
             highlightObject.SetActive(true);
             highlightRenderer.color = availableColor;
         }
         else if (card != null)
         {
+            Debug.Log($"[CraftSlotFilter] Слот {slotIndex} НЕДОСТУПЕН для {card.cardName}");
             highlightObject.SetActive(true);
             highlightRenderer.color = unavailableColor;
         }
         else
         {
+            Debug.Log($"[CraftSlotFilter] Слот {slotIndex} - нет карты");
             highlightObject.SetActive(false);
         }
     }
