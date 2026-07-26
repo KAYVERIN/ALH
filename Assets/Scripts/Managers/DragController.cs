@@ -364,4 +364,20 @@ public class DragController : MonoBehaviour
 
     public bool IsDragging => isDragging;
     public CardObject DraggedCard => draggedCard;
+
+    /// <summary>
+    /// Сбрасывает состояние перетаскивания (для внешнего использования)
+    /// </summary>
+    public void ResetDragState()
+    {
+        if (enableDebugLogs)
+            Debug.Log("[DragController] Сброс состояния перетаскивания");
+
+        isDragging = false;
+        draggedCard = null;
+        isMouseDownOnCard = false;
+        clickedCard = null;
+        hasExceededThreshold = false;
+        GridManager.Instance?.HideHighlight();
+    }
 }

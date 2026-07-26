@@ -3,7 +3,6 @@ using System.Collections.Generic;
 
 /// <summary>
 /// Окно крафта - открывается при клике на карту с взаимодействиями
-/// Использует Grid Layout Group для автоматического расположения слотов
 /// </summary>
 public class CraftWindow : MonoBehaviour, ICardWindow
 {
@@ -27,6 +26,10 @@ public class CraftWindow : MonoBehaviour, ICardWindow
     [Tooltip("Кнопка подтверждения крафта (опционально)")]
     public GameObject craftButton;
 
+    [Header("Позиционирование")]
+    [Tooltip("Высота окна над картой")]
+    public float heightAboveCard = 2f;
+
     [Header("Отладка")]
     public bool enableDebugLogs = true;
 
@@ -35,6 +38,11 @@ public class CraftWindow : MonoBehaviour, ICardWindow
     private CardObject sourceCard;
     private CardData sourceCardData;
     private bool isOpen = false;
+    private CardObject currentDraggedCard = null;
+    private CraftSlotFilter lastHighlightedSlot = null;
+
+    // Статическая ссылка для проверки открытых окон
+    private static CraftWindow currentOpenWindow = null;
 
     // События
     public System.Action<CraftWindow> OnWindowClosed;
@@ -57,12 +65,20 @@ public class CraftWindow : MonoBehaviour, ICardWindow
     }
 
     // ============================================================
+    //  СТАТИЧЕСКИЕ МЕТОДЫ
+    // ============================================================
+
+    public static bool IsAnyOpen()
+    {
+        return currentOpenWindow != null && currentOpenWindow.isOpen;
+    }
+
+    // ============================================================
     //  ЖИЗНЕННЫЙ ЦИКЛ
     // ============================================================
 
     void Awake()
     {
-        // Если контейнер не назначен - ищем
         if (slotContainer == null)
         {
             Transform container = transform.Find("SlotContainer");
@@ -72,14 +88,12 @@ public class CraftWindow : MonoBehaviour, ICardWindow
                 LogWarning("SlotContainer не назначен и не найден!");
         }
 
-        // Ищем компоненты если не назначены
         if (backgroundRenderer == null)
             backgroundRenderer = GetComponentInChildren<SpriteRenderer>();
 
         if (backgroundCollider == null)
             backgroundCollider = GetComponent<BoxCollider2D>();
 
-        // Подписываемся на кнопки
         if (closeButton != null)
         {
             var button = closeButton.GetComponent<UnityEngine.UI.Button>();
@@ -97,8 +111,31 @@ public class CraftWindow : MonoBehaviour, ICardWindow
             }
         }
 
-        // По умолчанию окно скрыто
         gameObject.SetActive(false);
+    }
+
+    void Update()
+    {
+        if (!isOpen) return;
+
+        // Получаем перетаскиваемую карту
+        CardObject draggedCard = GetDraggedCard();
+
+        // Если карта изменилась - обновляем подсветку
+        if (draggedCard != currentDraggedCard)
+        {
+            currentDraggedCard = draggedCard;
+            UpdateAllSlotsHighlight();
+        }
+
+        // Если есть карта - обновляем подсветку под курсором
+        if (currentDraggedCard != null)
+        {
+            UpdateSlotHighlightUnderMouse();
+        }
+
+        // Проверяем сброс карты на слот
+        CheckDropOnSlot();
     }
 
     void OnDestroy()
@@ -118,6 +155,9 @@ public class CraftWindow : MonoBehaviour, ICardWindow
             if (button != null)
                 button.onClick.RemoveListener(ConfirmCraft);
         }
+
+        if (currentOpenWindow == this)
+            currentOpenWindow = null;
     }
 
     // ============================================================
@@ -139,6 +179,12 @@ public class CraftWindow : MonoBehaviour, ICardWindow
         {
             LogWarning("Попытка открыть окно с null картой!");
             return;
+        }
+
+        // Закрываем предыдущее открытое окно
+        if (currentOpenWindow != null && currentOpenWindow != this)
+        {
+            currentOpenWindow.Close();
         }
 
         sourceCard = card;
@@ -164,6 +210,7 @@ public class CraftWindow : MonoBehaviour, ICardWindow
 
         gameObject.SetActive(true);
         isOpen = true;
+        currentOpenWindow = this;
 
         Log($"Открыто окно крафта для {card.cardName}, слотов: {slotCount}");
     }
@@ -176,6 +223,9 @@ public class CraftWindow : MonoBehaviour, ICardWindow
         ClearSlots();
         gameObject.SetActive(false);
         isOpen = false;
+
+        if (currentOpenWindow == this)
+            currentOpenWindow = null;
 
         OnWindowClosed?.Invoke(this);
         Log("Окно закрыто");
@@ -201,7 +251,6 @@ public class CraftWindow : MonoBehaviour, ICardWindow
             return;
         }
 
-        // Очищаем контейнер
         foreach (Transform child in slotContainer)
         {
             Destroy(child.gameObject);
@@ -269,11 +318,188 @@ public class CraftWindow : MonoBehaviour, ICardWindow
             if (card != null)
             {
                 slot.RemoveCard();
-
-                // Используем существующий метод из CardLibrary
                 CardLibrary.PlaceCardSmart(card);
             }
         }
+    }
+
+    // ============================================================
+    //  ПОДСВЕТКА И ПРОВЕРКА СБРОСА
+    // ============================================================
+
+    private CardObject GetDraggedCard()
+    {
+        if (DragController.Instance != null && DragController.Instance.IsDragging)
+        {
+            return DragController.Instance.DraggedCard;
+        }
+        return null;
+    }
+
+    private void UpdateAllSlotsHighlight()
+    {
+        foreach (var slot in slots)
+        {
+            if (slot == null) continue;
+
+            if (currentDraggedCard != null)
+            {
+                slot.ShowAvailability(currentDraggedCard);
+            }
+            else
+            {
+                slot.ResetHighlight();
+            }
+        }
+    }
+
+    private void UpdateSlotHighlightUnderMouse()
+    {
+        if (currentDraggedCard == null) return;
+
+        Vector3 mouseWorldPos = GetMouseWorldPosition();
+        CraftSlotFilter slotUnderMouse = GetSlotUnderMouse(mouseWorldPos);
+
+        // Сбрасываем подсветку у предыдущего слота
+        if (lastHighlightedSlot != null && lastHighlightedSlot != slotUnderMouse)
+        {
+            if (!lastHighlightedSlot.IsOccupied())
+            {
+                lastHighlightedSlot.ResetHighlight();
+            }
+        }
+
+        // Подсвечиваем новый слот
+        if (slotUnderMouse != null && !slotUnderMouse.IsOccupied())
+        {
+            slotUnderMouse.ShowAvailability(currentDraggedCard);
+            lastHighlightedSlot = slotUnderMouse;
+        }
+        else
+        {
+            lastHighlightedSlot = null;
+        }
+    }
+
+    private CraftSlotFilter GetSlotUnderMouse(Vector3 mouseWorldPos)
+    {
+        foreach (var slot in slots)
+        {
+            if (slot == null) continue;
+
+            Collider2D collider = slot.GetComponent<Collider2D>();
+            if (collider != null && collider.OverlapPoint(mouseWorldPos))
+            {
+                return slot;
+            }
+        }
+        return null;
+    }
+
+    private void CheckDropOnSlot()
+    {
+        if (currentDraggedCard == null) return;
+        if (!DragController.Instance.IsDragging) return;
+
+        // Проверяем отпускание кнопки мыши
+        if (Input.GetMouseButtonUp(0))
+        {
+            Vector3 mouseWorldPos = GetMouseWorldPosition();
+            CraftSlotFilter targetSlot = GetSlotUnderMouse(mouseWorldPos);
+
+            if (targetSlot != null && !targetSlot.IsOccupied())
+            {
+                if (targetSlot.CanPlaceCard(currentDraggedCard))
+                {
+                    // Забираем карту с поля
+                    if (currentDraggedCard.currentCell != null)
+                    {
+                        currentDraggedCard.currentCell.RemoveCard();
+                        currentDraggedCard.currentCell = null;
+                    }
+
+                    // Помещаем в слот
+                    targetSlot.PlaceCard(currentDraggedCard);
+                    currentDraggedCard.isDragging = false;
+                    currentDraggedCard.LowerCardVisuals();
+
+                    // Сбрасываем состояние DragController
+                    DragController.Instance.ResetDragState();
+
+                    Log($"Карта {currentDraggedCard.cardName} помещена в слот");
+
+                    // Обновляем подсветку
+                    UpdateAllSlotsHighlight();
+                    currentDraggedCard = null;
+                    lastHighlightedSlot = null;
+
+                    // Скрываем подсветку на поле
+                    GridManager.Instance?.HideHighlight();
+                }
+            }
+        }
+    }
+
+    private Vector3 GetMouseWorldPosition()
+    {
+        Camera cam = Camera.main;
+        if (cam == null) return Vector3.zero;
+
+        Vector3 mousePos = Input.mousePosition;
+
+        if (cam.orthographic)
+        {
+            Vector3 world = cam.ScreenToWorldPoint(new Vector3(mousePos.x, mousePos.y, 0));
+            world.z = 0;
+            return world;
+        }
+        else
+        {
+            Plane plane = new Plane(Vector3.forward, Vector3.zero);
+            Ray ray = cam.ScreenPointToRay(mousePos);
+            float distance;
+            if (plane.Raycast(ray, out distance))
+            {
+                return ray.GetPoint(distance);
+            }
+            return cam.ScreenToWorldPoint(new Vector3(mousePos.x, mousePos.y, 10f));
+        }
+    }
+
+    // ============================================================
+    //  ПОЗИЦИОНИРОВАНИЕ
+    // ============================================================
+
+    private void PositionAboveCard(CardObject card)
+    {
+        if (card == null) return;
+
+        Vector3 cardPos;
+
+        if (card.currentCell != null)
+        {
+            cardPos = card.currentCell.worldPosition;
+        }
+        else
+        {
+            cardPos = card.transform.position;
+        }
+
+        cardPos.z = 0;
+        cardPos.y += heightAboveCard;
+
+        // Используем DragWorldWindow если есть
+        DragWorldWindow dragWindow = GetComponent<DragWorldWindow>();
+        if (dragWindow != null)
+        {
+            dragWindow.SetPosition(cardPos);
+        }
+        else
+        {
+            transform.position = cardPos;
+        }
+
+        Log($"Окно позиционировано над картой: {cardPos}");
     }
 
     // ============================================================
@@ -332,7 +558,7 @@ public class CraftWindow : MonoBehaviour, ICardWindow
             if (card == null)
             {
                 allSlotsFilled = false;
-                LogWarning($"Слот {slots.IndexOf(slot)} пуст!");
+                LogWarning($"Слот пуст!");
                 break;
             }
             placedCards.Add(card);
@@ -352,16 +578,8 @@ public class CraftWindow : MonoBehaviour, ICardWindow
     }
 
     // ============================================================
-    //  ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ
+    //  ПУБЛИЧНЫЕ МЕТОДЫ
     // ============================================================
-
-    private void PositionAboveCard(CardObject card)
-    {
-        if (card == null) return;
-
-        Vector3 cardPos = card.transform.position;
-        transform.position = new Vector3(cardPos.x, cardPos.y + 1.5f, cardPos.z);
-    }
 
     public bool IsOpen() => isOpen;
     public CardObject GetSourceCard() => sourceCard;
