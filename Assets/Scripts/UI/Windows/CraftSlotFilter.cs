@@ -61,7 +61,7 @@ public class CraftSlotFilter : MonoBehaviour
         dropZoneCollider = GetComponentInChildren<Collider2D>();
         if (dropZoneCollider == null)
         {
-            LogWarning("Не найден Collider2D для зоны сброса!");
+            Log("Не найден Collider2D для зоны сброса!");
         }
     }
 
