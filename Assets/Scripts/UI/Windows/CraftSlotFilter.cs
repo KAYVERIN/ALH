@@ -116,6 +116,9 @@ public class CraftSlotFilter : MonoBehaviour
     /// <summary>
     /// Помещает карту в слот
     /// </summary>
+    /// <summary>
+    /// Помещает карту в слот
+    /// </summary>
     public bool PlaceCard(CardObject card)
     {
         if (!CanPlaceCard(card)) return false;
@@ -123,8 +126,13 @@ public class CraftSlotFilter : MonoBehaviour
         isOccupied = true;
         placedCard = card;
 
-        // Перемещаем карту в слот
+        // Сохраняем родителя
+        Transform originalParent = card.transform.parent;
+
+        // Устанавливаем родителя в слот
         card.transform.SetParent(transform);
+
+        // Позиционируем карту в центр слота (локально - 0)
         card.transform.localPosition = Vector3.zero;
         card.transform.localScale = Vector3.one * 0.9f;
 
