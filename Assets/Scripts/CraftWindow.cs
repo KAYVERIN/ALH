@@ -80,6 +80,7 @@ public class CraftWindow : MonoBehaviour, ICardWindow
     /// Определяет, над каким слотом находится мышь
     /// </summary>
 
+
     void Awake()
     {
         if (slotContainer == null)
@@ -414,6 +415,7 @@ public class CraftWindow : MonoBehaviour, ICardWindow
         {
             if (slot == null) continue;
 
+            // Проверяем через Collider2D
             Collider2D collider = slot.GetComponent<Collider2D>();
             if (collider != null && collider.OverlapPoint(mouseWorldPos))
             {
