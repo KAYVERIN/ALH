@@ -110,38 +110,59 @@ public class CardData : ScriptableObject
     public float archetypeDotSize = 0.15f;
     public Vector2 archetypeOffset = new Vector2(1.2f, 0f);
 
+    // ============================================================
+    //  СТРУКТУРА ДЛЯ ВЗАИМОДЕЙСТВИЙ
+    // ============================================================
+
     [System.Serializable]
     public class CraftInteraction
     {
-        [Header("=== НАСТРОЙКИ ВЗАИМОДЕЙСТВИЯ ===")]
-        [Tooltip("Типы карт, которые можно поместить в ячейки")]
+        [Tooltip("Типы карт, которые можно поместить в эту ячейку")]
         public List<CardType> allowedCardTypes = new List<CardType>();
     }
 
     [Header("=== СИСТЕМА КРАФТА ===")]
-    [Tooltip("Список взаимодействий для этой карты")]
+    [Tooltip("Список взаимодействий для этой карты (каждая запись = 1 слот)")]
     public List<CraftInteraction> craftInteractions = new List<CraftInteraction>();
 
-    // метод для проверки, может ли карта открыть крафт-окно:
+    // ============================================================
+    //  МЕТОДЫ ДЛЯ РАБОТЫ С КРАФТОМ
+    // ============================================================
+
+    /// <summary>
+    /// Проверяет, есть ли у карты взаимодействия для крафта
+    /// </summary>
     public bool HasCraftInteractions()
     {
-        // здесь надо проверить сколько записей в листе
-        return true;
+        return craftInteractions != null && craftInteractions.Count > 0;
     }
 
-    // Добавьте метод для получения взаимодействия по типу карты:
-    public CraftInteraction GetInteractionForCardType(CardType cardType)
+    /// <summary>
+    /// Получает количество слотов (равно количеству записей в списке)
+    /// </summary>
+    public int GetSlotCount()
     {
-        if (craftInteractions == null) return null;
+        return craftInteractions != null ? craftInteractions.Count : 0;
+    }
 
-        foreach (var interaction in craftInteractions)
-        {
-            if (interaction.allowedCardTypes.Contains(cardType))
-            {
-                return interaction;
-            }
-        }
-        return null;
+    /// <summary>
+    /// Получает взаимодействие для конкретного слота по индексу
+    /// </summary>
+    public CraftInteraction GetInteraction(int slotIndex)
+    {
+        if (craftInteractions == null || slotIndex < 0 || slotIndex >= craftInteractions.Count)
+            return null;
+
+        return craftInteractions[slotIndex];
+    }
+
+    /// <summary>
+    /// Получает разрешённые типы для конкретного слота
+    /// </summary>
+    public List<CardType> GetAllowedTypesForSlot(int slotIndex)
+    {
+        var interaction = GetInteraction(slotIndex);
+        return interaction != null ? interaction.allowedCardTypes : new List<CardType>();
     }
 
     /// <summary>
