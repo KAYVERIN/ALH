@@ -114,14 +114,8 @@ public class CardData : ScriptableObject
     public class CraftInteraction
     {
         [Header("=== НАСТРОЙКИ ВЗАИМОДЕЙСТВИЯ ===")]
-        [Tooltip("Название взаимодействия (например: 'Переработка ресурсов')")]
-        public string interactionName = "Новое взаимодействие";
-
         [Tooltip("Типы карт, которые можно поместить в ячейки")]
         public List<CardType> allowedCardTypes = new List<CardType>();
-
-        [Tooltip("Количество слотов, которые откроются для этих типов карт")]
-        public int slotCount = 0;
     }
 
     [Header("=== СИСТЕМА КРАФТА ===")]
@@ -131,8 +125,8 @@ public class CardData : ScriptableObject
     // метод для проверки, может ли карта открыть крафт-окно:
     public bool HasCraftInteractions()
     {
-        return craftInteractions != null && craftInteractions.Count > 0 &&
-               craftInteractions.Exists(i => i.slotCount > 0 && i.allowedCardTypes.Count > 0);
+        // здесь надо проверить сколько записей в листе
+        return true;
     }
 
     // Добавьте метод для получения взаимодействия по типу карты:
@@ -149,6 +143,7 @@ public class CardData : ScriptableObject
         }
         return null;
     }
+
     /// <summary>
     /// Проверяет, есть ли у карты архетип
     /// </summary>
