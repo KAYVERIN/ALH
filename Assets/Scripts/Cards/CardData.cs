@@ -121,10 +121,7 @@ public class CardData : ScriptableObject
         public List<CardType> allowedCardTypes = new List<CardType>();
 
         [Tooltip("Количество слотов, которые откроются для этих типов карт")]
-        public int slotCount = 1;
-
-        [Tooltip("Результат крафта (опционально)")]
-        public CardData resultCard;
+        public int slotCount = 0;
     }
 
     [Header("=== СИСТЕМА КРАФТА ===")]
