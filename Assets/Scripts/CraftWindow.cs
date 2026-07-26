@@ -429,17 +429,38 @@ public class CraftWindow : MonoBehaviour, ICardWindow
 
     private CraftSlotFilter GetSlotUnderMouse(Vector3 mouseWorldPos)
     {
-        foreach (var slot in slots)
-        {
-            if (slot == null) continue;
+        // Получаем все коллайдеры в точке
+        Collider2D[] hits = Physics2D.OverlapPointAll(mouseWorldPos);
 
-            // Проверяем через Collider2D
-            Collider2D collider = slot.GetComponent<Collider2D>();
-            if (collider != null && collider.OverlapPoint(mouseWorldPos))
+        Debug.Log($"[CraftWindow] OverlapPointAll нашёл {hits.Length} коллайдеров");
+
+        foreach (var hit in hits)
+        {
+            // Пропускаем карты
+            CardObject card = hit.GetComponent<CardObject>();
+            if (card != null)
             {
+                Debug.Log($"[CraftWindow] Пропускаем карту: {card.cardName}");
+                continue;
+            }
+
+            // Проверяем, является ли объект слотом
+            CraftSlotFilter slot = hit.GetComponent<CraftSlotFilter>();
+            if (slot != null)
+            {
+                Debug.Log($"[CraftWindow] Найден слот {slot.slotIndex}");
+                return slot;
+            }
+
+            // Проверяем на родителе
+            slot = hit.GetComponentInParent<CraftSlotFilter>();
+            if (slot != null)
+            {
+                Debug.Log($"[CraftWindow] Найден слот {slot.slotIndex} (на родителе)");
                 return slot;
             }
         }
+
         return null;
     }
 
