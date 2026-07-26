@@ -76,6 +76,9 @@ public class CraftWindow : MonoBehaviour, ICardWindow
     // ============================================================
     //  ЖИЗНЕННЫЙ ЦИКЛ
     // ============================================================
+    /// <summary>
+    /// Определяет, над каким слотом находится мышь
+    /// </summary>
 
     void Awake()
     {
@@ -118,33 +121,46 @@ public class CraftWindow : MonoBehaviour, ICardWindow
     {
         if (!isOpen) return;
 
-        // ТЕСТ: Проверяем, что мы получаем перетаскиваемую карту
+        // Получаем перетаскиваемую карту
+        CardObject draggedCard = null;
         if (DragController.Instance != null && DragController.Instance.IsDragging)
         {
-            CardObject draggedCard = DragController.Instance.DraggedCard;
-            if (draggedCard != null)
-            {
-                Debug.Log($"[CraftWindow] Перетаскивается: {draggedCard.cardName}");
+            draggedCard = DragController.Instance.DraggedCard;
+        }
 
-                // ТЕСТ: Включаем подсветку всех слотов
-                foreach (var slot in slots)
+        if (draggedCard != null)
+        {
+            // Получаем позицию мыши в мире
+            Vector3 mouseWorldPos = GetMouseWorldPosition();
+
+            // Определяем, над каким слотом мышь
+            CraftSlotFilter slotUnderMouse = GetSlotUnderMouse(mouseWorldPos);
+
+            // Сбрасываем подсветку у всех слотов
+            foreach (var slot in slots)
+            {
+                if (slot == null) continue;
+
+                if (slot == slotUnderMouse && !slot.IsOccupied())
                 {
-                    if (slot != null && !slot.IsOccupied())
-                    {
-                        slot.ShowAvailability(draggedCard);
-                    }
+                    // Подсвечиваем слот под мышью
+                    slot.ShowAvailability(draggedCard);
+                    Debug.Log($"[CraftWindow] Мышь над слотом {slot.slotIndex}");
+                }
+                else if (!slot.IsOccupied())
+                {
+                    // Сбрасываем подсветку у остальных слотов
+                    slot.ResetHighlight();
                 }
             }
         }
         else
         {
-            // ТЕСТ: Выключаем подсветку всех слотов
+            // Нет карты - сбрасываем подсветку
             foreach (var slot in slots)
             {
                 if (slot != null)
-                {
                     slot.ResetHighlight();
-                }
             }
         }
     }
