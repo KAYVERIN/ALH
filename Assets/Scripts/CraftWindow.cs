@@ -429,31 +429,34 @@ public class CraftWindow : MonoBehaviour, ICardWindow
 
     private CraftSlotFilter GetSlotUnderMouse(Vector3 mouseWorldPos)
     {
-        // Получаем все коллайдеры в точке
-        Collider2D[] hits = Physics2D.OverlapPointAll(mouseWorldPos);
-
-        Debug.Log($"[CraftWindow] OverlapPointAll нашёл {hits.Length} коллайдеров");
-
-        foreach (var hit in hits)
+        // Получаем индекс слоя Slots
+        int slotLayer = LayerMask.NameToLayer("Slots");
+        if (slotLayer == -1)
         {
-            // Пропускаем карты
-            CardObject card = hit.GetComponent<CardObject>();
-            if (card != null)
-            {
-                Debug.Log($"[CraftWindow] Пропускаем карту: {card.cardName}");
-                continue;
-            }
+            Debug.LogError("[CraftWindow] Слой 'Slots' не найден!");
+            return null;
+        }
 
-            // Проверяем, является ли объект слотом
-            CraftSlotFilter slot = hit.GetComponent<CraftSlotFilter>();
+        // Создаём маску только для слоя Slots
+        int layerMask = 1 << slotLayer;
+
+        // 2D Raycast в точку (Vector2.zero - направление не важно, дистанция 0)
+        RaycastHit2D hit = Physics2D.Raycast(mouseWorldPos, Vector2.zero, 0f, layerMask);
+
+        if (hit.collider != null)
+        {
+            Debug.Log($"[CraftWindow] Raycast попал в: {hit.collider.gameObject.name}");
+
+            // Ищем компонент на объекте
+            CraftSlotFilter slot = hit.collider.GetComponent<CraftSlotFilter>();
             if (slot != null)
             {
                 Debug.Log($"[CraftWindow] Найден слот {slot.slotIndex}");
                 return slot;
             }
 
-            // Проверяем на родителе
-            slot = hit.GetComponentInParent<CraftSlotFilter>();
+            // Ищем на родителе (если коллайдер на дочернем объекте)
+            slot = hit.collider.GetComponentInParent<CraftSlotFilter>();
             if (slot != null)
             {
                 Debug.Log($"[CraftWindow] Найден слот {slot.slotIndex} (на родителе)");
@@ -461,6 +464,7 @@ public class CraftWindow : MonoBehaviour, ICardWindow
             }
         }
 
+        Debug.Log("[CraftWindow] Слот не найден");
         return null;
     }
 
