@@ -14,6 +14,9 @@ public class CardClickHandler : MonoBehaviour
     [Header("Настройки по умолчанию")]
     [SerializeField] private GameObject defaultWindowPrefab;
 
+    [Header("Настройки окна крафта")]
+    [SerializeField] private GameObject craftWindowPrefab; // Добавляем префаб окна крафта
+
     [Header("Настройки")]
     [SerializeField] private Transform uiParent; // Куда создавать окна
     [SerializeField] private bool enableDebugLogs = true;
@@ -54,7 +57,20 @@ public class CardClickHandler : MonoBehaviour
         if (enableDebugLogs)
             Debug.Log($"[CardClickHandler] Клик по карте: {card.cardName}");
 
-        // Определяем, какое окно открывать
+        // ============================================================
+        //  ПРОВЕРКА НА КРАФТ-ВЗАИМОДЕЙСТВИЯ
+        // ============================================================
+        CardData cardData = card.GetCardData();
+        if (cardData != null && cardData.HasCraftInteractions())
+        {
+            // Открываем окно крафта
+            OpenCraftWindow(card);
+            return;
+        }
+
+        // ============================================================
+        //  СТАНДАРТНОЕ ОКНО (по типу карты или дефолтное)
+        // ============================================================
         GameObject windowPrefab = GetWindowPrefabForCard(card);
 
         if (windowPrefab == null)
@@ -74,7 +90,32 @@ public class CardClickHandler : MonoBehaviour
         }
 
         if (enableDebugLogs)
-            Debug.Log($"[CardClickHandler] Открыто окно для {card.cardName}");
+            Debug.Log($"[CardClickHandler] Открыто стандартное окно для {card.cardName}");
+    }
+
+    /// <summary>
+    /// Открывает окно крафта
+    /// </summary>
+    private void OpenCraftWindow(CardObject card)
+    {
+        if (craftWindowPrefab == null)
+        {
+            Debug.LogWarning($"[CardClickHandler] Префаб окна крафта не назначен!");
+            return;
+        }
+
+        // Создаём окно крафта
+        GameObject window = Instantiate(craftWindowPrefab, uiParent ?? transform);
+
+        // Передаём карту в окно
+        ICardWindow cardWindow = window.GetComponent<ICardWindow>();
+        if (cardWindow != null)
+        {
+            cardWindow.SetCard(card);
+        }
+
+        if (enableDebugLogs)
+            Debug.Log($"[CardClickHandler] Открыто окно крафта для {card.cardName}");
     }
 
     /// <summary>
@@ -82,10 +123,17 @@ public class CardClickHandler : MonoBehaviour
     /// </summary>
     private GameObject GetWindowPrefabForCard(CardObject card)
     {
-       // if (windowPrefabs.TryGetValue(card.cardType, out GameObject prefab))
-       // {
-       //     return prefab;
-       // }
+        CardData cardData = card.GetCardData();
+        if (cardData != null && cardData.Types != null)
+        {
+            foreach (CardType type in cardData.Types)
+            {
+                if (windowPrefabs.TryGetValue(type, out GameObject prefab))
+                {
+                    return prefab;
+                }
+            }
+        }
 
         return defaultWindowPrefab;
     }
