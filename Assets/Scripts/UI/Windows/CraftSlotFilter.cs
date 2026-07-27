@@ -75,6 +75,32 @@ public class CraftSlotFilter : MonoBehaviour
             Debug.LogWarning($"[CraftSlotFilter] {message}");
     }
 
+
+    /// <summary>
+    /// Извлекает карту из слота (для поднятия)
+    /// </summary>
+    public CardObject TakeCard()
+    {
+        if (!isOccupied) return null;
+        if (placedCard == null) return null;
+
+        CardObject card = placedCard;
+        placedCard = null;
+        isOccupied = false;
+
+        // Возвращаем карте нормальный масштаб
+        if (card != null)
+        {
+            card.transform.SetParent(null);
+            card.transform.localScale = card.originalScale;
+        }
+
+        OnCardRemoved?.Invoke(this);
+        Log($"Карта {card.cardName} взята из слота {slotIndex}");
+
+        return card;
+    }
+
     /// <summary>
     /// Настраивает слот с разрешёнными типами
     /// </summary>
