@@ -103,8 +103,10 @@ public class CardVisualController : MonoBehaviour
     /// </summary>
     private void SaveAllData()
     {
-        // Сохраняет оригинальные Sorting Order всех SpriteRenderer внутри VisualContainer
-        allRenderers = visualContainer.GetComponentsInChildren<SpriteRenderer>(true);
+        // ============================================================
+        // 1. ВСЕ SPRITE RENDERERS - от корневого объекта и всех дочерних
+        // ============================================================
+        allRenderers = GetComponentsInChildren<SpriteRenderer>(true);
         originalOrders = new int[allRenderers.Length];
 
         for (int i = 0; i < allRenderers.Length; i++)
@@ -115,23 +117,27 @@ public class CardVisualController : MonoBehaviour
                 Log($"{allRenderers[i].gameObject.name} - originalOrder: {originalOrders[i]}");
             }
         }
-        // Сохраняет данные всех Canvas внутри VisualContainer (кроме основного)
-        // Находим все Canvas в VisualContainer
-        Canvas[] canvases = visualContainer.GetComponentsInChildren<Canvas>(true);
+
+        // ============================================================
+        // 2. ВСЕ CANVAS - от корневого объекта и всех дочерних
+        // ============================================================
+        childCanvases.Clear();
+
+        Canvas[] canvases = GetComponentsInChildren<Canvas>(true);
         foreach (Canvas canvas in canvases)
         {
-            // Пропускаем основной Canvas на VisualContainer
-            if (canvas == containerCanvas) continue;
-            // Сохраняем данные
-            CanvasData data = new CanvasData
+            if (canvas != null)
             {
-                canvas = canvas,
-                originalSortingOrder = canvas.sortingOrder,
-                originalSortingLayer = canvas.sortingLayerName,
-                wasOverriding = canvas.overrideSorting
-            };
-            childCanvases.Add(data);
-            Log($"Сохранён Canvas: {canvas.gameObject.name}, Order={data.originalSortingOrder}, Layer={data.originalSortingLayer}");
+                CanvasData data = new CanvasData
+                {
+                    canvas = canvas,
+                    originalSortingOrder = canvas.sortingOrder,
+                    originalSortingLayer = canvas.sortingLayerName,
+                    wasOverriding = canvas.overrideSorting
+                };
+                childCanvases.Add(data);
+                Log($"Сохранён Canvas: {canvas.gameObject.name}, Order={data.originalSortingOrder}, Layer={data.originalSortingLayer}");
+            }
         }
     }
 
@@ -210,39 +216,32 @@ public class CardVisualController : MonoBehaviour
 
         Log($"Опускаем карту на {offset}");
 
-        // ============================================================
-        // 1. ВСЕ SPRITE RENDERERS - от корневого объекта и всех дочерних
-        // ============================================================
-        SpriteRenderer[] allRenderers = GetComponentsInChildren<SpriteRenderer>(true);
-        foreach (var sr in allRenderers)
+        // 1. Все SpriteRenderer
+        for (int i = 0; i < allRenderers.Length; i++)
         {
-            if (sr != null)
+            if (allRenderers[i] != null)
             {
-                int oldOrder = sr.sortingOrder;
-                sr.sortingOrder -= offset;
-                Log($"{sr.gameObject.name}: {oldOrder} → {sr.sortingOrder}");
+                int oldOrder = allRenderers[i].sortingOrder;
+                allRenderers[i].sortingOrder = originalOrders[i];
+                Log($"{allRenderers[i].gameObject.name}: {oldOrder} → {allRenderers[i].sortingOrder}");
             }
         }
 
-        // ============================================================
-        // 2. ВСЕ CANVAS - от корневого объекта и всех дочерних
-        // ============================================================
-        Canvas[] allCanvases = GetComponentsInChildren<Canvas>(true);
-        foreach (var canvas in allCanvases)
+        // 2. Все Canvas
+        foreach (CanvasData data in childCanvases)
         {
-            if (canvas != null)
+            if (data.canvas != null)
             {
-                int oldOrder = canvas.sortingOrder;
-                canvas.sortingOrder -= offset;
-                Log($"{canvas.gameObject.name}: {oldOrder} → {canvas.sortingOrder}");
+                int oldOrder = data.canvas.sortingOrder;
+                data.canvas.overrideSorting = data.wasOverriding;
+                data.canvas.sortingOrder = data.originalSortingOrder;
+                data.canvas.sortingLayerName = data.originalSortingLayer;
+                Log($"{data.canvas.gameObject.name}: {oldOrder} → {data.canvas.sortingOrder}");
             }
         }
 
         currentOffset = 0;
     }
-
-
-
 
     /// <summary>
     /// Обновляет список спрайтов и Canvas (вызывать после добавления новых слоёв)
