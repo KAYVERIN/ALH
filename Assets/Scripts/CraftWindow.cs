@@ -323,22 +323,33 @@ public class CraftWindow : MonoBehaviour, ICardWindow
             Debug.Log($"[CraftWindow] Клик по карте {card.cardName} в слоте {parentSlot.slotIndex}");
 
             // ============================================================
-            //  ИЗВЛЕКАЕМ КАРТУ ИЗ СЛОТА (RemoveCard САМ ОПУСКАЕТ КАРТУ)
+            //  ИЗВЛЕКАЕМ КАРТУ ИЗ СЛОТА (опускает её на исходные слои)
             // ============================================================
             CardObject takenCard = parentSlot.RemoveCard();
             if (takenCard == null) return;
 
             // ============================================================
-            //  ПОДНИМАЕМ КАРТУ ДЛЯ ПЕРЕТАСКИВАНИЯ
+            //  РУЧНО УСТАНАВЛИВАЕМ СОСТОЯНИЯ ДЛЯ ПЕРЕТАСКИВАНИЯ
+            // ============================================================
+            takenCard.isDragging = true;
+            takenCard.currentCell = null;
+
+            // ============================================================
+            //  ПОДНИМАЕМ КАРТУ ВИЗУАЛЬНО
             // ============================================================
             CardVisualController visualController = takenCard.GetComponent<CardVisualController>();
             if (visualController != null)
             {
-                visualController.LiftCard(); // использует dragSortingOrder
-                Log($"Карта {takenCard.cardName} поднята для перетаскивания");
+                visualController.LiftCard(); // поднимает на dragSortingOrder
+                Debug.Log($"[CraftWindow] Карта {takenCard.cardName} поднята визуально");
             }
 
-            takenCard.PickUp();
+            // ============================================================
+            //  ПЕРЕДАЁМ КАРТУ В DRAGCONTROLLER
+            // ============================================================
+            // Карта поднимается, но DragController её не видит, потому что PickUp() не вызван
+            // Вместо этого имитируем поднятие через событие
+            DragController.Instance.HandleMouseDown(takenCard);
 
             ResetAllSlotsHighlight();
 
