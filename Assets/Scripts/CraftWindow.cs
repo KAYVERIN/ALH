@@ -210,24 +210,9 @@ public class CraftWindow : MonoBehaviour, ICardWindow
 
     private void OnCardDroppedHandler(CardObject card)
     {
-        // Проверяем, что окно открыто
-        if (!isOpen)
-        {
-            Debug.Log("[CraftWindow] OnCardDroppedHandler: окно закрыто");
-            return;
-        }
-
-        if (card == null)
-        {
-            Debug.Log("[CraftWindow] OnCardDroppedHandler: card == null");
-            return;
-        }
-
-        if (isProcessingDrop)
-        {
-            Debug.Log("[CraftWindow] OnCardDroppedHandler: уже обрабатываем сброс");
-            return;
-        }
+        if (!isOpen) return;
+        if (card == null) return;
+        if (isProcessingDrop) return;
 
         isProcessingDrop = true;
 
@@ -249,19 +234,62 @@ public class CraftWindow : MonoBehaviour, ICardWindow
 
             if (targetSlot == null)
             {
-                Debug.Log("[CraftWindow] OnCardDroppedHandler: нет слота под мышью");
+                Debug.Log("[CraftWindow] OnCardDroppedHandler: нет слота под мышью, возвращаем карту на поле");
+
+                // ============================================================
+                //  ВОЗВРАЩАЕМ КАРТУ НА ПОЛЕ
+                // ============================================================
+                CardLibrary.PlaceCardSmart(card);
+
+                // Сбрасываем состояние
+                card.isDragging = false;
+                card.LowerCardVisuals();
+
+                currentDraggedCard = null;
+                lastHighlightedSlot = null;
+
+                GridManager.Instance?.HideHighlight();
+                ResetAllSlotsHighlight();
                 return;
             }
 
             if (targetSlot.IsOccupied())
             {
-                Debug.Log($"[CraftWindow] OnCardDroppedHandler: слот {targetSlot.slotIndex} занят");
+                Debug.Log($"[CraftWindow] OnCardDroppedHandler: слот {targetSlot.slotIndex} занят, возвращаем карту на поле");
+
+                // ============================================================
+                //  ВОЗВРАЩАЕМ КАРТУ НА ПОЛЕ
+                // ============================================================
+                CardLibrary.PlaceCardSmart(card);
+
+                card.isDragging = false;
+                card.LowerCardVisuals();
+
+                currentDraggedCard = null;
+                lastHighlightedSlot = null;
+
+                GridManager.Instance?.HideHighlight();
+                ResetAllSlotsHighlight();
                 return;
             }
 
             if (!targetSlot.CanPlaceCard(card))
             {
-                Debug.Log($"[CraftWindow] OnCardDroppedHandler: слот {targetSlot.slotIndex} НЕ подходит для {card.cardName}");
+                Debug.Log($"[CraftWindow] OnCardDroppedHandler: слот {targetSlot.slotIndex} НЕ подходит для {card.cardName}, возвращаем карту на поле");
+
+                // ============================================================
+                //  ВОЗВРАЩАЕМ КАРТУ НА ПОЛЕ
+                // ============================================================
+                CardLibrary.PlaceCardSmart(card);
+
+                card.isDragging = false;
+                card.LowerCardVisuals();
+
+                currentDraggedCard = null;
+                lastHighlightedSlot = null;
+
+                GridManager.Instance?.HideHighlight();
+                ResetAllSlotsHighlight();
                 return;
             }
 
@@ -287,8 +315,6 @@ public class CraftWindow : MonoBehaviour, ICardWindow
 
             GridManager.Instance?.HideHighlight();
             ResetAllSlotsHighlight();
-
-            // Проверяем, все ли слоты заполнены (вызовется через OnSlotCardPlaced)
         }
         catch (System.Exception e)
         {
