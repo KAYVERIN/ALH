@@ -142,7 +142,7 @@ public class CraftSlotFilter : MonoBehaviour
             CardVisualController visualController = card.GetComponent<CardVisualController>();
             if (visualController != null)
             {
-                visualController.LowerCard(slotSortingOffset);
+                //visualController.LowerCard(slotSortingOffset);
                 Log($"Карта {card.cardName} опущена на {slotSortingOffset}");
             }
 
