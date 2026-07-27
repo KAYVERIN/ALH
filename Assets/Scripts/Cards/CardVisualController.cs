@@ -19,6 +19,7 @@ public class CardVisualController : MonoBehaviour
     private SpriteRenderer[] allRenderers;
     private int[] originalOrders;
     private bool isDragging = false;
+    private int currentOffset = 0;
 
     // Ссылка на VisualContainer
     private GameObject visualContainer;
@@ -314,6 +315,165 @@ public class CardVisualController : MonoBehaviour
             }
         }
     }
+
+
+    // ============================================================
+    //  УНИВЕРСАЛЬНЫЕ МЕТОДЫ УПРАВЛЕНИЯ СОРТИРОВКОЙ
+    // ============================================================
+
+    /// <summary>
+    /// Поднимает все визуальные компоненты карты на указанное смещение
+    /// </summary>
+    /// <param name="offset">Величина смещения Sorting Order</param>
+    public void LiftCard(int offset)
+    {
+        if (offset == 0) return;
+
+        Log($"Поднимаем карту на {offset}");
+
+        // ============================================================
+        // 1. CANVAS НА VISUALCONTAINER
+        // ============================================================
+        if (containerCanvas != null)
+        {
+            containerCanvas.sortingOrder = baseSortingOrder + offset;
+            Log($"VisualContainer Canvas: {baseSortingOrder} → {baseSortingOrder + offset}");
+        }
+
+        // ============================================================
+        // 2. ВСЕ SPRITE RENDERERS ВНУТРИ VISUALCONTAINER
+        // ============================================================
+        if (allRenderers != null && originalOrders != null)
+        {
+            for (int i = 0; i < allRenderers.Length && i < originalOrders.Length; i++)
+            {
+                if (allRenderers[i] != null)
+                {
+                    int newOrder = originalOrders[i] + offset;
+                    allRenderers[i].sortingOrder = newOrder;
+                    Log($"{allRenderers[i].gameObject.name}: {originalOrders[i]} → {newOrder}");
+                }
+            }
+        }
+
+        // ============================================================
+        // 3. ВСЕ CANVAS ВНУТРИ VISUALCONTAINER (кроме основного)
+        // ============================================================
+        foreach (CanvasData data in childCanvases)
+        {
+            if (data.canvas != null)
+            {
+                data.canvas.overrideSorting = true;
+                int newOrder = data.originalSortingOrder + offset;
+                data.canvas.sortingOrder = newOrder;
+                Log($"Canvas {data.canvas.gameObject.name}: {data.originalSortingOrder} → {newOrder}");
+            }
+        }
+
+        // ============================================================
+        // 4. РАМКА КАРТЫ
+        // ============================================================
+        if (cardFrame != null)
+        {
+            cardFrame.sortingOrder = originalFrameOrder + offset;
+            Log($"Рамка: {originalFrameOrder} → {originalFrameOrder + offset}");
+        }
+
+        // ============================================================
+        // 5. СЧЁТЧИК СТОПКИ
+        // ============================================================
+        Transform counter = transform.Find("StackCounter");
+        if (counter != null)
+        {
+            Canvas counterCanvas = counter.GetComponent<Canvas>();
+            if (counterCanvas != null)
+            {
+                counterCanvas.overrideSorting = true;
+                counterCanvas.sortingOrder = counterSortingOrder + offset;
+                Log($"Счётчик: {counterSortingOrder} → {counterSortingOrder + offset}");
+            }
+        }
+
+        // Запоминаем текущее смещение
+        currentOffset = offset;
+    }
+
+    /// <summary>
+    /// Опускает все визуальные компоненты карты на указанное смещение
+    /// </summary>
+    /// <param name="offset">Величина смещения Sorting Order (обычно то же, что и при поднятии)</param>
+    public void LowerCard(int offset)
+    {
+        if (offset == 0) return;
+
+        Log($"Опускаем карту на {offset}");
+
+        // ============================================================
+        // 1. CANVAS НА VISUALCONTAINER
+        // ============================================================
+        if (containerCanvas != null)
+        {
+            containerCanvas.sortingOrder = baseSortingOrder;
+            Log($"VisualContainer Canvas: {baseSortingOrder + offset} → {baseSortingOrder}");
+        }
+
+        // ============================================================
+        // 2. ВСЕ SPRITE RENDERERS ВНУТРИ VISUALCONTAINER
+        // ============================================================
+        if (allRenderers != null && originalOrders != null)
+        {
+            for (int i = 0; i < allRenderers.Length && i < originalOrders.Length; i++)
+            {
+                if (allRenderers[i] != null)
+                {
+                    allRenderers[i].sortingOrder = originalOrders[i];
+                    Log($"{allRenderers[i].gameObject.name}: {originalOrders[i] + offset} → {originalOrders[i]}");
+                }
+            }
+        }
+
+        // ============================================================
+        // 3. ВСЕ CANVAS ВНУТРИ VISUALCONTAINER (кроме основного)
+        // ============================================================
+        foreach (CanvasData data in childCanvases)
+        {
+            if (data.canvas != null)
+            {
+                data.canvas.overrideSorting = data.wasOverriding;
+                data.canvas.sortingOrder = data.originalSortingOrder;
+                data.canvas.sortingLayerName = data.originalSortingLayer;
+                Log($"Canvas {data.canvas.gameObject.name}: {data.originalSortingOrder + offset} → {data.originalSortingOrder}");
+            }
+        }
+
+        // ============================================================
+        // 4. РАМКА КАРТЫ
+        // ============================================================
+        if (cardFrame != null)
+        {
+            cardFrame.sortingOrder = originalFrameOrder;
+            Log($"Рамка: {originalFrameOrder + offset} → {originalFrameOrder}");
+        }
+
+        // ============================================================
+        // 5. СЧЁТЧИК СТОПКИ
+        // ============================================================
+        Transform counter = transform.Find("StackCounter");
+        if (counter != null)
+        {
+            Canvas counterCanvas = counter.GetComponent<Canvas>();
+            if (counterCanvas != null)
+            {
+                counterCanvas.overrideSorting = true;
+                counterCanvas.sortingOrder = counterSortingOrder;
+                Log($"Счётчик: {counterSortingOrder + offset} → {counterSortingOrder}");
+            }
+        }
+
+        currentOffset = 0;
+        isDragging = false;
+    }
+
 
     // ============================================================
     //  ОБНОВЛЕНИЕ ДАННЫХ
