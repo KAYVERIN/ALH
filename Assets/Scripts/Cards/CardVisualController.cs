@@ -201,7 +201,7 @@ public class CardVisualController : MonoBehaviour
     }
 
     /// <summary>
-    /// Опускает все визуальные компоненты карты на указанное смещение
+    /// Опускает все визуальные компоненты карты на указанное смещение. устаревший метод, будет удалён. В новых скриптах не использовать.
     /// </summary>
     /// <param name="offset">Величина смещения Sorting Order (обычно то же, что и при поднятии)</param>
     public void LowerCard(int offset)
