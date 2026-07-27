@@ -41,6 +41,7 @@ public class CraftWindow : MonoBehaviour, ICardWindow
     private CardObject currentDraggedCard = null;
     private CraftSlotFilter lastHighlightedSlot = null;
     private bool isProcessingDrop = false;
+    private bool isProcessingCardClick = false;
 
     // Статическая ссылка для проверки открытых окон
     private static CraftWindow currentOpenWindow = null;
@@ -126,6 +127,7 @@ public class CraftWindow : MonoBehaviour, ICardWindow
         gameObject.SetActive(false);
         // Подписываемся на событие сброса карты
         DragController.OnCardDropped += OnCardDroppedHandler;
+        CardObject.OnCardClicked += OnCardClickedHandler;
     }
 
     void Update()
@@ -206,6 +208,7 @@ public class CraftWindow : MonoBehaviour, ICardWindow
         if (currentOpenWindow == this)
             currentOpenWindow = null;
         DragController.OnCardDropped -= OnCardDroppedHandler;
+        CardObject.OnCardClicked -= OnCardClickedHandler;
     }
 
     private void OnCardDroppedHandler(CardObject card)
@@ -323,6 +326,56 @@ public class CraftWindow : MonoBehaviour, ICardWindow
         finally
         {
             isProcessingDrop = false;
+        }
+    }
+
+    private void OnCardClickedHandler(CardObject card)
+    {
+        if (card == null) return;
+        if (!isOpen) return;
+        if (isProcessingCardClick) return;
+
+        // Проверяем, находится ли карта в слоте
+        CraftSlotFilter parentSlot = null;
+        foreach (var slot in slots)
+        {
+            if (slot != null && slot.GetPlacedCard() == card)
+            {
+                parentSlot = slot;
+                break;
+            }
+        }
+
+        if (parentSlot == null) return;
+
+        isProcessingCardClick = true;
+
+        try
+        {
+            Debug.Log($"[CraftWindow] Клик по карте {card.cardName} в слоте {parentSlot.slotIndex}");
+
+            // Извлекаем карту из слота
+            CardObject takenCard = parentSlot.TakeCard();
+            if (takenCard == null) return;
+
+            // Поднимаем карту
+            takenCard.PickUp();
+
+            // Сбрасываем подсветку
+            ResetAllSlotsHighlight();
+
+            // Скрываем кнопку крафта
+            if (craftButton != null)
+                craftButton.SetActive(false);
+
+            // Обновляем currentDraggedCard
+            currentDraggedCard = takenCard;
+
+            Log($"Карта {card.cardName} взята из слота {parentSlot.slotIndex} для перетаскивания");
+        }
+        finally
+        {
+            isProcessingCardClick = false;
         }
     }
 
