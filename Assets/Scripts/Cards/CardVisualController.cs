@@ -174,148 +174,28 @@ public class CardVisualController : MonoBehaviour
     // ============================================================
 
     /// <summary>
-    /// Поднимает карту на верхний слой (при перетаскивании)
+    /// Поднимает карту на слой dragSortingOrder (для перетаскивания)
     /// </summary>
     public void LiftCard()
     {
-        if (isDragging) return;
-        isDragging = true;
-
-        Log($"Поднимаем карту на слой {dragSortingOrder}");
-
-        // Поднимаем Canvas на VisualContainer
-        if (containerCanvas != null)
-        {
-            containerCanvas.sortingOrder = dragSortingOrder;
-            Log($"VisualContainer Canvas поднят до {dragSortingOrder}");
-        }
-
-        // ============================================================
-        //  ПОДНИМАЕМ ВСЕ SPRITERENDERER ВНУТРИ VISUALCONTAINER
-        // ============================================================
-        if (allRenderers != null && originalOrders != null)
-        {
-            for (int i = 0; i < allRenderers.Length && i < originalOrders.Length; i++)
-            {
-                if (allRenderers[i] != null)
-                {
-                    int newOrder = originalOrders[i] + dragSortingOrder;
-                    allRenderers[i].sortingOrder = newOrder;
-                    Log($"{allRenderers[i].gameObject.name}: {originalOrders[i]} → {newOrder}");
-                }
-            }
-        }
-
-        // ============================================================
-        //  ПОДНИМАЕМ ВСЕ Canvas внутри VisualContainer (кроме основного)
-        // ============================================================
-        foreach (CanvasData data in childCanvases)
-        {
-            if (data.canvas != null)
-            {
-                data.canvas.overrideSorting = true;
-                int newOrder = data.originalSortingOrder + dragSortingOrder;
-                data.canvas.sortingOrder = newOrder;
-                Log($"Canvas {data.canvas.gameObject.name}: {data.originalSortingOrder} → {newOrder}");
-            }
-        }
-
-        // Поднимаем рамку
-        if (cardFrame != null)
-        {
-            cardFrame.sortingOrder = originalFrameOrder + dragSortingOrder;
-            Log($"Рамка поднята: {originalFrameOrder} → {cardFrame.sortingOrder}");
-        }
-
-        // ============================================================
-        //  ПОДНИМАЕМ СЧЁТЧИК
-        // ============================================================
-        Transform counter = transform.Find("StackCounter");
-        if (counter != null)
-        {
-            Canvas counterCanvas = counter.GetComponent<Canvas>();
-            if (counterCanvas != null)
-            {
-                counterCanvas.overrideSorting = true;
-                counterCanvas.sortingOrder = counterSortingOrder + 10;
-                Log($"Счётчик поднят до {counterSortingOrder + 10}");
-            }
-        }
+        LiftCard(dragSortingOrder);
     }
 
-    // ============================================================
-    //  ОПУСКАНИЕ КАРТЫ
-    // ============================================================
-
     /// <summary>
-    /// Опускает карту на исходный слой (после отпускания)
+    /// Опускает карту на исходный слой
     /// </summary>
     public void LowerCard()
     {
-        if (!isDragging) return;
-        isDragging = false;
-
-        Log($"Опускаем карту на исходный слой");
-
-        // Восстанавливаем Canvas на VisualContainer
-        if (containerCanvas != null)
+        if (currentOffset != 0)
         {
-            containerCanvas.sortingOrder = baseSortingOrder;
-            Log($"VisualContainer Canvas опущен до {baseSortingOrder}");
+            LowerCard(currentOffset);
         }
-
-        // ============================================================
-        //  ВОССТАНАВЛИВАЕМ ВСЕ SPRITERENDERER ВНУТРИ VISUALCONTAINER
-        // ============================================================
-        if (allRenderers != null && originalOrders != null)
+        else
         {
-            for (int i = 0; i < allRenderers.Length && i < originalOrders.Length; i++)
-            {
-                if (allRenderers[i] != null)
-                {
-                    allRenderers[i].sortingOrder = originalOrders[i];
-                    Log($"{allRenderers[i].gameObject.name}: восстановлен → {originalOrders[i]}");
-                }
-            }
-        }
-
-        // ============================================================
-        //  ВОССТАНАВЛИВАЕМ ВСЕ Canvas внутри VisualContainer (кроме основного)
-        // ============================================================
-        foreach (CanvasData data in childCanvases)
-        {
-            if (data.canvas != null)
-            {
-                data.canvas.overrideSorting = data.wasOverriding;
-                data.canvas.sortingOrder = data.originalSortingOrder;
-                data.canvas.sortingLayerName = data.originalSortingLayer;
-                Log($"Canvas {data.canvas.gameObject.name}: восстановлен → {data.originalSortingOrder}");
-            }
-        }
-
-        // Восстанавливаем рамку
-        if (cardFrame != null)
-        {
-            cardFrame.sortingOrder = originalFrameOrder;
-            Log($"Рамка восстановлена: {originalFrameOrder}");
-        }
-
-        // ============================================================
-        //  ВОССТАНАВЛИВАЕМ СЧЁТЧИК
-        // ============================================================
-        Transform counter = transform.Find("StackCounter");
-        if (counter != null)
-        {
-            Canvas counterCanvas = counter.GetComponent<Canvas>();
-            if (counterCanvas != null)
-            {
-                counterCanvas.overrideSorting = true;
-                counterCanvas.sortingOrder = counterSortingOrder;
-                Log($"Счётчик опущен до {counterSortingOrder}");
-            }
+            // Если нет смещения, просто восстанавливаем через LowerCard(0)
+            LowerCard(0);
         }
     }
-
 
     // ============================================================
     //  УНИВЕРСАЛЬНЫЕ МЕТОДЫ УПРАВЛЕНИЯ СОРТИРОВКОЙ

@@ -104,9 +104,14 @@ public class CraftSlotFilter : MonoBehaviour
         placedCard = card;
 
         // ============================================================
-        //  ПОДНИМАЕМ ВСЕ ВИЗУАЛЬНЫЕ КОМПОНЕНТЫ КАРТЫ
+        //  ПОДНИМАЕМ КАРТУ НА СМЕЩЕНИЕ СЛОТА
         // ============================================================
-        card.AddSortingOffset(slotSortingOffset);
+        CardVisualController visualController = card.GetComponent<CardVisualController>();
+        if (visualController != null)
+        {
+            visualController.LiftCard(slotSortingOffset);
+            Log($"Карта {card.cardName} поднята на {slotSortingOffset}");
+        }
 
         card.transform.SetParent(transform);
         card.transform.localPosition = Vector3.zero;
@@ -116,7 +121,7 @@ public class CraftSlotFilter : MonoBehaviour
             highlightObject.SetActive(false);
 
         OnCardPlaced?.Invoke(this, card);
-        Log($"Карта {card.cardName} помещена в слот {slotIndex} (Sorting Order +{slotSortingOffset})");
+        Log($"Карта {card.cardName} помещена в слот {slotIndex}");
         return true;
     }
 
@@ -132,16 +137,21 @@ public class CraftSlotFilter : MonoBehaviour
         if (card != null)
         {
             // ============================================================
-            //  ВОЗВРАЩАЕМ ОРИГИНАЛЬНЫЙ SORTING ORDER
+            //  ОПУСКАЕМ КАРТУ (ВОЗВРАЩАЕМ ОРИГИНАЛЬНЫЙ SORTING ORDER)
             // ============================================================
-            card.AddSortingOffset(-slotSortingOffset);
+            CardVisualController visualController = card.GetComponent<CardVisualController>();
+            if (visualController != null)
+            {
+                visualController.LowerCard(slotSortingOffset);
+                Log($"Карта {card.cardName} опущена на {slotSortingOffset}");
+            }
 
             card.transform.SetParent(null);
             card.transform.localScale = card.originalScale;
         }
 
         OnCardRemoved?.Invoke(this);
-        Log($"Карта {card.cardName} удалена из слота {slotIndex} (Sorting Order -{slotSortingOffset})");
+        Log($"Карта {card.cardName} удалена из слота {slotIndex}");
         return card;
     }
 
