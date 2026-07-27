@@ -154,7 +154,7 @@ public class CardVisualController : MonoBehaviour
     /// </summary>
     public void LowerCard()
     {
-        LiftCard(-dragSortingOrder);
+        LowerCard(offset);
         isDragging = false;
     }
 
@@ -197,7 +197,72 @@ public class CardVisualController : MonoBehaviour
                 Log($"{canvas.gameObject.name}: {oldOrder} → {canvas.sortingOrder}");
             }
         }
+        currentOffset = offset;
     }
+
+    /// <summary>
+    /// Опускает все визуальные компоненты карты на указанное смещение
+    /// </summary>
+    /// <param name="offset">Величина смещения Sorting Order (обычно то же, что и при поднятии)</param>
+    public void LowerCard(int offset)
+    {
+        if (offset == 0) return;
+
+        Log($"Опускаем карту на {offset}");
+
+        // ============================================================
+        // 1. CANVAS НА VISUALCONTAINER
+        // ============================================================
+        if (containerCanvas != null)
+        {
+            containerCanvas.sortingOrder = containerCanvas.sortingOrder - offset;
+            Log($"VisualContainer Canvas: {containerCanvas.sortingOrder} → {containerCanvas.sortingOrder - offset}");
+        }
+
+        // ============================================================
+        // 2. ВСЕ SPRITE RENDERERS ВНУТРИ VISUALCONTAINER
+        // ============================================================
+        if (allRenderers != null && originalOrders != null)
+        {
+            for (int i = 0; i < allRenderers.Length && i < originalOrders.Length; i++)
+            {
+                if (allRenderers[i] != null)
+                {
+                    allRenderers[i].sortingOrder = originalOrders[i];
+                    Log($"{allRenderers[i].gameObject.name}: {originalOrders[i] + offset} → {originalOrders[i]}");
+                }
+            }
+        }
+
+        // ============================================================
+        // 3. ВСЕ CANVAS ВНУТРИ VISUALCONTAINER (кроме основного)
+        // ============================================================
+        foreach (CanvasData data in childCanvases)
+        {
+            if (data.canvas != null)
+            {
+                data.canvas.overrideSorting = data.wasOverriding;
+                data.canvas.sortingOrder = data.originalSortingOrder;
+                data.canvas.sortingLayerName = data.originalSortingLayer;
+                Log($"Canvas {data.canvas.gameObject.name}: {data.originalSortingOrder + offset} → {data.originalSortingOrder}");
+            }
+        }
+
+        // ============================================================
+        // 4. РАМКА КАРТЫ
+        // ============================================================
+        if (cardFrame != null)
+        {
+            cardFrame.sortingOrder = originalFrameOrder;
+            Log($"Рамка: {originalFrameOrder + offset} → {originalFrameOrder}");
+        }
+
+        currentOffset = 0;
+        
+    }
+
+
+
 
     /// <summary>
     /// Обновляет список спрайтов и Canvas (вызывать после добавления новых слоёв)
