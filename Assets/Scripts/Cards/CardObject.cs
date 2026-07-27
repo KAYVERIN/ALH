@@ -683,7 +683,7 @@ public class CardObject : MonoBehaviour
     {
         if (visualController != null)
         {
-            visualController.LiftCard(0);
+            visualController.LowerCard();
         }
         else
         {
