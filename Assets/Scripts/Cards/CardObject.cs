@@ -167,11 +167,7 @@ public class CardObject : MonoBehaviour
         // 3. CardVisualController (если есть)
         // ============================================================
         CardVisualController visualController = GetComponent<CardVisualController>();
-        if (visualController != null)
-        {
-            // Обновляем счётчик если есть
-            //visualController.SetCounterSortingOrder(visualController.GetCounterSortingOrder() + offset);
-        }
+
     }
 
     /// <summary>
@@ -554,13 +550,6 @@ public class CardObject : MonoBehaviour
         }
     }
 
-    public void UpdateCounterSortingOrder()
-    {
-        if (visualController != null)
-        {
-            visualController.SetCounterSortingOrder(110);
-        }
-    }
 
     // ============================================================
     //  МЕТОДЫ ПЕРЕТАСКИВАНИЯ

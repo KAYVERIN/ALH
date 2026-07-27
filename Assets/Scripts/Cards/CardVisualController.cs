@@ -416,19 +416,5 @@ public class CardVisualController : MonoBehaviour
         return isDragging;
     }
 
-    public void SetCounterSortingOrder(int newOrder)
-    {
-        counterSortingOrder = newOrder;
 
-        Transform counter = transform.Find("StackCounter");
-        if (counter != null)
-        {
-            Canvas counterCanvas = counter.GetComponent<Canvas>();
-            if (counterCanvas != null)
-            {
-                counterCanvas.overrideSorting = true;
-                counterCanvas.sortingOrder = counterSortingOrder;
-            }
-        }
-    }
 }
