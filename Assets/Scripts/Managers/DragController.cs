@@ -254,7 +254,6 @@ public class DragController : MonoBehaviour
 
             if (isDragging && draggedCard != null)
             {
-                Debug.Log("DragController: Release on UI ignored-------------");
                 draggedCard.ReturnToOriginalPosition();
                 isDragging = false;
                 draggedCard = null;
