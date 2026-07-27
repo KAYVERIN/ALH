@@ -77,7 +77,7 @@ public static class DropLogic
 
     private static void PlaceCardInCell(CardObject card, Cell cell)
     {
-        //Debug.Log($"[DropLogic] PlaceCardInCell: карта {card.cardName} → ячейка ({cell.gridX}, {cell.gridY})");
+        Debug.Log($"[DropLogic] PlaceCardInCell: карта {card.cardName} → ячейка ({cell.gridX}, {cell.gridY})");
         //Debug.Log($"[DropLogic] PlaceCardInCell: позиция ячейки world={cell.worldPosition}");
 
         if (card.currentCell != null)
