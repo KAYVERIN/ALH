@@ -114,17 +114,7 @@ public class CardVisualController : MonoBehaviour
     /// </summary>
     private void SaveAllData()
     {
-        SaveOriginalOrders();
-        SaveChildCanvases();
-    }
-
-    /// <summary>
-    /// Сохраняет оригинальные Sorting Order всех SpriteRenderer внутри VisualContainer
-    /// </summary>
-    private void SaveOriginalOrders()
-    {
-        if (visualContainer == null) return;
-
+        // Сохраняет оригинальные Sorting Order всех SpriteRenderer внутри VisualContainer
         allRenderers = visualContainer.GetComponentsInChildren<SpriteRenderer>(true);
         originalOrders = new int[allRenderers.Length];
 
@@ -136,25 +126,13 @@ public class CardVisualController : MonoBehaviour
                 Log($"{allRenderers[i].gameObject.name} - originalOrder: {originalOrders[i]}");
             }
         }
-    }
-
-    /// <summary>
-    /// Сохраняет данные всех Canvas внутри VisualContainer (кроме основного)
-    /// </summary>
-    private void SaveChildCanvases()
-    {
-        if (visualContainer == null) return;
-
-        childCanvases.Clear();
-
+        // Сохраняет данные всех Canvas внутри VisualContainer (кроме основного)
         // Находим все Canvas в VisualContainer
         Canvas[] canvases = visualContainer.GetComponentsInChildren<Canvas>(true);
-
         foreach (Canvas canvas in canvases)
         {
             // Пропускаем основной Canvas на VisualContainer
             if (canvas == containerCanvas) continue;
-
             // Сохраняем данные
             CanvasData data = new CanvasData
             {
@@ -163,11 +141,11 @@ public class CardVisualController : MonoBehaviour
                 originalSortingLayer = canvas.sortingLayerName,
                 wasOverriding = canvas.overrideSorting
             };
-
             childCanvases.Add(data);
             Log($"Сохранён Canvas: {canvas.gameObject.name}, Order={data.originalSortingOrder}, Layer={data.originalSortingLayer}");
         }
     }
+
 
     // ============================================================
     //  ПОДНЯТИЕ КАРТЫ
@@ -186,15 +164,7 @@ public class CardVisualController : MonoBehaviour
     /// </summary>
     public void LowerCard()
     {
-        if (currentOffset != 0)
-        {
-            LowerCard(currentOffset);
-        }
-        else
-        {
-            // Если нет смещения, просто восстанавливаем через LowerCard(0)
-            LowerCard(0);
-        }
+        LowerCard(currentOffset);
     }
 
     // ============================================================
