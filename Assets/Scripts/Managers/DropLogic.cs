@@ -6,7 +6,7 @@ public static class DropLogic
     {
         if (draggedCard == null) return false;
 
-        //Debug.Log($"[DropLogic] ProcessDrop: карта={draggedCard.cardName}, позиция мыши={mouseWorldPos}");
+        Debug.Log($"[DropLogic] ProcessDrop: карта={draggedCard.cardName}, позиция мыши={mouseWorldPos}");
 
         Cell targetCell = GridManager.Instance.GetCellAtWorldPosition(mouseWorldPos);
 
