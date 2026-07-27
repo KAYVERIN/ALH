@@ -10,6 +10,9 @@ public class CardVisualController : MonoBehaviour
     [SerializeField] private int baseSortingOrder = 0;
     [SerializeField] private int dragSortingOrder = 100;
 
+    [Header("VisualContainer")]
+    [SerializeField] private GameObject visualContainer;
+
     [Header("Отладка")]
     [SerializeField] private bool enableDebugLogs = false;
 
@@ -20,8 +23,7 @@ public class CardVisualController : MonoBehaviour
     private bool isDragging = false;
     private int currentOffset = 0;
 
-    // Ссылка на VisualContainer
-    private GameObject visualContainer;
+    
 
     // ============================================================
     //  УПРАВЛЕНИЕ Canvas внутри VisualContainer
@@ -84,6 +86,7 @@ public class CardVisualController : MonoBehaviour
         if (containerCanvas != null)
         {
             containerCanvas.overrideSorting = true;
+
             Log($"Canvas найден на VisualContainer, sortingOrder: {containerCanvas.sortingOrder}");
         }
         else
