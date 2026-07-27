@@ -153,7 +153,7 @@ public class CardVisualController : MonoBehaviour
     /// </summary>
     public void LowerCard()
     {
-        LiftCard(-dragSortingOrder);
+        LiftCard(0);
     }
 
     // ============================================================
