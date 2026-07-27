@@ -9,7 +9,6 @@ public class CardVisualController : MonoBehaviour
     [Header("Настройки слоёв")]
     [SerializeField] private int baseSortingOrder = 0;
     [SerializeField] private int dragSortingOrder = 100;
-    [SerializeField] private int counterSortingOrder = 110;
 
     [Header("Отладка")]
     [SerializeField] private bool enableDebugLogs = false;
@@ -85,7 +84,6 @@ public class CardVisualController : MonoBehaviour
         if (containerCanvas != null)
         {
             containerCanvas.overrideSorting = true;
-            containerCanvas.sortingOrder = baseSortingOrder;
             Log($"Canvas найден на VisualContainer, sortingOrder: {baseSortingOrder}");
         }
         else
@@ -95,11 +93,8 @@ public class CardVisualController : MonoBehaviour
 
         // Находим рамку
         cardFrame = GetComponent<SpriteRenderer>();
-        if (cardFrame != null)
-        {
-            originalFrameOrder = cardFrame.sortingOrder;
-            Log($"Рамка найдена, originalOrder: {originalFrameOrder}");
-        }
+        originalFrameOrder = cardFrame.sortingOrder;
+        Log($"Рамка найдена, originalOrder: {originalFrameOrder}");
 
         // Сохраняем все данные
         SaveAllData();
@@ -229,21 +224,6 @@ public class CardVisualController : MonoBehaviour
             Log($"Рамка: {originalFrameOrder} → {originalFrameOrder + offset}");
         }
 
-        // ============================================================
-        // 5. СЧЁТЧИК СТОПКИ
-        // ============================================================
-        Transform counter = transform.Find("StackCounter");
-        if (counter != null)
-        {
-            Canvas counterCanvas = counter.GetComponent<Canvas>();
-            if (counterCanvas != null)
-            {
-                counterCanvas.overrideSorting = true;
-                counterCanvas.sortingOrder = counterSortingOrder + offset;
-                Log($"Счётчик: {counterSortingOrder} → {counterSortingOrder + offset}");
-            }
-        }
-
         // Запоминаем текущее смещение
         currentOffset = offset;
     }
@@ -303,21 +283,6 @@ public class CardVisualController : MonoBehaviour
         {
             cardFrame.sortingOrder = originalFrameOrder;
             Log($"Рамка: {originalFrameOrder + offset} → {originalFrameOrder}");
-        }
-
-        // ============================================================
-        // 5. СЧЁТЧИК СТОПКИ
-        // ============================================================
-        Transform counter = transform.Find("StackCounter");
-        if (counter != null)
-        {
-            Canvas counterCanvas = counter.GetComponent<Canvas>();
-            if (counterCanvas != null)
-            {
-                counterCanvas.overrideSorting = true;
-                counterCanvas.sortingOrder = counterSortingOrder;
-                Log($"Счётчик: {counterSortingOrder + offset} → {counterSortingOrder}");
-            }
         }
 
         currentOffset = 0;
