@@ -40,6 +40,7 @@ public class CraftWindow : MonoBehaviour, ICardWindow
     private bool isOpen = false;
     private CardObject currentDraggedCard = null;
     private CraftSlotFilter lastHighlightedSlot = null;
+    private bool isProcessingDrop = false;
 
     // Статическая ссылка для проверки открытых окон
     private static CraftWindow currentOpenWindow = null;
@@ -123,6 +124,8 @@ public class CraftWindow : MonoBehaviour, ICardWindow
         }
 
         gameObject.SetActive(false);
+        // Подписываемся на событие сброса карты
+        DragController.OnCardDropped += OnCardDroppedHandler;
     }
 
     void Update()
@@ -178,10 +181,7 @@ public class CraftWindow : MonoBehaviour, ICardWindow
                 lastHighlightedSlot = null;
             }
 
-            // ============================================================
-            //  ПРОВЕРКА СБРОСА КАРТЫ В СЛОТ
-            // ============================================================
-            CheckDropOnSlot();
+
         }
     }
 
@@ -205,6 +205,99 @@ public class CraftWindow : MonoBehaviour, ICardWindow
 
         if (currentOpenWindow == this)
             currentOpenWindow = null;
+        DragController.OnCardDropped -= OnCardDroppedHandler;
+    }
+
+    private void OnCardDroppedHandler(CardObject card)
+    {
+        // Проверяем, что окно открыто
+        if (!isOpen)
+        {
+            Debug.Log("[CraftWindow] OnCardDroppedHandler: окно закрыто");
+            return;
+        }
+
+        if (card == null)
+        {
+            Debug.Log("[CraftWindow] OnCardDroppedHandler: card == null");
+            return;
+        }
+
+        if (isProcessingDrop)
+        {
+            Debug.Log("[CraftWindow] OnCardDroppedHandler: уже обрабатываем сброс");
+            return;
+        }
+
+        isProcessingDrop = true;
+
+        try
+        {
+            Vector3 mouseWorldPos = GetMouseWorldPosition();
+
+            // Проверяем, что мышь над окном
+            if (!IsMouseOverWindow(mouseWorldPos))
+            {
+                Debug.Log("[CraftWindow] OnCardDroppedHandler: карта отпущена НЕ над окном");
+                return;
+            }
+
+            Debug.Log($"[CraftWindow] OnCardDroppedHandler: карта {card.cardName} над окном");
+
+            // Определяем слот под мышью
+            CraftSlotFilter targetSlot = GetSlotUnderMouse(mouseWorldPos);
+
+            if (targetSlot == null)
+            {
+                Debug.Log("[CraftWindow] OnCardDroppedHandler: нет слота под мышью");
+                return;
+            }
+
+            if (targetSlot.IsOccupied())
+            {
+                Debug.Log($"[CraftWindow] OnCardDroppedHandler: слот {targetSlot.slotIndex} занят");
+                return;
+            }
+
+            if (!targetSlot.CanPlaceCard(card))
+            {
+                Debug.Log($"[CraftWindow] OnCardDroppedHandler: слот {targetSlot.slotIndex} НЕ подходит для {card.cardName}");
+                return;
+            }
+
+            Debug.Log($"[CraftWindow] OnCardDroppedHandler: помещаем карту {card.cardName} в слот {targetSlot.slotIndex}");
+
+            // Забираем карту с поля
+            if (card.currentCell != null)
+            {
+                card.currentCell.RemoveCard();
+                card.currentCell = null;
+            }
+
+            // Помещаем в слот
+            targetSlot.PlaceCard(card);
+            card.isDragging = false;
+            card.LowerCardVisuals();
+
+            Log($"Карта {card.cardName} помещена в слот {targetSlot.slotIndex}");
+
+            // Сбрасываем состояние
+            currentDraggedCard = null;
+            lastHighlightedSlot = null;
+
+            GridManager.Instance?.HideHighlight();
+            ResetAllSlotsHighlight();
+
+            // Проверяем, все ли слоты заполнены (вызовется через OnSlotCardPlaced)
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"[CraftWindow] Ошибка в OnCardDroppedHandler: {e.Message}");
+        }
+        finally
+        {
+            isProcessingDrop = false;
+        }
     }
 
     // ============================================================
@@ -451,43 +544,7 @@ public class CraftWindow : MonoBehaviour, ICardWindow
 
     private void CheckDropOnSlot()
     {
-        if (currentDraggedCard == null) return;
-
-        // Проверяем отпускание кнопки мыши (без проверки IsDragging!)
-        if (Input.GetMouseButtonUp(0))
-        {
-            Vector3 mouseWorldPos = GetMouseWorldPosition();
-            CraftSlotFilter targetSlot = GetSlotUnderMouse(mouseWorldPos);
-
-            if (targetSlot != null && !targetSlot.IsOccupied())
-            {
-                if (targetSlot.CanPlaceCard(currentDraggedCard))
-                {
-                    // Забираем карту с поля
-                    if (currentDraggedCard.currentCell != null)
-                    {
-                        currentDraggedCard.currentCell.RemoveCard();
-                        currentDraggedCard.currentCell = null;
-                    }
-
-                    // Помещаем в слот
-                    targetSlot.PlaceCard(currentDraggedCard);
-                    currentDraggedCard.isDragging = false;
-                    currentDraggedCard.LowerCardVisuals();
-
-                    DragController.Instance.ResetDragState();
-
-                    Log($"Карта {currentDraggedCard.cardName} помещена в слот {targetSlot.slotIndex}");
-
-                    // Сбрасываем состояние
-                    currentDraggedCard = null;
-                    lastHighlightedSlot = null;
-
-                    GridManager.Instance?.HideHighlight();
-                    ResetAllSlotsHighlight();
-                }
-            }
-        }
+       //
     }
 
     private Vector3 GetMouseWorldPosition()

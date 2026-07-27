@@ -31,6 +31,11 @@ public class DragController : MonoBehaviour
     private LayerMask cardLayer;
 
     // ============================================================
+    //  СОБЫТИЯ
+    // ============================================================
+    public static System.Action<CardObject> OnCardDropped;
+
+    // ============================================================
     //  ЖИЗНЕННЫЙ ЦИКЛ
     // ============================================================
 
@@ -247,7 +252,7 @@ public class DragController : MonoBehaviour
         if (card == null) return;
 
         // ============================================================
-        //  ПРОВЕРКА 1: НАД ОКНОМ КРАФТА (ДО UI)
+        //  ПРОВЕРКА: НАД ОКНОМ КРАФТА (ДО UI)
         // ============================================================
         if (CraftWindow.IsAnyOpen())
         {
@@ -259,15 +264,17 @@ public class DragController : MonoBehaviour
                 if (enableDebugLogs)
                     Debug.Log("[DragController] Карта над окном крафта - пропускаем DropLogic");
 
-                // Сбрасываем состояние перетаскивания, НО НЕ вызываем ReturnToOriginalPosition
+                // Вызываем событие, чтобы CraftWindow обработал сброс
+                OnCardDropped?.Invoke(card);
+
+                // Сбрасываем состояние
                 isDragging = false;
-                // Не сбрасываем draggedCard, чтобы CraftWindow мог использовать currentDraggedCard
+                // НЕ сбрасываем draggedCard, чтобы событие могло использовать карту
                 isMouseDownOnCard = false;
                 clickedCard = null;
                 hasExceededThreshold = false;
                 GridManager.Instance?.HideHighlight();
 
-                // Пусть CraftWindow обработает сброс
                 return;
             }
         }
