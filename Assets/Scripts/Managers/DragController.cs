@@ -246,6 +246,35 @@ public class DragController : MonoBehaviour
     {
         if (card == null) return;
 
+        // ============================================================
+        //  ПРОВЕРКА 1: НАД ОКНОМ КРАФТА (ДО UI)
+        // ============================================================
+        if (CraftWindow.IsAnyOpen())
+        {
+            Vector3 mouseWorldPos = GetMouseWorldPosition();
+            CraftWindow window = CraftWindow.GetCurrentWindow();
+
+            if (window != null && window.IsMouseOverWindow(mouseWorldPos))
+            {
+                if (enableDebugLogs)
+                    Debug.Log("[DragController] Карта над окном крафта - пропускаем DropLogic");
+
+                // Сбрасываем состояние перетаскивания, НО НЕ вызываем ReturnToOriginalPosition
+                isDragging = false;
+                // Не сбрасываем draggedCard, чтобы CraftWindow мог использовать currentDraggedCard
+                isMouseDownOnCard = false;
+                clickedCard = null;
+                hasExceededThreshold = false;
+                GridManager.Instance?.HideHighlight();
+
+                // Пусть CraftWindow обработает сброс
+                return;
+            }
+        }
+
+        // ============================================================
+        //  ПРОВЕРКА 2: НАД UI
+        // ============================================================
         if (IsPointerOverUI())
         {
             if (enableDebugLogs)
@@ -263,33 +292,6 @@ public class DragController : MonoBehaviour
             clickedCard = null;
             hasExceededThreshold = false;
             return;
-        }
-
-        // ============================================================
-        //  НОВАЯ ПРОВЕРКА: Над окном крафта
-        // ============================================================
-        if (CraftWindow.IsAnyOpen())
-        {
-            Vector3 mouseWorldPos = GetMouseWorldPosition();
-            CraftWindow window = CraftWindow.GetCurrentWindow();
-
-            if (window != null && window.IsMouseOverWindow(mouseWorldPos))
-            {
-                if (enableDebugLogs)
-                    Debug.Log("[DragController] Карта над окном крафта - пропускаем DropLogic");
-
-                // Сбрасываем состояние перетаскивания, НО НЕ вызываем ReturnToOriginalPosition
-                isDragging = false;
-                // Не сбрасываем draggedCard полностью, чтобы CraftWindow мог использовать currentDraggedCard
-                // draggedCard = null; // НЕ делаем этого!
-                isMouseDownOnCard = false;
-                clickedCard = null;
-                hasExceededThreshold = false;
-                GridManager.Instance?.HideHighlight();
-
-                // Пусть CraftWindow обработает сброс
-                return;
-            }
         }
 
         // ============================================================
