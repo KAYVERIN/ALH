@@ -68,16 +68,9 @@ public class CardVisualController : MonoBehaviour
 
     void Awake()
     {
-        // Находим VisualContainer
-        Transform container = transform.Find("VisualContainer");
-        if (container != null)
+        if (visualContainer == null) 
         {
-            visualContainer = container.gameObject;
-            Log($"VisualContainer найден на {gameObject.name}");
-        }
-        else
-        {
-            LogWarning($"VisualContainer НЕ найден на {gameObject.name}!");
+            LogWarning($"VisualContainer НЕ найден!");
             return;
         }
 
@@ -86,7 +79,6 @@ public class CardVisualController : MonoBehaviour
         if (containerCanvas != null)
         {
             containerCanvas.overrideSorting = true;
-
             Log($"Canvas найден на VisualContainer, sortingOrder: {containerCanvas.sortingOrder}");
         }
         else
@@ -184,8 +176,8 @@ public class CardVisualController : MonoBehaviour
         // ============================================================
         if (containerCanvas != null)
         {
-            containerCanvas.sortingOrder = baseSortingOrder + offset;
-            Log($"VisualContainer Canvas: {baseSortingOrder} → {baseSortingOrder + offset}");
+            containerCanvas.sortingOrder = containerCanvas.sortingOrder + offset;
+            Log($"VisualContainer Canvas: {containerCanvas.sortingOrder} → {containerCanvas.sortingOrder + offset}");
         }
 
         // ============================================================
@@ -246,8 +238,8 @@ public class CardVisualController : MonoBehaviour
         // ============================================================
         if (containerCanvas != null)
         {
-            containerCanvas.sortingOrder = baseSortingOrder;
-            Log($"VisualContainer Canvas: {baseSortingOrder + offset} → {baseSortingOrder}");
+            containerCanvas.sortingOrder = containerCanvas.sortingOrder - offset;
+            Log($"VisualContainer Canvas: {containerCanvas.sortingOrder} → {containerCanvas.sortingOrder - offset}");
         }
 
         // ============================================================
