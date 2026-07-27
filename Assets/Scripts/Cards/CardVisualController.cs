@@ -153,7 +153,7 @@ public class CardVisualController : MonoBehaviour
     /// </summary>
     public void LowerCard()
     {
-        LiftCard(0);
+        LiftCard(-dragSortingOrder);
     }
 
     // ============================================================
@@ -166,56 +166,34 @@ public class CardVisualController : MonoBehaviour
     /// <param name="offset">Величина смещения Sorting Order</param>
     public void LiftCard(int offset)
     {
-        if (offset == 0) return;
-
         Log($"Поднимаем карту на {offset}");
 
         // ============================================================
-        // 1. CANVAS НА VISUALCONTAINER
+        // 1. ВСЕ SPRITE RENDERERS - от корневого объекта и всех дочерних
         // ============================================================
-        if (containerCanvas != null)
+        SpriteRenderer[] allRenderers = GetComponentsInChildren<SpriteRenderer>(true);
+        foreach (var sr in allRenderers)
         {
-            containerCanvas.sortingOrder = containerCanvas.sortingOrder + offset;
-            Log($"VisualContainer Canvas: {containerCanvas.sortingOrder} → {containerCanvas.sortingOrder + offset}");
-        }
-
-        // ============================================================
-        // 2. ВСЕ SPRITE RENDERERS ВНУТРИ VISUALCONTAINER
-        // ============================================================
-        if (allRenderers != null && originalOrders != null)
-        {
-            for (int i = 0; i < allRenderers.Length && i < originalOrders.Length; i++)
+            if (sr != null)
             {
-                if (allRenderers[i] != null)
-                {
-                    int newOrder = originalOrders[i] + offset;
-                    allRenderers[i].sortingOrder = newOrder;
-                    Log($"{allRenderers[i].gameObject.name}: {originalOrders[i]} → {newOrder}");
-                }
+                int oldOrder = sr.sortingOrder;
+                sr.sortingOrder = oldOrder + offset;
+                Log($"{sr.gameObject.name}: {oldOrder} → {sr.sortingOrder}");
             }
         }
 
         // ============================================================
-        // 3. ВСЕ CANVAS ВНУТРИ VISUALCONTAINER (кроме основного)
+        // 2. ВСЕ CANVAS - от корневого объекта и всех дочерних
         // ============================================================
-        foreach (CanvasData data in childCanvases)
+        Canvas[] allCanvases = GetComponentsInChildren<Canvas>(true);
+        foreach (var canvas in allCanvases)
         {
-            if (data.canvas != null)
+            if (canvas != null)
             {
-                data.canvas.overrideSorting = true;
-                int newOrder = data.originalSortingOrder + offset;
-                data.canvas.sortingOrder = newOrder;
-                Log($"Canvas {data.canvas.gameObject.name}: {data.originalSortingOrder} → {newOrder}");
+                int oldOrder = canvas.sortingOrder;
+                canvas.sortingOrder = oldOrder + offset;
+                Log($"{canvas.gameObject.name}: {oldOrder} → {canvas.sortingOrder}");
             }
-        }
-
-        // ============================================================
-        // 4. РАМКА КАРТЫ
-        // ============================================================
-        if (cardFrame != null)
-        {
-            cardFrame.sortingOrder = originalFrameOrder + offset;
-            Log($"Рамка: {originalFrameOrder} → {originalFrameOrder + offset}");
         }
     }
 
