@@ -170,7 +170,7 @@ public class CardObject : MonoBehaviour
         if (visualController != null)
         {
             // Обновляем счётчик если есть
-            visualController.SetCounterSortingOrder(visualController.GetCounterSortingOrder() + offset);
+            //visualController.SetCounterSortingOrder(visualController.GetCounterSortingOrder() + offset);
         }
     }
 
