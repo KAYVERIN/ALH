@@ -211,54 +211,34 @@ public class CardVisualController : MonoBehaviour
         Log($"Опускаем карту на {offset}");
 
         // ============================================================
-        // 1. CANVAS НА VISUALCONTAINER
+        // 1. ВСЕ SPRITE RENDERERS - от корневого объекта и всех дочерних
         // ============================================================
-        if (containerCanvas != null)
+        SpriteRenderer[] allRenderers = GetComponentsInChildren<SpriteRenderer>(true);
+        foreach (var sr in allRenderers)
         {
-            containerCanvas.sortingOrder = containerCanvas.sortingOrder - offset;
-            Log($"VisualContainer Canvas: {containerCanvas.sortingOrder} → {containerCanvas.sortingOrder - offset}");
-        }
-
-        // ============================================================
-        // 2. ВСЕ SPRITE RENDERERS ВНУТРИ VISUALCONTAINER
-        // ============================================================
-        if (allRenderers != null && originalOrders != null)
-        {
-            for (int i = 0; i < allRenderers.Length && i < originalOrders.Length; i++)
+            if (sr != null)
             {
-                if (allRenderers[i] != null)
-                {
-                    allRenderers[i].sortingOrder = originalOrders[i];
-                    Log($"{allRenderers[i].gameObject.name}: {originalOrders[i] + offset} → {originalOrders[i]}");
-                }
+                int oldOrder = sr.sortingOrder;
+                sr.sortingOrder -= offset;
+                Log($"{sr.gameObject.name}: {oldOrder} → {sr.sortingOrder}");
             }
         }
 
         // ============================================================
-        // 3. ВСЕ CANVAS ВНУТРИ VISUALCONTAINER (кроме основного)
+        // 2. ВСЕ CANVAS - от корневого объекта и всех дочерних
         // ============================================================
-        foreach (CanvasData data in childCanvases)
+        Canvas[] allCanvases = GetComponentsInChildren<Canvas>(true);
+        foreach (var canvas in allCanvases)
         {
-            if (data.canvas != null)
+            if (canvas != null)
             {
-                data.canvas.overrideSorting = data.wasOverriding;
-                data.canvas.sortingOrder = data.originalSortingOrder;
-                data.canvas.sortingLayerName = data.originalSortingLayer;
-                Log($"Canvas {data.canvas.gameObject.name}: {data.originalSortingOrder + offset} → {data.originalSortingOrder}");
+                int oldOrder = canvas.sortingOrder;
+                canvas.sortingOrder -= offset;
+                Log($"{canvas.gameObject.name}: {oldOrder} → {canvas.sortingOrder}");
             }
-        }
-
-        // ============================================================
-        // 4. РАМКА КАРТЫ
-        // ============================================================
-        if (cardFrame != null)
-        {
-            cardFrame.sortingOrder = originalFrameOrder;
-            Log($"Рамка: {originalFrameOrder + offset} → {originalFrameOrder}");
         }
 
         currentOffset = 0;
-        
     }
 
 
