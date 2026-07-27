@@ -139,16 +139,15 @@ public class CraftWindow : MonoBehaviour, ICardWindow
         // ОБНОВЛЯЕМ currentDraggedCard
         if (draggedCard != currentDraggedCard)
         {
+            Debug.Log($"[CraftWindow] draggedCard изменился: старый = {(currentDraggedCard != null ? currentDraggedCard.cardName : "null")}, новый = {(draggedCard != null ? draggedCard.cardName : "null")}");
             currentDraggedCard = draggedCard;
 
-            // Если карта появилась - обновляем подсветку всех слотов
             if (currentDraggedCard != null)
             {
                 UpdateAllSlotsHighlight();
             }
             else
             {
-                // Карта исчезла - сбрасываем подсветку
                 ResetAllSlotsHighlight();
             }
         }
