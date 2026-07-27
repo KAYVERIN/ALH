@@ -452,19 +452,31 @@ public class CraftWindow : MonoBehaviour, ICardWindow
 
     private void CheckDropOnSlot()
     {
-        if (currentDraggedCard == null) return;
-        if (!DragController.Instance.IsDragging) return;
+        Debug.Log($"[CraftWindow] CheckDropOnSlot ВЫЗВАН, currentDraggedCard = {(currentDraggedCard != null ? currentDraggedCard.cardName : "null")}");
+
+        if (currentDraggedCard == null)
+        {
+            Debug.Log("[CraftWindow] currentDraggedCard == null, выходим");
+            return;
+        }
+
+       // if (!DragController.Instance.IsDragging)
+       // {
+       //     Debug.Log("[CraftWindow] !DragController.Instance.IsDragging, выходим");
+       //     return;
+       // }
 
         if (Input.GetMouseButtonUp(0))
         {
+            Debug.Log("[CraftWindow] MouseButtonUp (0) сработал");
             Vector3 mouseWorldPos = GetMouseWorldPosition();
             CraftSlotFilter targetSlot = GetSlotUnderMouse(mouseWorldPos);
 
-            Debug.Log($"[CraftWindow] CheckDropOnSlot: targetSlot = {(targetSlot != null ? targetSlot.slotIndex.ToString() : "null")}");
+            Debug.Log($"[CraftWindow] targetSlot = {(targetSlot != null ? targetSlot.slotIndex.ToString() : "null")}");
 
             if (targetSlot != null && !targetSlot.IsOccupied())
             {
-                Debug.Log($"[CraftWindow] Слот {targetSlot.slotIndex} свободен, проверяем CanPlaceCard");
+                Debug.Log($"[CraftWindow] Слот {targetSlot.slotIndex} свободен");
 
                 if (targetSlot.CanPlaceCard(currentDraggedCard))
                 {
@@ -484,13 +496,10 @@ public class CraftWindow : MonoBehaviour, ICardWindow
 
                     Log($"Карта {currentDraggedCard.cardName} помещена в слот {targetSlot.slotIndex}");
 
-                    // Сбрасываем состояние
                     currentDraggedCard = null;
                     lastHighlightedSlot = null;
 
                     GridManager.Instance?.HideHighlight();
-
-                    // Обновляем подсветку
                     ResetAllSlotsHighlight();
                 }
                 else
