@@ -734,15 +734,8 @@ public class CardObject : MonoBehaviour
 
     public void ReturnToOriginalPosition()
     {
-        if (originalScale != Vector3.zero)
-        {
-            transform.localScale = originalScale;
-        }
-        else
-        {
-            transform.localScale = Vector3.one;
-            LogWarning($"Карта {cardName} имела нулевой масштаб! Установлен 1");
-        }
+
+        transform.localScale = originalScale;
 
         Log($"Возврат {cardName} на исходную позицию");
 
