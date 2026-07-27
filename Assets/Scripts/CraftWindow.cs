@@ -223,7 +223,6 @@ public class CraftWindow : MonoBehaviour, ICardWindow
         {
             Vector3 mouseWorldPos = GetMouseWorldPosition();
 
-            // Проверяем, что мышь над окном
             if (!IsMouseOverWindow(mouseWorldPos))
             {
                 Debug.Log("[CraftWindow] OnCardDroppedHandler: карта отпущена НЕ над окном");
@@ -232,25 +231,15 @@ public class CraftWindow : MonoBehaviour, ICardWindow
 
             Debug.Log($"[CraftWindow] OnCardDroppedHandler: карта {card.cardName} над окном");
 
-            // Определяем слот под мышью
             CraftSlotFilter targetSlot = GetSlotUnderMouse(mouseWorldPos);
 
             if (targetSlot == null)
             {
-                Debug.Log("[CraftWindow] OnCardDroppedHandler: нет слота под мышью, возвращаем карту на поле");
-
-                // ============================================================
-                //  ВОЗВРАЩАЕМ КАРТУ НА ПОЛЕ
-                // ============================================================
+                Debug.Log("[CraftWindow] OnCardDroppedHandler: нет слота под мышью, возвращаем на поле");
                 CardLibrary.PlaceCardSmart(card);
-
-                // Сбрасываем состояние
                 card.isDragging = false;
-                card.LowerCardVisuals();
-
                 currentDraggedCard = null;
                 lastHighlightedSlot = null;
-
                 GridManager.Instance?.HideHighlight();
                 ResetAllSlotsHighlight();
                 return;
@@ -258,19 +247,11 @@ public class CraftWindow : MonoBehaviour, ICardWindow
 
             if (targetSlot.IsOccupied())
             {
-                Debug.Log($"[CraftWindow] OnCardDroppedHandler: слот {targetSlot.slotIndex} занят, возвращаем карту на поле");
-
-                // ============================================================
-                //  ВОЗВРАЩАЕМ КАРТУ НА ПОЛЕ
-                // ============================================================
+                Debug.Log($"[CraftWindow] OnCardDroppedHandler: слот {targetSlot.slotIndex} занят, возвращаем на поле");
                 CardLibrary.PlaceCardSmart(card);
-
                 card.isDragging = false;
-                card.LowerCardVisuals();
-
                 currentDraggedCard = null;
                 lastHighlightedSlot = null;
-
                 GridManager.Instance?.HideHighlight();
                 ResetAllSlotsHighlight();
                 return;
@@ -278,19 +259,11 @@ public class CraftWindow : MonoBehaviour, ICardWindow
 
             if (!targetSlot.CanPlaceCard(card))
             {
-                Debug.Log($"[CraftWindow] OnCardDroppedHandler: слот {targetSlot.slotIndex} НЕ подходит для {card.cardName}, возвращаем карту на поле");
-
-                // ============================================================
-                //  ВОЗВРАЩАЕМ КАРТУ НА ПОЛЕ
-                // ============================================================
+                Debug.Log($"[CraftWindow] OnCardDroppedHandler: слот {targetSlot.slotIndex} НЕ подходит для {card.cardName}, возвращаем на поле");
                 CardLibrary.PlaceCardSmart(card);
-
                 card.isDragging = false;
-                card.LowerCardVisuals();
-
                 currentDraggedCard = null;
                 lastHighlightedSlot = null;
-
                 GridManager.Instance?.HideHighlight();
                 ResetAllSlotsHighlight();
                 return;
@@ -298,21 +271,17 @@ public class CraftWindow : MonoBehaviour, ICardWindow
 
             Debug.Log($"[CraftWindow] OnCardDroppedHandler: помещаем карту {card.cardName} в слот {targetSlot.slotIndex}");
 
-            // Забираем карту с поля
             if (card.currentCell != null)
             {
                 card.currentCell.RemoveCard();
                 card.currentCell = null;
             }
 
-            // Помещаем в слот
             targetSlot.PlaceCard(card);
             card.isDragging = false;
-            card.LowerCardVisuals();
 
             Log($"Карта {card.cardName} помещена в слот {targetSlot.slotIndex}");
 
-            // Сбрасываем состояние
             currentDraggedCard = null;
             lastHighlightedSlot = null;
 
@@ -335,7 +304,6 @@ public class CraftWindow : MonoBehaviour, ICardWindow
         if (!isOpen) return;
         if (isProcessingCardClick) return;
 
-        // Проверяем, находится ли карта в слоте
         CraftSlotFilter parentSlot = null;
         foreach (var slot in slots)
         {
@@ -354,21 +322,29 @@ public class CraftWindow : MonoBehaviour, ICardWindow
         {
             Debug.Log($"[CraftWindow] Клик по карте {card.cardName} в слоте {parentSlot.slotIndex}");
 
-            // Извлекаем карту из слота
-            CardObject takenCard = parentSlot.TakeCard();
+            // ============================================================
+            //  ИЗВЛЕКАЕМ КАРТУ ИЗ СЛОТА (RemoveCard САМ ОПУСКАЕТ КАРТУ)
+            // ============================================================
+            CardObject takenCard = parentSlot.RemoveCard();
             if (takenCard == null) return;
 
-            // Поднимаем карту
+            // ============================================================
+            //  ПОДНИМАЕМ КАРТУ ДЛЯ ПЕРЕТАСКИВАНИЯ
+            // ============================================================
+            CardVisualController visualController = takenCard.GetComponent<CardVisualController>();
+            if (visualController != null)
+            {
+                visualController.LiftCard(); // использует dragSortingOrder
+                Log($"Карта {takenCard.cardName} поднята для перетаскивания");
+            }
+
             takenCard.PickUp();
 
-            // Сбрасываем подсветку
             ResetAllSlotsHighlight();
 
-            // Скрываем кнопку крафта
             if (craftButton != null)
                 craftButton.SetActive(false);
 
-            // Обновляем currentDraggedCard
             currentDraggedCard = takenCard;
 
             Log($"Карта {card.cardName} взята из слота {parentSlot.slotIndex} для перетаскивания");
