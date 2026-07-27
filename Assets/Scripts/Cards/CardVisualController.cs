@@ -84,7 +84,7 @@ public class CardVisualController : MonoBehaviour
         if (containerCanvas != null)
         {
             containerCanvas.overrideSorting = true;
-            Log($"Canvas найден на VisualContainer, sortingOrder: {baseSortingOrder}");
+            Log($"Canvas найден на VisualContainer, sortingOrder: {containerCanvas.sortingOrder}");
         }
         else
         {
