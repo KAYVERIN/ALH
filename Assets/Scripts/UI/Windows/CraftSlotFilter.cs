@@ -24,6 +24,13 @@ public class CraftSlotFilter : MonoBehaviour
     [Header("Отладка")]
     public bool enableDebugLogs = true;
 
+    [Header("Настройки сортировки")]
+    [Tooltip("Смещение Sorting Order для карт в этом слоте")]
+    public int slotSortingOffset = 20;
+
+    // Приватная переменная для хранения текущего смещения карты
+    private int currentCardOffset = 0;
+
     // Приватные переменные
     private List<CardType> allowedTypes = new List<CardType>();
     private bool isOccupied = false;
@@ -88,15 +95,28 @@ public class CraftSlotFilter : MonoBehaviour
         placedCard = null;
         isOccupied = false;
 
-        // Возвращаем карте нормальный масштаб
         if (card != null)
         {
+            // ============================================================
+            //  ВОЗВРАЩАЕМ ОРИГИНАЛЬНЫЙ SORTING ORDER (УБИРАЕМ СМЕЩЕНИЕ)
+            // ============================================================
+            card.AddSortingOffset(-currentCardOffset);
+            currentCardOffset = 0;
+
+            // Отвязываем от слота
             card.transform.SetParent(null);
             card.transform.localScale = card.originalScale;
+
+            // Обновляем visual controller если есть
+            CardVisualController visualController = card.GetComponent<CardVisualController>();
+            if (visualController != null)
+            {
+                visualController.LowerCard();
+            }
         }
 
         OnCardRemoved?.Invoke(this);
-        Log($"Карта {card.cardName} взята из слота {slotIndex}");
+        Log($"Карта {card.cardName} взята из слота {slotIndex} (Sorting Order -{slotSortingOffset})");
 
         return card;
     }
@@ -151,23 +171,24 @@ public class CraftSlotFilter : MonoBehaviour
 
         isOccupied = true;
         placedCard = card;
+        currentCardOffset = slotSortingOffset;
 
-        // Сохраняем родителя
-        Transform originalParent = card.transform.parent;
+        // ============================================================
+        //  ПРИМЕНЯЕМ СМЕЩЕНИЕ КО ВСЕМ ВИЗУАЛЬНЫМ КОМПОНЕНТАМ КАРТЫ
+        // ============================================================
+        card.AddSortingOffset(slotSortingOffset);
 
-        // Устанавливаем родителя в слот
+        // Родитель и позиция
         card.transform.SetParent(transform);
-
-        // Позиционируем карту в центр слота (локально - 0)
         card.transform.localPosition = Vector3.zero;
         card.transform.localScale = Vector3.one * 0.9f;
 
-        // Обновляем визуал
+        // Выключаем подсветку
         if (highlightObject != null)
             highlightObject.SetActive(false);
 
         OnCardPlaced?.Invoke(this, card);
-        Log($"Карта {card.cardName} помещена в слот {slotIndex}");
+        Log($"Карта {card.cardName} помещена в слот {slotIndex} (Sorting Order +{slotSortingOffset})");
         return true;
     }
 

@@ -136,6 +136,61 @@ public class CardObject : MonoBehaviour
         UpdateVisuals();
     }
 
+    /// <summary>
+    /// Добавляет смещение ко всем визуальным компонентам карты
+    /// </summary>
+    public void AddSortingOffset(int offset)
+    {
+        if (offset == 0) return;
+
+        // ============================================================
+        // 1. SPRITE RENDERERS
+        // ============================================================
+        SpriteRenderer[] spriteRenderers = GetComponentsInChildren<SpriteRenderer>();
+        foreach (var sr in spriteRenderers)
+        {
+            sr.sortingOrder += offset;
+            Log($"SpriteRenderer {sr.gameObject.name}: sortingOrder += {offset} → {sr.sortingOrder}");
+        }
+
+        // ============================================================
+        // 2. CANVAS (для UI элементов)
+        // ============================================================
+        Canvas[] canvases = GetComponentsInChildren<Canvas>();
+        foreach (var canvas in canvases)
+        {
+            canvas.sortingOrder += offset;
+            Log($"Canvas {canvas.gameObject.name}: sortingOrder += {offset} → {canvas.sortingOrder}");
+        }
+
+        // ============================================================
+        // 3. CardVisualController (если есть)
+        // ============================================================
+        CardVisualController visualController = GetComponent<CardVisualController>();
+        if (visualController != null)
+        {
+            // Обновляем счётчик если есть
+            visualController.SetCounterSortingOrder(visualController.GetCounterSortingOrder() + offset);
+        }
+    }
+
+    /// <summary>
+    /// Получает текущий базовый Sorting Order карты
+    /// </summary>
+    public int GetBaseSortingOrder()
+    {
+        SpriteRenderer mainRenderer = GetComponent<SpriteRenderer>();
+        if (mainRenderer != null)
+            return mainRenderer.sortingOrder;
+
+        // Если нет SpriteRenderer на корне, ищем первый дочерний
+        SpriteRenderer[] renderers = GetComponentsInChildren<SpriteRenderer>();
+        if (renderers.Length > 0)
+            return renderers[0].sortingOrder;
+
+        return 0;
+    }
+
     // ============================================================
     //  ОБРАБОТЧИКИ МЫШИ
     // ============================================================
