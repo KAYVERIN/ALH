@@ -154,7 +154,7 @@ public class CardVisualController : MonoBehaviour
     /// </summary>
     public void LowerCard()
     {
-        LowerCard(offset);
+        LowerCard(currentOffset);
         isDragging = false;
     }
 
