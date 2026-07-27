@@ -112,6 +112,10 @@ public class CraftSlotFilter : MonoBehaviour
             visualController.LiftCard(slotSortingOffset);
             Log($"Карта {card.cardName} поднята на {slotSortingOffset}");
         }
+        else
+        {
+            LogWarning($"CardVisualController не найден на {card.cardName}!");
+        }
 
         card.transform.SetParent(transform);
         card.transform.localPosition = Vector3.zero;
@@ -142,7 +146,7 @@ public class CraftSlotFilter : MonoBehaviour
             CardVisualController visualController = card.GetComponent<CardVisualController>();
             if (visualController != null)
             {
-                //visualController.LowerCard(slotSortingOffset);
+                visualController.LowerCard(slotSortingOffset);
                 Log($"Карта {card.cardName} опущена на {slotSortingOffset}");
             }
 
