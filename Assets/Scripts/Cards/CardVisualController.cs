@@ -6,8 +6,7 @@ using System.Collections.Generic;
 /// </summary>
 public class CardVisualController : MonoBehaviour
 {
-    [Header("Настройки слоёв")]
-    [SerializeField] private int baseSortingOrder = 0;
+    [Header("На сколько слоёв поднимаем")]
     [SerializeField] private int dragSortingOrder = 100;
 
     [Header("VisualContainer")]
@@ -154,7 +153,7 @@ public class CardVisualController : MonoBehaviour
     /// </summary>
     public void LowerCard()
     {
-        LowerCard(currentOffset);
+        LiftCard(-dragSortingOrder);
     }
 
     // ============================================================
@@ -218,9 +217,6 @@ public class CardVisualController : MonoBehaviour
             cardFrame.sortingOrder = originalFrameOrder + offset;
             Log($"Рамка: {originalFrameOrder} → {originalFrameOrder + offset}");
         }
-
-        // Запоминаем текущее смещение
-        currentOffset = offset;
     }
 
     /// <summary>
@@ -285,44 +281,7 @@ public class CardVisualController : MonoBehaviour
     }
 
 
-    // ============================================================
-    //  ОБНОВЛЕНИЕ ДАННЫХ
-    // ============================================================
 
-    /// <summary>
-    /// Обновляет ссылку на VisualContainer и пересоздаёт Canvas если нужно
-    /// </summary>
-    public void RefreshVisualContainer()
-    {
-        Transform container = transform.Find("VisualContainer");
-        if (container != null)
-        {
-            visualContainer = container.gameObject;
-
-            Canvas canvas = visualContainer.GetComponent<Canvas>();
-            if (canvas == null)
-            {
-                canvas = visualContainer.AddComponent<Canvas>();
-                canvas.renderMode = RenderMode.WorldSpace;
-                canvas.overrideSorting = true;
-                canvas.sortingLayerName = "Default";
-                canvas.sortingOrder = baseSortingOrder;
-                Log($"Создан Canvas на VisualContainer для {gameObject.name}");
-            }
-            else
-            {
-                canvas.overrideSorting = true;
-                canvas.sortingOrder = baseSortingOrder;
-            }
-
-            containerCanvas = canvas;
-            SaveAllData();
-        }
-        else
-        {
-            LogWarning($"VisualContainer не найден для {gameObject.name}");
-        }
-    }
 
     /// <summary>
     /// Обновляет список спрайтов и Canvas (вызывать после добавления новых слоёв)
