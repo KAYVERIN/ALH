@@ -95,7 +95,12 @@ public class CardObject : MonoBehaviour
         // Получаем VisualContainer из контроллера
         visualContainer = visualController.GetVisualContainer();
         if (visualContainer == null)
+        {
             LogWarning("VisualContainer не найден в CardVisualController!");
+            return;
+        }    
+           
+
 
         Log($"Карта {cardName} инициализирована");
     }
@@ -173,7 +178,7 @@ public class CardObject : MonoBehaviour
     /// </summary>
     private void ClearVisualLayers()
     {
-        if (visualContainer == null) return;
+ /*       if (visualContainer == null) return;
 
         // Список имён элементов, которые нужно сохранить
         string[] preserveNames = new string[]
@@ -228,7 +233,7 @@ public class CardObject : MonoBehaviour
         if (visualController != null)
         {
             visualController.RefreshRenderers();
-        }
+        }*/
     }
 
     /// <summary>
