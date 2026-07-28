@@ -103,26 +103,6 @@ public class StackManager : MonoBehaviour
         return newCard;
     }
 
-    /// <summary>
-    /// Забирает всю стопку
-    /// </summary>
-    public CardObject TakeAllFromStack(CardObject card)
-    {
-        if (card == null) return card;
-
-        int count = card.stackSize;
-
-        // Создаём новую карту со всей стопкой
-        CardObject newCard = CreateCardFromStack(card, count);
-
-        // Удаляем старую
-        Destroy(card.gameObject);
-
-        if (enableDebugLogs)
-            Debug.Log($"Взята вся стопка: {count} шт.");
-
-        return newCard;
-    }
 
     /// <summary>
     /// Создаёт одну карту из стопки (для перетаскивания)
