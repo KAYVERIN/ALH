@@ -140,9 +140,8 @@ public class StackManager : MonoBehaviour
         // Настраиваем для перетаскивания
         newCard.currentCell = null;
         newCard.originalGridPos = source.originalGridPos;
-        newCard.isDragging = true;
 
-        // Поднимаем визуально (масштаб управляется через CardVisualController)
+        // Поднимаем
         newCard.LiftCardVisuals();
 
         if (GridManager.Instance != null)
@@ -201,10 +200,6 @@ public class StackManager : MonoBehaviour
         target.maxStackSize = source.maxStackSize;
         target.stackSize = source.stackSize; // Будет перезаписано позже
 
-        // ============================================================
-        //  ВАЖНО: Масштаб теперь управляется через CardVisualController
-        //  Не нужно копировать originalScale!
-        // ============================================================
 
         // ============================================================
         //  КОПИРУЕМ ВИЗУАЛЬНЫЕ СЛОИ
