@@ -259,11 +259,11 @@ public class CardObject : MonoBehaviour
     public void PickUp()
     {
         if (isDragging) return;
-       // if (currentCell == null)
-       // {
-       //     LogWarning($"Карта {cardName} не находится в ячейке!");
-       //     return;
-       // }
+        if (currentCell == null)
+        {
+            LogWarning($"Карта {cardName} не находится в ячейке!");
+            return;
+        }
 
         bool shiftPressed = InputHandler.Instance != null && InputHandler.Instance.GetKey("TakeAll");
 
