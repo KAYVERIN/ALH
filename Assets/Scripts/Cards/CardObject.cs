@@ -279,7 +279,6 @@ public class CardObject : MonoBehaviour
 
                 if (newCard != null)
                 {
-                    newCard.isDragging = true;
                     newCard.currentCell = null;
                     newCard.originalGridPos = new Vector2Int(currentCell.gridX, currentCell.gridY);
 
@@ -290,9 +289,7 @@ public class CardObject : MonoBehaviour
                         newCard.transform.SetParent(GridManager.Instance.transform.parent);
                     }
 
-                    this.isDragging = false;
                     this.LowerCardVisuals();
-                    // Масштаб восстанавливается в LowerCardVisuals
 
                     OnCardPickedUp?.Invoke(newCard);
                     return;
