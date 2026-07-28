@@ -94,21 +94,14 @@ public class CardObject : MonoBehaviour
         visualController = GetComponent<CardVisualController>();
         if (visualController == null)
         {
-            LogWarning("CardVisualController не найден! Добавляем...");
-            visualController = gameObject.AddComponent<CardVisualController>();
+            LogWarning("CardVisualController не найден!");
+            return;
         }
 
-        // Находим VisualContainer (должен быть в префабе)
-        Transform existingContainer = transform.Find("VisualContainer");
-        if (existingContainer != null)
-        {
-            visualContainer = existingContainer.gameObject;
-            Log("Найден VisualContainer из префаба");
-        }
-        else
-        {
-            LogWarning("VisualContainer не найден в префабе!");
-        }
+        // Получаем VisualContainer из контроллера
+        visualContainer = visualController.GetVisualContainer();
+        if (visualContainer == null)
+            LogWarning("VisualContainer не найден в CardVisualController!");
 
         // Находим фон (рамку)
         frameRenderer = GetComponent<SpriteRenderer>();
@@ -127,11 +120,6 @@ public class CardObject : MonoBehaviour
         }
 
         Log($"Карта {cardName} инициализирована");
-    }
-
-    void Start()
-    {
-        UpdateVisuals();
     }
 
     /// <summary>
@@ -225,11 +213,6 @@ public class CardObject : MonoBehaviour
     private void CreateLayerFromData(Sprite sprite, Vector2 offset, float scale, float rotation, Color color, int sortingOrder, string name)
     {
         if (sprite == null) return;
-        if (visualContainer == null)
-        {
-            LogWarning("VisualContainer не найден!");
-            return;
-        }
 
         // Создаём объект слоя
         GameObject layerObj = new GameObject(name);
@@ -313,23 +296,6 @@ public class CardObject : MonoBehaviour
         {
             visualController.RefreshRenderers();
         }
-    }
-
-    /// <summary>
-    /// Обновляет цвет рамки - УДАЛЁН, так как cardColor удалён
-    /// </summary>
-    private void UpdateFrameColor()
-    {
-        // Цвет рамки теперь управляется через CardVisualLayer
-        Log("UpdateFrameColor: цвет рамки управляется через слои");
-    }
-
-    /// <summary>
-    /// Обновляет все визуальные элементы
-    /// </summary>
-    public void UpdateVisuals()
-    {
-        UpdateFrameColor();
     }
 
     /// <summary>
@@ -451,9 +417,6 @@ public class CardObject : MonoBehaviour
             );
         }
 
-        // Обновляем цвет рамки (теперь пусто)
-        UpdateFrameColor();
-
         // Загружаем настройки стопок
         LoadStackSettings(data);
 
@@ -503,12 +466,7 @@ public class CardObject : MonoBehaviour
         }
     }
 
-    public void Setup(string name, Sprite icon, Color color)
-    {
-        cardName = name;
-        // cardColor удалён
-        UpdateVisuals();
-    }
+
 
     public void SetDebugMode(bool enable)
     {

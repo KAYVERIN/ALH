@@ -307,4 +307,11 @@ public class CardVisualController : MonoBehaviour
     {
         return dragScaleMultiplier;
     }
+    /// <summary>
+    /// Возвращает VisualContainer
+    /// </summary>
+    public GameObject GetVisualContainer()
+    {
+        return visualContainer;
+    }
 }
