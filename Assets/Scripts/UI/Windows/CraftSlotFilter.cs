@@ -151,7 +151,6 @@ public class CraftSlotFilter : MonoBehaviour
             }
 
             card.transform.SetParent(null);
-            card.transform.localScale = card.originalScale;
         }
 
         OnCardRemoved?.Invoke(this);

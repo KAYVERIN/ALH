@@ -22,10 +22,6 @@ public class CardObject : MonoBehaviour
     // ============================================================
     //  ВИЗУАЛ
     // ============================================================
-    // Удалён параметр cardColor
-
-    // Основной фон карты (рамка)
-    private SpriteRenderer frameRenderer;
 
     // Контейнер для всех визуальных слоёв
     private GameObject visualContainer;
@@ -66,8 +62,6 @@ public class CardObject : MonoBehaviour
 
     public StackCounterUI stackCounterUI;
 
-    // Приватные переменные
-    public Vector3 originalScale;
 
     // ============================================================
     //  МЕТОДЫ ЛОГИРОВАНИЯ
@@ -102,22 +96,6 @@ public class CardObject : MonoBehaviour
         visualContainer = visualController.GetVisualContainer();
         if (visualContainer == null)
             LogWarning("VisualContainer не найден в CardVisualController!");
-
-        // Находим фон (рамку)
-        frameRenderer = GetComponent<SpriteRenderer>();
-        if (frameRenderer == null)
-        {
-            frameRenderer = gameObject.AddComponent<SpriteRenderer>();
-            frameRenderer.sprite = CreateSquareSprite();
-            frameRenderer.sortingOrder = 0;
-        }
-
-        // Сохраняем масштаб (теперь через VisualController)
-        originalScale = transform.localScale;
-        if (originalScale == Vector3.zero)
-        {
-            originalScale = Vector3.one;
-        }
 
         Log($"Карта {cardName} инициализирована");
     }
@@ -465,8 +443,6 @@ public class CardObject : MonoBehaviour
             stackSize = 1;
         }
     }
-
-
 
     public void SetDebugMode(bool enable)
     {
