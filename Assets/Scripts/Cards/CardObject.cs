@@ -272,26 +272,33 @@ public class CardObject : MonoBehaviour
             if (!shiftPressed)
             {
                 Log($"Берём 1 карту из стопки {cardName}. Осталось: {stackSize - 1}");
-
                 stackSize--;
 
                 CardObject newCard = StackManager.Instance.CreateSingleCardFromStack(this);
 
                 if (newCard != null)
                 {
+                    // Настраиваем новую карту
                     newCard.currentCell = null;
                     newCard.originalGridPos = new Vector2Int(currentCell.gridX, currentCell.gridY);
-
-                    newCard.LiftCardVisuals();
+                    // НЕ УСТАНАВЛИВАЕМ isDragging = true
+                    // НЕ ВЫЗЫВАЕМ LiftCardVisuals()
 
                     if (GridManager.Instance != null)
                     {
                         newCard.transform.SetParent(GridManager.Instance.transform.parent);
                     }
 
+                    // Позиционируем под курсором
+                    Vector3 mouseWorldPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+                    mouseWorldPos.z = 0;
+                    newCard.transform.position = mouseWorldPos;
+
+                    // Сбрасываем состояние старой карты
+                    this.isDragging = false;
                     this.LowerCardVisuals();
 
-                    //OnCardPickedUp?.Invoke(newCard);
+                    Log($"Создана карта {newCard.cardName} для перетаскивания");
                     return;
                 }
             }

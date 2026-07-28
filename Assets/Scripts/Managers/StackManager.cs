@@ -137,19 +137,19 @@ public class StackManager : MonoBehaviour
 
         if (newCard == null) return null;
 
-        // Настраиваем для перетаскивания
+        // НЕ НАСТРАИВАЕМ ДЛЯ ПЕРЕТАСКИВАНИЯ
+        // Просто создаём карту в мире
         newCard.currentCell = null;
         newCard.originalGridPos = source.originalGridPos;
-
-        // Поднимаем
-        newCard.LiftCardVisuals();
+        // НЕ устанавливаем isDragging = true
+        // НЕ вызываем LiftCardVisuals()
 
         if (GridManager.Instance != null)
         {
             newCard.transform.SetParent(GridManager.Instance.transform.parent);
         }
 
-        Debug.Log($"Создана карта {newCard.cardName} для перетаскивания (стопка: 1)");
+        Debug.Log($"Создана карта {newCard.cardName} (стопка: 1)");
         return newCard;
     }
 

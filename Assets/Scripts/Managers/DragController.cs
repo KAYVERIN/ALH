@@ -158,20 +158,40 @@ public class DragController : MonoBehaviour
                 if (enableDebugLogs)
                     Debug.Log($"Превышен порог → поднимаем карту {clickedCard.cardName}");
 
+                // Вызываем PickUp() - внутри может создаться новая карта
                 clickedCard.PickUp();
 
-                if (draggedCard == null && clickedCard.isDragging)
+                // ============================================================
+                //  ПОСЛЕ PICKUP() ИЩЕМ КАРТУ ПОД КУРСОРОМ С ПОМОЩЬЮ RAYCAST
+                // ============================================================
+                CardObject cardUnderCursor = GetCardUnderMouse();
+
+                if (cardUnderCursor != null && cardUnderCursor.isDragging == false)
                 {
+                    // Нашли карту под курсором - начинаем её перетаскивание
+                    cardUnderCursor.isDragging = true;
+                    cardUnderCursor.LiftCardVisuals();
+
+                    draggedCard = cardUnderCursor;
+                    isDragging = true;
+
+                    if (enableDebugLogs)
+                        Debug.Log($"Начато перетаскивание для {draggedCard.cardName} (найдена через Raycast)");
+                }
+                else if (clickedCard != null && clickedCard.isDragging)
+                {
+                    // Если карта уже в состоянии перетаскивания
                     draggedCard = clickedCard;
                     isDragging = true;
+
                     if (enableDebugLogs)
                         Debug.Log($"Начато перетаскивание для {draggedCard.cardName}");
                 }
-
-                if (draggedCard == null)
+                else
                 {
+                    // Карта не найдена - сбрасываем
                     if (enableDebugLogs)
-                        Debug.Log($"Карта {clickedCard.cardName} НЕ поднялась!");
+                        Debug.Log($"Карта под курсором не найдена!");
                     isMouseDownOnCard = false;
                     clickedCard = null;
                     hasExceededThreshold = false;
@@ -206,6 +226,33 @@ public class DragController : MonoBehaviour
                 HandleEscape();
             }
         }
+    }
+
+    /// <summary>
+    /// Находит карту под курсором с помощью Raycast
+    /// </summary>
+    private CardObject GetCardUnderMouse()
+    {
+        if (mainCamera == null) return null;
+
+        Vector3 mousePos = Input.mousePosition;
+        Ray ray = mainCamera.ScreenPointToRay(mousePos);
+
+        // Используем слой карт
+        RaycastHit2D hit = Physics2D.Raycast(ray.origin, ray.direction, raycastDistance, cardLayer);
+
+        if (hit.collider != null)
+        {
+            CardObject card = hit.collider.GetComponent<CardObject>();
+            if (card != null)
+            {
+                if (enableDebugLogs)
+                    Debug.Log($"Raycast найден: {card.cardName}");
+                return card;
+            }
+        }
+
+        return null;
     }
 
     // ============================================================
@@ -310,22 +357,25 @@ public class DragController : MonoBehaviour
         // ============================================================
         //  СЛУЧАЙ 1: ЗАВЕРШЕНИЕ ПЕРЕТАСКИВАНИЯ
         // ============================================================
-        // Если мы перетаскивали карту (превышен порог движения)
         if (isDragging && draggedCard != null)
         {
             if (enableDebugLogs)
                 Debug.Log($"Завершение перетаскивания: {draggedCard.cardName}");
 
-            Vector3 mouseWorldPos = GetMouseWorldPosition();
+            // Проверяем, что карта всё ещё существует
+            if (draggedCard == null || draggedCard.gameObject == null)
+            {
+                isDragging = false;
+                draggedCard = null;
+                GridManager.Instance?.HideHighlight();
+                return;
+            }
 
-            // Пытаемся сбросить карту в мире
-            // Возвращает true, если карта осталась под курсором (например, остаток стопки)
+            Vector3 mouseWorldPos = GetMouseWorldPosition();
             bool cardRemainsUnderCursor = draggedCard.Drop(mouseWorldPos);
 
             if (cardRemainsUnderCursor)
             {
-                // Карта не была размещена (например, остаток стопки)
-                // Обновляем её позицию под курсором и ждём следующего движения
                 if (enableDebugLogs)
                     Debug.Log($"{draggedCard.cardName} продолжает перетаскивание (остаток стопки)");
 
@@ -336,7 +386,6 @@ public class DragController : MonoBehaviour
                 return;
             }
 
-            // Успешно завершили перетаскивание
             isDragging = false;
             draggedCard = null;
             isMouseDownOnCard = false;
@@ -348,7 +397,7 @@ public class DragController : MonoBehaviour
                 Debug.Log("Перетаскивание завершено");
 
             return;
-        } 
+        }
 
         // ============================================================
         //  СЛУЧАЙ 2: ОБЫЧНЫЙ КЛИК (БЕЗ ПЕРЕТАСКИВАНИЯ)
