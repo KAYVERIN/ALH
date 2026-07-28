@@ -251,27 +251,6 @@ public class CardObject : MonoBehaviour
         return CardLibrary.Instance?.GetCard(cardID);
     }
 
-    // ============================================================
-    //  МЕТОДЫ ДЛЯ ИЗМЕНЕНИЯ ПАРАМЕТРОВ В РЕАЛЬНОМ ВРЕМЕНИ
-    // ============================================================
-
-    public void UpdateIconOffset(Vector2 newOffset)
-    {
-        Transform icon = visualContainer?.transform.Find("IconSprite");
-        if (icon != null)
-        {
-            icon.localPosition = newOffset;
-        }
-    }
-
-    public void UpdateIconScale(float newScale)
-    {
-        Transform icon = visualContainer?.transform.Find("IconSprite");
-        if (icon != null)
-        {
-            icon.localScale = Vector3.one * newScale;
-        }
-    }
 
     // ============================================================
     //  МЕТОДЫ ПЕРЕТАСКИВАНИЯ
