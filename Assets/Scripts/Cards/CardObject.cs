@@ -167,75 +167,8 @@ public class CardObject : MonoBehaviour
 
         Log($"Создан слой: {name} (позиция: {offset}, масштаб: {scale})");
 
-        if (visualController != null)
-        {
-            visualController.RefreshRenderers();
-        }
+        visualController.RefreshRenderers();
     }
-
-    /// <summary>
-    /// Очищает только визуальные слои (иконки), НО СОХРАНЯЕТ текст и другие важные элементы
-    /// </summary>
-    private void ClearVisualLayers()
-    {
- /*       if (visualContainer == null) return;
-
-        // Список имён элементов, которые нужно сохранить
-        string[] preserveNames = new string[]
-        {
-            "CardNameText"  // Текст с именем карты
-        };
-
-        // Собираем список детей для удаления
-        List<Transform> childrenToRemove = new List<Transform>();
-
-        foreach (Transform child in visualContainer.transform)
-        {
-            bool shouldPreserve = false;
-
-            // Проверяем, нужно ли сохранить этот объект
-            foreach (string name in preserveNames)
-            {
-                if (child.name == name)
-                {
-                    shouldPreserve = true;
-                    break;
-                }
-            }
-
-            // Также сохраняем объекты с TextMeshProUGUI (на всякий случай)
-            if (child.GetComponent<TextMeshProUGUI>() != null)
-            {
-                shouldPreserve = true;
-            }
-
-            if (shouldPreserve)
-            {
-                Log($"Сохраняем: {child.name}");
-                continue;
-            }
-
-            childrenToRemove.Add(child);
-        }
-
-        // Удаляем все собранные объекты
-        foreach (Transform child in childrenToRemove)
-        {
-            if (child != null && child.gameObject != null)
-            {
-                Log($"Удалён слой: {child.name}");
-                DestroyImmediate(child.gameObject);
-            }
-        }
-
-        visualLayers.Clear();
-
-        if (visualController != null)
-        {
-            visualController.RefreshRenderers();
-        }*/
-    }
-
 
     // ============================================================
     //  ЗАГРУЗКА ДАННЫХ ИЗ CardData
@@ -253,26 +186,6 @@ public class CardObject : MonoBehaviour
         cardID = data.cardID;
         cardName = data.cardName;
         description = data.description;
-        // cardColor удалён
-
-        // Очищаем старые визуальные слои (текст сохраняется)
-        ClearVisualLayers();
-
-        // Проверяем наличие VisualContainer
-        if (visualContainer == null)
-        {
-            Transform existingContainer = transform.Find("VisualContainer");
-            if (existingContainer != null)
-            {
-                visualContainer = existingContainer.gameObject;
-                Log("Найден VisualContainer из префаба");
-            }
-            else
-            {
-                LogWarning("VisualContainer не найден!");
-                return;
-            }
-        }
 
         // 1. Фон для иконки
         if (data.iconBackground != null)
@@ -336,30 +249,6 @@ public class CardObject : MonoBehaviour
     {
         if (string.IsNullOrEmpty(cardID)) return null;
         return CardLibrary.Instance?.GetCard(cardID);
-    }
-
-    // ============================================================
-    //  ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ
-    // ============================================================
-
-    private Sprite CreateSquareSprite()
-    {
-        Texture2D tex = new Texture2D(64, 64);
-        Color[] colors = new Color[64 * 64];
-        for (int i = 0; i < colors.Length; i++)
-        {
-            colors[i] = Color.white;
-        }
-        tex.SetPixels(colors);
-        tex.Apply();
-        return Sprite.Create(tex, new Rect(0, 0, 64, 64), new Vector2(0.5f, 0.5f), 64);
-    }
-
-
-    public void SetDebugMode(bool enable)
-    {
-        enableDebugLogs = enable;
-        Log($"Режим отладки: {(enable ? "Включен" : "Выключен")}");
     }
 
     // ============================================================
