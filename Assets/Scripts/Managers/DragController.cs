@@ -252,8 +252,10 @@ public class DragController : MonoBehaviour
         if (card == null) return;
 
         // ============================================================
-        //  ПРОВЕРКА: НАД ОКНОМ КРАФТА (ДО UI)
+        //  ПРОВЕРКА 1: НАД ОКНОМ КРАФТА (ДО UI)
         // ============================================================
+        // Проверяем, открыто ли окно крафта и находится ли курсор над ним
+        // Это делается до проверки UI, чтобы окно крафта могло перехватить событие
         if (CraftWindow.IsAnyOpen())
         {
             Vector3 mouseWorldPos = GetMouseWorldPosition();
@@ -264,10 +266,10 @@ public class DragController : MonoBehaviour
                 if (enableDebugLogs)
                     Debug.Log("[DragController] Карта над окном крафта - пропускаем DropLogic");
 
-                // Вызываем событие, чтобы CraftWindow обработал сброс
+                // Вызываем событие, чтобы CraftWindow обработал сброс карты
                 OnCardDropped?.Invoke(card);
 
-                // Сбрасываем состояние
+                // Сбрасываем состояние перетаскивания
                 isDragging = false;
                 // НЕ сбрасываем draggedCard, чтобы событие могло использовать карту
                 isMouseDownOnCard = false;
@@ -280,13 +282,16 @@ public class DragController : MonoBehaviour
         }
 
         // ============================================================
-        //  ПРОВЕРКА 2: НАД UI
+        //  ПРОВЕРКА 2: НАД UI ЭЛЕМЕНТАМИ
         // ============================================================
+        // Проверяем, находится ли курсор над UI (кнопки, панели и т.д.)
+        // Если да - игнорируем отпускание и возвращаем карту на место
         if (IsPointerOverUI())
         {
             if (enableDebugLogs)
                 Debug.Log("DragController: Release on UI ignored");
 
+            // Если карта перетаскивалась - возвращаем её в исходную позицию
             if (isDragging && draggedCard != null)
             {
                 draggedCard.ReturnToOriginalPosition();
@@ -295,6 +300,7 @@ public class DragController : MonoBehaviour
                 GridManager.Instance?.HideHighlight();
             }
 
+            // Сбрасываем все состояния
             isMouseDownOnCard = false;
             clickedCard = null;
             hasExceededThreshold = false;
@@ -302,18 +308,24 @@ public class DragController : MonoBehaviour
         }
 
         // ============================================================
-        //  СЛУЧАЙ 1: ПЕРЕТАСКИВАНИЕ
+        //  СЛУЧАЙ 1: ЗАВЕРШЕНИЕ ПЕРЕТАСКИВАНИЯ
         // ============================================================
-        if (isDragging && draggedCard != null)
+        // Если мы перетаскивали карту (превышен порог движения)
+       /* if (isDragging && draggedCard != null)
         {
             if (enableDebugLogs)
                 Debug.Log($"Завершение перетаскивания: {draggedCard.cardName}");
 
             Vector3 mouseWorldPos = GetMouseWorldPosition();
+
+            // Пытаемся сбросить карту в мире
+            // Возвращает true, если карта осталась под курсором (например, остаток стопки)
             bool cardRemainsUnderCursor = draggedCard.Drop(mouseWorldPos);
 
             if (cardRemainsUnderCursor)
             {
+                // Карта не была размещена (например, остаток стопки)
+                // Обновляем её позицию под курсором и ждём следующего движения
                 if (enableDebugLogs)
                     Debug.Log($"{draggedCard.cardName} продолжает перетаскивание (остаток стопки)");
 
@@ -324,6 +336,7 @@ public class DragController : MonoBehaviour
                 return;
             }
 
+            // Успешно завершили перетаскивание
             isDragging = false;
             draggedCard = null;
             isMouseDownOnCard = false;
@@ -335,24 +348,31 @@ public class DragController : MonoBehaviour
                 Debug.Log("Перетаскивание завершено");
 
             return;
-        }
+        } */
 
         // ============================================================
-        //  СЛУЧАЙ 2: КЛИК
+        //  СЛУЧАЙ 2: ОБЫЧНЫЙ КЛИК (БЕЗ ПЕРЕТАСКИВАНИЯ)
         // ============================================================
+        // Если мышь была нажата на карте, но не было движения (порог не превышен)
+        // Это считается кликом, а не перетаскиванием
         if (isMouseDownOnCard && clickedCard != null && !hasExceededThreshold)
         {
             if (enableDebugLogs)
                 Debug.Log($"Клик: открываем UI для {clickedCard.cardName}");
 
+            // Вызываем событие клика - обычно открывает UI карты (информация, действия)
             CardObject.OnCardClicked?.Invoke(clickedCard);
 
+            // Сбрасываем состояние клика
             clickedCard = null;
             isMouseDownOnCard = false;
             hasExceededThreshold = false;
         }
         else
         {
+            // Случай, когда isMouseDownOnCard = false (не было нажатия на карте)
+            // или hasExceededThreshold = true (было движение, но isDragging почему-то false)
+            // Просто сбрасываем все состояния
             isMouseDownOnCard = false;
             clickedCard = null;
             hasExceededThreshold = false;
