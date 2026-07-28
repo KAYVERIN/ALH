@@ -388,8 +388,10 @@ public class CardObject : MonoBehaviour
         }
         else
         {
-            Log($"{cardName} осталась под курсором (остаток стопки)");
-            return true;
+            // Если не удалось разместить - возвращаем на место через DropLogic
+            DropLogic.ReturnToOriginalPosition(this);
+            Log($"{cardName} возвращена на место");
+            return false;
         }
     }
 
