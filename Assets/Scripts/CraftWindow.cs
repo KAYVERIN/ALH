@@ -344,12 +344,7 @@ public class CraftWindow : MonoBehaviour, ICardWindow
                 Debug.Log($"[CraftWindow] Карта {takenCard.cardName} поднята визуально");
             }
 
-            // ============================================================
-            //  ПЕРЕДАЁМ КАРТУ В DRAGCONTROLLER
-            // ============================================================
-            // Карта поднимается, но DragController её не видит, потому что PickUp() не вызван
-            // Вместо этого имитируем поднятие через событие
-            DragController.Instance.HandleMouseDown(takenCard);
+
 
             ResetAllSlotsHighlight();
 
