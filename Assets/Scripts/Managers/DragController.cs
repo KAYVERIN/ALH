@@ -177,9 +177,21 @@ public class DragController : MonoBehaviour
         // Берём 1 карту из стопки
         if (card.isStackable && card.stackSize > 1 && !shiftPressed)
         {
-            CardObject newCard = StackManager.Instance.CreateSingleCardFromStack(card);
+            // Используем CardLibrary.CreateCard() вместо StackManager.CreateSingleCardFromStack()
+            CardObject newCard = CardLibrary.CreateCard(card.cardID, card.transform.position, 1);
+
             if (newCard != null)
             {
+                // Настраиваем для перетаскивания (то, что делал CreateSingleCardFromStack)
+                newCard.currentCell = null;
+                newCard.originalGridPos = card.originalGridPos;
+
+                // Родитель для карты
+                //if (GridManager.Instance != null)
+                //{
+                //    newCard.transform.SetParent(GridManager.Instance.transform.parent);
+                //}
+
                 // Поднимаем новую карту
                 newCard.PickUp();
                 draggedCard = newCard;
@@ -189,6 +201,12 @@ public class DragController : MonoBehaviour
                     Debug.Log($"Создана и поднята 1 карта из стопки: {newCard.cardName}");
 
                 clickedCard = draggedCard;
+                return;
+            }
+            else
+            {
+                Debug.LogError($"Не удалось создать карту {card.cardID} через CardLibrary");
+                ResetDragState();
                 return;
             }
         }

@@ -94,44 +94,16 @@ public class StackManager : MonoBehaviour
         card.stackSize--;
         if (StackUpdateService.Instance != null) StackUpdateService.Instance.UpdateCard(card);
 
-        // Создаём новую карту для перетаскивания
-        CardObject newCard = CreateSingleCardFromStack(card);
+        // Создаём новую карту через CardLibrary
+        CardObject newCard = CardLibrary.CreateCard(card.cardID, card.transform.position, 1);
 
-        if (enableDebugLogs)
+        if (newCard != null && enableDebugLogs)
             Debug.Log($"Взята 1 карта из стопки. Осталось: {card.stackSize}");
 
         return newCard;
     }
 
-
-    /// <summary>
-    /// Создаёт одну карту из стопки (для перетаскивания)
-    /// </summary>
-    public CardObject CreateSingleCardFromStack(CardObject source)
-    {
-        if (source == null) return null;
-
-        Vector3 spawnPos = source.transform.position;
-
-        CardObject newCard = CardLibrary.CreateCard(source.cardID, spawnPos, 1);
-
-        if (newCard == null) return null;
-
-        // НЕ НАСТРАИВАЕМ ДЛЯ ПЕРЕТАСКИВАНИЯ
-        // Просто создаём карту в мире
-        newCard.currentCell = null;
-        newCard.originalGridPos = source.originalGridPos;
-        // НЕ устанавливаем isDragging = true
-        // НЕ вызываем LiftCardVisuals()
-
-        if (GridManager.Instance != null)
-        {
-            newCard.transform.SetParent(GridManager.Instance.transform.parent);
-        }
-
-        Debug.Log($"Создана карта {newCard.cardName} (стопка: 1)");
-        return newCard;
-    }
+    // УДАЛЯЕМ: CreateSingleCardFromStack() - больше не нужен
 
     /// <summary>
     /// Копирует данные с одной карты на другую
