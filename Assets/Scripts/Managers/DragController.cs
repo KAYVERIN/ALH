@@ -179,7 +179,8 @@ public class DragController : MonoBehaviour
         {
             // Используем CardLibrary.CreateCard() вместо StackManager.CreateSingleCardFromStack()
             CardObject newCard = CardLibrary.CreateCard(card.cardID, card.transform.position, 1);
-
+            // УМЕНЬШАЕМ СТОПКУ ИСХОДНОЙ КАРТЫ
+            card.stackSize--;
             if (newCard != null)
             {
                 // Настраиваем для перетаскивания (то, что делал CreateSingleCardFromStack)
