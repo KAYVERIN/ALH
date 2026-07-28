@@ -236,6 +236,7 @@ public class CardObject : MonoBehaviour
         }*/
     }
 
+
     // ============================================================
     //  ЗАГРУЗКА ДАННЫХ ИЗ CardData
     // ============================================================
@@ -319,6 +320,8 @@ public class CardObject : MonoBehaviour
         isStackable = data.isStackable;
         maxStackSize = data.maxStackSize;
 
+        // Отключаем Raycast чтобы клики проходили сквозь текст
+        cardNameText.raycastTarget = false;
         // Устанавливаем имя карты
         cardNameText.text = cardName;
 
@@ -476,6 +479,11 @@ public class CardObject : MonoBehaviour
             currentCell = null;
         }
 
+        // Масштаб теперь управляется через LiftCardVisuals
+        if (GridManager.Instance != null)
+        {
+            transform.SetParent(GridManager.Instance.transform.parent);
+        }
 
         LiftCardVisuals();
 
