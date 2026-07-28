@@ -669,26 +669,12 @@ public class CardObject : MonoBehaviour
 
     public void LiftCardVisuals()
     {
-        if (visualController != null)
-        {
-            visualController.LiftCard();
-        }
-        else
-        {
-            LogWarning("CardVisualController не найден!");
-        }
+        visualController.LiftCard();
     }
 
     public void LowerCardVisuals()
     {
-        if (visualController != null)
-        {
-            visualController.LowerCard();
-        }
-        else
-        {
-            LogWarning("CardVisualController не найден!");
-        }
+        visualController.LowerCard();
     }
 
     public bool Drop(Vector3 mouseWorldPos)
