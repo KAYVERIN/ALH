@@ -258,12 +258,12 @@ public class CardObject : MonoBehaviour
 
     public void PickUp()
     {
-        if (isDragging) return;
-        if (currentCell == null)
-        {
-            LogWarning($"Карта {cardName} не находится в ячейке!");
-            return;
-        }
+       // if (isDragging) return;
+       // if (currentCell == null)
+       // {
+       //     LogWarning($"Карта {cardName} не находится в ячейке!");
+       //     return;
+       // }
 
         bool shiftPressed = InputHandler.Instance != null && InputHandler.Instance.GetKey("TakeAll");
 
@@ -282,7 +282,7 @@ public class CardObject : MonoBehaviour
                     newCard.currentCell = null;
                     newCard.originalGridPos = new Vector2Int(currentCell.gridX, currentCell.gridY);
 
-                    newCard.LiftCardVisuals();
+                    newCard.visualController.LiftCard();
 
                     if (GridManager.Instance != null)
                     {
