@@ -291,7 +291,7 @@ public class CardObject : MonoBehaviour
 
                     this.LowerCardVisuals();
 
-                    OnCardPickedUp?.Invoke(newCard);
+                    //OnCardPickedUp?.Invoke(newCard);
                     return;
                 }
             }
