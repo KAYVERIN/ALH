@@ -304,7 +304,7 @@ public class DragController : MonoBehaviour
         // ============================================================
         //  СЛУЧАЙ 1: ПЕРЕТАСКИВАНИЕ
         // ============================================================
-        if (isDragging && draggedCard != null)
+        if (draggedCard != null)
         {
             if (enableDebugLogs)
                 Debug.Log($"Завершение перетаскивания: {draggedCard.cardName}");
