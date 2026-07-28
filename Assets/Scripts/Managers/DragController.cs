@@ -127,7 +127,7 @@ public class DragController : MonoBehaviour
             else if (isMouseDown && clickedCard != null && !hasExceededThreshold)
             {
                 // Клик без перетаскивания - уведомляем CardObject
-                //clickedCard.OnMouseUp();
+                clickedCard.OnMouseUp();
             }
 
             // Сбрасываем состояние нажатия
