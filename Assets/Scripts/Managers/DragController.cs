@@ -311,7 +311,7 @@ public class DragController : MonoBehaviour
         //  СЛУЧАЙ 1: ЗАВЕРШЕНИЕ ПЕРЕТАСКИВАНИЯ
         // ============================================================
         // Если мы перетаскивали карту (превышен порог движения)
-       /* if (isDragging && draggedCard != null)
+        if (isDragging && draggedCard != null)
         {
             if (enableDebugLogs)
                 Debug.Log($"Завершение перетаскивания: {draggedCard.cardName}");
@@ -348,7 +348,7 @@ public class DragController : MonoBehaviour
                 Debug.Log("Перетаскивание завершено");
 
             return;
-        } */
+        } 
 
         // ============================================================
         //  СЛУЧАЙ 2: ОБЫЧНЫЙ КЛИК (БЕЗ ПЕРЕТАСКИВАНИЯ)
@@ -373,9 +373,9 @@ public class DragController : MonoBehaviour
             // Случай, когда isMouseDownOnCard = false (не было нажатия на карте)
             // или hasExceededThreshold = true (было движение, но isDragging почему-то false)
             // Просто сбрасываем все состояния
-            isMouseDownOnCard = false;
-            clickedCard = null;
-            hasExceededThreshold = false;
+            //isMouseDownOnCard = false;
+            //clickedCard = null;
+           // hasExceededThreshold = false;
         }
     }
 
