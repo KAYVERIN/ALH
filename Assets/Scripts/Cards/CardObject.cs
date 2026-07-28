@@ -258,7 +258,7 @@ public class CardObject : MonoBehaviour
 
     public void PickUp()
     {
-       // if (isDragging) return;
+        if (isDragging) return;
        // if (currentCell == null)
        // {
        //     LogWarning($"Карта {cardName} не находится в ячейке!");
