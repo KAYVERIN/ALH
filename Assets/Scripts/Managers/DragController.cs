@@ -373,9 +373,9 @@ public class DragController : MonoBehaviour
             // Случай, когда isMouseDownOnCard = false (не было нажатия на карте)
             // или hasExceededThreshold = true (было движение, но isDragging почему-то false)
             // Просто сбрасываем все состояния
-            //isMouseDownOnCard = false;
-            //clickedCard = null;
-           // hasExceededThreshold = false;
+            isMouseDownOnCard = false;
+            clickedCard = null;
+            hasExceededThreshold = false;
         }
     }
 
