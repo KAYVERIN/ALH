@@ -155,14 +155,6 @@ public class CardVisualController : MonoBehaviour
         isDragging = true;
     }
 
-    /// <summary>
-    /// Опускает карту на исходный слой
-    /// </summary>
-    public void LowerCard()
-    {
-        LowerCard(currentOffset);
-        isDragging = false;
-    }
 
     // ============================================================
     //  УНИВЕРСАЛЬНЫЕ МЕТОДЫ УПРАВЛЕНИЯ СОРТИРОВКОЙ
@@ -210,11 +202,9 @@ public class CardVisualController : MonoBehaviour
     /// Опускает все визуальные компоненты карты на указанное смещение. устаревший метод, будет удалён. В новых скриптах не использовать.
     /// </summary>
     /// <param name="offset">Величина смещения Sorting Order (обычно то же, что и при поднятии)</param>
-    public void LowerCard(int offset)
+    public void LowerCard()
     {
-        if (offset == 0) return;
-
-        Log($"Опускаем карту на {offset}");
+        Log($"Опускаем карту на оригинальный слой");
 
         // 1. Все SpriteRenderer
         for (int i = 0; i < allRenderers.Length; i++)
@@ -239,7 +229,7 @@ public class CardVisualController : MonoBehaviour
                 Log($"{data.canvas.gameObject.name}: {oldOrder} → {data.canvas.sortingOrder}");
             }
         }
-
+        isDragging = false;
         currentOffset = 0;
     }
 
