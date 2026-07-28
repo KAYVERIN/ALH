@@ -124,11 +124,7 @@ public class DragController : MonoBehaviour
             {
                 EndDrag();
             }
-            else if (isMouseDown && clickedCard != null && !hasExceededThreshold)
-            {
-                // Клик без перетаскивания - вызываем событие
-                CardObject.OnCardClicked?.Invoke(clickedCard);
-            }
+ 
 
             // Сбрасываем состояние нажатия
             ResetMouseState();
@@ -406,20 +402,6 @@ public class DragController : MonoBehaviour
     // ============================================================
     //  ПУБЛИЧНЫЕ МЕТОДЫ
     // ============================================================
-
-    /// <summary>
-    /// Вызывается из CardObject при нажатии на карту
-    /// </summary>
-    public void HandleMouseDown(CardObject card)
-    {
-        if (card == null) return;
-        if (card.isBlocked) return;
-        if (card.isDragging) return;
-        if (IsPointerOverUI()) return;
-
-        StartDrag(card);
-    }
-
 
     public bool IsDragging => isDragging;
     public CardObject DraggedCard => draggedCard;
