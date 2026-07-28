@@ -43,6 +43,13 @@ public class CardObject : MonoBehaviour
     public Vector2Int originalGridPos;
 
     // ============================================================
+    //  ПЕРЕМЕННЫЕ ДЛЯ ОТСЛЕЖИВАНИЯ ПЕРЕТАСКИВАНИЯ
+    // ============================================================
+    private Vector2 mouseDownPosition;
+    private bool isMouseDown = false;
+    private bool hasExceededThreshold = false;
+
+    // ============================================================
     //  НАСТРОЙКИ
     // ============================================================
 
@@ -102,21 +109,58 @@ public class CardObject : MonoBehaviour
     }
 
     // ============================================================
-    //  ОБРАБОТЧИК МЫШИ (ТОЛЬКО ДЛЯ КЛИКА)
+    //  ОБРАБОТЧИКИ МЫШИ
     // ============================================================
 
     /// <summary>
-    /// При отпускании карты - если не было перетаскивания, вызываем событие клика
+    /// При нажатии на карту - запоминаем позицию
+    /// </summary>
+    private void OnMouseDown()
+    {
+        if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
+            return;
+
+        if (isBlocked) return;
+        if (isDragging) return;
+
+        mouseDownPosition = Input.mousePosition;
+        isMouseDown = true;
+        hasExceededThreshold = false;
+    }
+
+    /// <summary>
+    /// При отпускании - проверяем, было ли перетаскивание
     /// </summary>
     private void OnMouseUp()
     {
         if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
             return;
 
-        // Если карта не перетаскивается - это клик
-        if (!isDragging)
+        // Если не было перетаскивания (порог не превышен) - это клик
+        if (isMouseDown && !hasExceededThreshold && !isDragging)
         {
             OnCardClicked?.Invoke(this);
+        }
+
+        // Сбрасываем состояние
+        isMouseDown = false;
+        hasExceededThreshold = false;
+    }
+
+    /// <summary>
+    /// Обновление для отслеживания движения мыши
+    /// </summary>
+    private void Update()
+    {
+        // Если мышь зажата на карте - проверяем порог
+        if (isMouseDown && !isDragging && !hasExceededThreshold)
+        {
+            float dragDistance = Vector2.Distance(mouseDownPosition, Input.mousePosition);
+
+            if (dragDistance > 10f) // порог перетаскивания
+            {
+                hasExceededThreshold = true;
+            }
         }
     }
 
