@@ -120,14 +120,6 @@ public class CardObject : MonoBehaviour
             originalScale = Vector3.one;
         }
 
-        // Добавляем VisualController
-        visualController = GetComponent<CardVisualController>();
-        if (visualController == null)
-        {
-            visualController = gameObject.AddComponent<CardVisualController>();
-            Log("Добавлен CardVisualController");
-        }
-
         Log($"Карта {cardName} инициализирована");
     }
 
