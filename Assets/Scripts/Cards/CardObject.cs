@@ -282,7 +282,7 @@ public class CardObject : MonoBehaviour
                     newCard.currentCell = null;
                     newCard.originalGridPos = new Vector2Int(currentCell.gridX, currentCell.gridY);
 
-                    newCard.visualController.LiftCard();
+                    newCard.LiftCardVisuals();
 
                     if (GridManager.Instance != null)
                     {
