@@ -252,7 +252,8 @@ public class DragController : MonoBehaviour
         // Проверяем, не над UI ли курсор
         if (IsPointerOverUI())
         {
-            draggedCard.ReturnToOriginalPosition();
+            // Используем DropLogic для возврата карты
+            DropLogic.ReturnToOriginalPosition(draggedCard);
             ResetDragState();
             return;
         }
@@ -297,7 +298,8 @@ public class DragController : MonoBehaviour
 
         if (draggedCard != null)
         {
-            draggedCard.ReturnToOriginalPosition();
+            // Используем DropLogic для возврата карты
+            DropLogic.ReturnToOriginalPosition(draggedCard);
         }
 
         ResetDragState();

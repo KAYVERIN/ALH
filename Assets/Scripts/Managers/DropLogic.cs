@@ -265,7 +265,7 @@ public static class DropLogic
     /// Используется при отмене или неудачном броске.
     /// </summary>
     /// <param name="card">Карта для возврата</param>
-    private static void ReturnToOriginalPosition(CardObject card)
+    public static void ReturnToOriginalPosition(CardObject card)
     {
         if (card == null) return;
 

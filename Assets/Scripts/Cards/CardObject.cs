@@ -396,7 +396,7 @@ public class CardObject : MonoBehaviour
     /// <summary>
     /// Возвращает карту на исходную позицию (или в свободную ячейку)
     /// </summary>
-    public void ReturnToOriginalPosition()
+   /* public void ReturnToOriginalPosition()
     {
         Log($"Возврат {cardName} на исходную позицию");
 
@@ -440,7 +440,7 @@ public class CardObject : MonoBehaviour
 
         isDragging = false;
         LowerCardVisuals();
-    }
+    }*/
 
     /// <summary>
     /// Обновляет позицию карты при перетаскивании
