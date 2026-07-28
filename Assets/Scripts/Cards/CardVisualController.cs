@@ -9,6 +9,9 @@ public class CardVisualController : MonoBehaviour
     [Header("На сколько слоёв поднимаем")]
     [SerializeField] private int dragSortingOrder = 100;
 
+    [Header("Множитель масштаба при поднятии")]
+    [SerializeField] private float dragScaleMultiplier = 1.1f;
+
     [Header("VisualContainer")]
     [SerializeField] private GameObject visualContainer;
 
@@ -22,7 +25,9 @@ public class CardVisualController : MonoBehaviour
     private bool isDragging = false;
     private int currentOffset = 0;
 
-    
+    // Масштаб
+    private Vector3 originalScale;
+    private Vector3 currentScale;
 
     // ============================================================
     //  УПРАВЛЕНИЕ Canvas внутри VisualContainer
@@ -67,7 +72,7 @@ public class CardVisualController : MonoBehaviour
 
     void Awake()
     {
-        if (visualContainer == null) 
+        if (visualContainer == null)
         {
             LogWarning($"VisualContainer НЕ найден!");
             return;
@@ -87,8 +92,20 @@ public class CardVisualController : MonoBehaviour
 
         // Находим рамку
         cardFrame = GetComponent<SpriteRenderer>();
-        originalFrameOrder = cardFrame.sortingOrder;
-        Log($"Рамка найдена, originalOrder: {originalFrameOrder}");
+        if (cardFrame != null)
+        {
+            originalFrameOrder = cardFrame.sortingOrder;
+            Log($"Рамка найдена, originalOrder: {originalFrameOrder}");
+        }
+
+        // Сохраняем масштаб
+        originalScale = transform.localScale;
+        if (originalScale == Vector3.zero)
+        {
+            originalScale = Vector3.one;
+        }
+        currentScale = originalScale;
+        Log($"Сохранён оригинальный масштаб: {originalScale}");
 
         // Сохраняем все данные
         SaveAllData();
@@ -99,7 +116,7 @@ public class CardVisualController : MonoBehaviour
     // ============================================================
 
     /// <summary>
-    /// Сохраняет все данные: SpriteRenderer и Canvas внутри VisualContainer
+    /// Сохраняет все данные: SpriteRenderer, Canvas и масштаб
     /// </summary>
     private void SaveAllData()
     {
@@ -139,15 +156,24 @@ public class CardVisualController : MonoBehaviour
                 Log($"Сохранён Canvas: {canvas.gameObject.name}, Order={data.originalSortingOrder}, Layer={data.originalSortingLayer}");
             }
         }
-    }
 
+        // ============================================================
+        // 3. МАСШТАБ
+        // ============================================================
+        originalScale = transform.localScale;
+        if (originalScale == Vector3.zero)
+        {
+            originalScale = Vector3.one;
+        }
+        Log($"Сохранён масштаб: {originalScale}");
+    }
 
     // ============================================================
     //  ПОДНЯТИЕ КАРТЫ
     // ============================================================
 
     /// <summary>
-    /// Поднимает карту на слой dragSortingOrder (для перетаскивания)
+    /// Поднимает карту на слой dragSortingOrder и увеличивает масштаб
     /// </summary>
     public void LiftCard()
     {
@@ -155,13 +181,12 @@ public class CardVisualController : MonoBehaviour
         isDragging = true;
     }
 
-
     // ============================================================
     //  УНИВЕРСАЛЬНЫЕ МЕТОДЫ УПРАВЛЕНИЯ СОРТИРОВКОЙ
     // ============================================================
 
     /// <summary>
-    /// Поднимает все визуальные компоненты карты на указанное смещение
+    /// Поднимает все визуальные компоненты карты на указанное смещение и увеличивает масштаб
     /// </summary>
     /// <param name="offset">Величина смещения Sorting Order</param>
     public void LiftCard(int offset)
@@ -196,14 +221,21 @@ public class CardVisualController : MonoBehaviour
             }
         }
         currentOffset = offset;
+
+        // ============================================================
+        // 3. МАСШТАБ - увеличиваем
+        // ============================================================
+        currentScale = originalScale * dragScaleMultiplier;
+        transform.localScale = currentScale;
+        Log($"Масштаб изменён: {originalScale} → {currentScale}");
     }
 
     /// <summary>
-    /// Опускает все визуальные компоненты карты на указанное смещение. 
+    /// Опускает все визуальные компоненты карты и восстанавливает масштаб
     /// </summary>
     public void LowerCard()
     {
-        Log($"Опускаем карту на оригинальный слой");
+        Log($"Опускаем карту на оригинальный слой и восстанавливаем масштаб");
 
         // 1. Все SpriteRenderer
         for (int i = 0; i < allRenderers.Length; i++)
@@ -230,6 +262,11 @@ public class CardVisualController : MonoBehaviour
         }
         isDragging = false;
         currentOffset = 0;
+
+        // 3. Восстанавливаем масштаб
+        transform.localScale = originalScale;
+        currentScale = originalScale;
+        Log($"Масштаб восстановлен: {originalScale}");
     }
 
     /// <summary>
@@ -254,5 +291,20 @@ public class CardVisualController : MonoBehaviour
         return isDragging;
     }
 
+    /// <summary>
+    /// Устанавливает множитель масштаба при поднятии
+    /// </summary>
+    public void SetDragScaleMultiplier(float multiplier)
+    {
+        dragScaleMultiplier = Mathf.Max(0.5f, multiplier);
+        Log($"Множитель масштаба установлен: {dragScaleMultiplier}");
+    }
 
+    /// <summary>
+    /// Получает текущий множитель масштаба
+    /// </summary>
+    public float GetDragScaleMultiplier()
+    {
+        return dragScaleMultiplier;
+    }
 }

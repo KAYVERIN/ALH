@@ -22,8 +22,7 @@ public class CardObject : MonoBehaviour
     // ============================================================
     //  ВИЗУАЛ
     // ============================================================
-    [Header("Визуал")]
-    public Color cardColor = Color.white;
+    // Удалён параметр cardColor
 
     // Основной фон карты (рамка)
     private SpriteRenderer frameRenderer;
@@ -50,8 +49,7 @@ public class CardObject : MonoBehaviour
     // ============================================================
     //  НАСТРОЙКИ
     // ============================================================
-    [Header("Настройки управления слоями")]
-    [SerializeField] private float dragScaleMultiplier = 1.1f;
+    // Удалён dragScaleMultiplier - перенесён в CardVisualController
 
     [Header("=== UI ЭЛЕМЕНТЫ ===")]
     [SerializeField] private TextMeshProUGUI cardNameText;
@@ -92,6 +90,14 @@ public class CardObject : MonoBehaviour
 
     void Awake()
     {
+        // Находим VisualController
+        visualController = GetComponent<CardVisualController>();
+        if (visualController == null)
+        {
+            LogWarning("CardVisualController не найден! Добавляем...");
+            visualController = gameObject.AddComponent<CardVisualController>();
+        }
+
         // Находим VisualContainer (должен быть в префабе)
         Transform existingContainer = transform.Find("VisualContainer");
         if (existingContainer != null)
@@ -113,7 +119,7 @@ public class CardObject : MonoBehaviour
             frameRenderer.sortingOrder = 0;
         }
 
-        // Сохраняем масштаб
+        // Сохраняем масштаб (теперь через VisualController)
         originalScale = transform.localScale;
         if (originalScale == Vector3.zero)
         {
@@ -154,12 +160,6 @@ public class CardObject : MonoBehaviour
             canvas.sortingOrder += offset;
             Log($"Canvas {canvas.gameObject.name}: sortingOrder += {offset} → {canvas.sortingOrder}");
         }
-
-        // ============================================================
-        // 3. CardVisualController (если есть)
-        // ============================================================
-        CardVisualController visualController = GetComponent<CardVisualController>();
-
     }
 
     /// <summary>
@@ -262,7 +262,7 @@ public class CardObject : MonoBehaviour
         // Список имён элементов, которые нужно сохранить
         string[] preserveNames = new string[]
         {
-        "CardNameText"  // Текст с именем карты
+            "CardNameText"  // Текст с именем карты
         };
 
         // Собираем список детей для удаления
@@ -316,15 +316,12 @@ public class CardObject : MonoBehaviour
     }
 
     /// <summary>
-    /// Обновляет цвет рамки
+    /// Обновляет цвет рамки - УДАЛЁН, так как cardColor удалён
     /// </summary>
     private void UpdateFrameColor()
     {
-        if (frameRenderer != null)
-        {
-            frameRenderer.color = cardColor;
-            Log($"Обновлён цвет рамки: {cardColor}");
-        }
+        // Цвет рамки теперь управляется через CardVisualLayer
+        Log("UpdateFrameColor: цвет рамки управляется через слои");
     }
 
     /// <summary>
@@ -391,7 +388,7 @@ public class CardObject : MonoBehaviour
         cardID = data.cardID;
         cardName = data.cardName;
         description = data.description;
-        cardColor = data.cardColor;
+        // cardColor удалён
 
         // Очищаем старые визуальные слои (текст сохраняется)
         ClearVisualLayers();
@@ -454,7 +451,7 @@ public class CardObject : MonoBehaviour
             );
         }
 
-        // Обновляем цвет рамки
+        // Обновляем цвет рамки (теперь пусто)
         UpdateFrameColor();
 
         // Загружаем настройки стопок
@@ -509,8 +506,7 @@ public class CardObject : MonoBehaviour
     public void Setup(string name, Sprite icon, Color color)
     {
         cardName = name;
-        //cardTag = tag;
-        cardColor = color;
+        // cardColor удалён
         UpdateVisuals();
     }
 
@@ -541,7 +537,6 @@ public class CardObject : MonoBehaviour
             icon.localScale = Vector3.one * newScale;
         }
     }
-
 
     // ============================================================
     //  МЕТОДЫ ПЕРЕТАСКИВАНИЯ
@@ -583,7 +578,7 @@ public class CardObject : MonoBehaviour
 
                     this.isDragging = false;
                     this.LowerCardVisuals();
-                    this.transform.localScale = this.originalScale;
+                    // Масштаб восстанавливается в LowerCardVisuals
 
                     OnCardPickedUp?.Invoke(newCard);
                     return;
@@ -638,12 +633,7 @@ public class CardObject : MonoBehaviour
             currentCell = null;
         }
 
-        if (originalScale == Vector3.zero)
-        {
-            originalScale = Vector3.one;
-        }
-        transform.localScale = originalScale * dragScaleMultiplier;
-
+        // Масштаб теперь управляется через LiftCardVisuals
         if (GridManager.Instance != null)
         {
             transform.SetParent(GridManager.Instance.transform.parent);
@@ -656,17 +646,31 @@ public class CardObject : MonoBehaviour
         mouseWorldPos.z = 0;
         transform.position = mouseWorldPos;
 
-        Log($"Карта {cardName} поднята. Масштаб: {transform.localScale}");
+        Log($"Карта {cardName} поднята");
     }
 
     public void LiftCardVisuals()
     {
-        visualController.LiftCard();
+        if (visualController != null)
+        {
+            visualController.LiftCard();
+        }
+        else
+        {
+            LogWarning("VisualController не найден!");
+        }
     }
 
     public void LowerCardVisuals()
     {
-        visualController.LowerCard();
+        if (visualController != null)
+        {
+            visualController.LowerCard();
+        }
+        else
+        {
+            LogWarning("VisualController не найден!");
+        }
     }
 
     public bool Drop(Vector3 mouseWorldPos)
@@ -701,9 +705,7 @@ public class CardObject : MonoBehaviour
 
     public void ReturnToOriginalPosition()
     {
-
-        transform.localScale = originalScale;
-
+        // Масштаб восстанавливается в LowerCardVisuals
         Log($"Возврат {cardName} на исходную позицию");
 
         if (currentCell != null)

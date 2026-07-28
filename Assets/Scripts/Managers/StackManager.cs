@@ -226,8 +226,6 @@ public class StackManager : MonoBehaviour
 		target.maxStackSize = source.maxStackSize;
 		target.stackSize = source.stackSize; // Будет перезаписано позже
 		
-		// Визуальные данные
-		target.cardColor = source.cardColor;
 		
 		// ============================================================
 		//  ВАЖНО: Копируем масштаб
