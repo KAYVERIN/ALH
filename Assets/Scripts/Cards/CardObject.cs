@@ -45,7 +45,6 @@ public class CardObject : MonoBehaviour
     // ============================================================
     //  НАСТРОЙКИ
     // ============================================================
-    // Удалён dragScaleMultiplier - перенесён в CardVisualController
 
     [Header("=== UI ЭЛЕМЕНТЫ ===")]
     [SerializeField] private TextMeshProUGUI cardNameText;
@@ -61,7 +60,6 @@ public class CardObject : MonoBehaviour
     public int maxStackSize = 999;
 
     public StackCounterUI stackCounterUI;
-
 
     // ============================================================
     //  МЕТОДЫ ЛОГИРОВАНИЯ
@@ -82,7 +80,7 @@ public class CardObject : MonoBehaviour
     //  ЖИЗНЕННЫЙ ЦИКЛ
     // ============================================================
 
-    void Awake()
+    private void Awake()
     {
         // Находим VisualController
         visualController = GetComponent<CardVisualController>();
@@ -98,31 +96,28 @@ public class CardObject : MonoBehaviour
         {
             LogWarning("VisualContainer не найден в CardVisualController!");
             return;
-        }    
-           
-
+        }
 
         Log($"Карта {cardName} инициализирована");
     }
 
     // ============================================================
-    //  ОБРАБОТЧИКИ МЫШИ для активации DragController
+    //  ОБРАБОТЧИК МЫШИ (ТОЛЬКО ДЛЯ КЛИКА)
     // ============================================================
 
-    private void OnMouseDown()
-    {
-        if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
-            return;
-
-        DragController.Instance?.HandleMouseDown(this);
-    }
-
+    /// <summary>
+    /// При отпускании карты - если не было перетаскивания, вызываем событие клика
+    /// </summary>
     private void OnMouseUp()
     {
         if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
             return;
 
-        DragController.Instance?.HandleMouseUp(this);
+        // Если карта не перетаскивается - это клик
+        if (!isDragging)
+        {
+            OnCardClicked?.Invoke(this);
+        }
     }
 
     // ============================================================
@@ -174,6 +169,9 @@ public class CardObject : MonoBehaviour
     //  ЗАГРУЗКА ДАННЫХ ИЗ CardData
     // ============================================================
 
+    /// <summary>
+    /// Загружает данные карты из CardData и создаёт визуальные слои
+    /// </summary>
     public void LoadFromCardData(CardData data)
     {
         if (data == null)
@@ -233,10 +231,12 @@ public class CardObject : MonoBehaviour
         isStackable = data.isStackable;
         maxStackSize = data.maxStackSize;
 
-        // Отключаем Raycast чтобы клики проходили сквозь текст
-        cardNameText.raycastTarget = false;
-        // Устанавливаем имя карты
-        cardNameText.text = cardName;
+        // Настраиваем текст
+        if (cardNameText != null)
+        {
+            cardNameText.raycastTarget = false;
+            cardNameText.text = cardName;
+        }
 
         Log($"Карта загружена: {cardName} (ID: {cardID})");
     }
@@ -251,26 +251,27 @@ public class CardObject : MonoBehaviour
         return CardLibrary.Instance?.GetCard(cardID);
     }
 
-
     // ============================================================
     //  МЕТОДЫ ПЕРЕТАСКИВАНИЯ
     // ============================================================
 
+    /// <summary>
+    /// Поднимает карту для перетаскивания. Учитывает стопки и клавишу Shift
+    /// </summary>
     public void PickUp()
     {
         if (isDragging) return;
-        //if (currentCell == null)
-        //{
-        //    LogWarning($"Карта {cardName} не находится в ячейке!");
-        //    return;
-        //}
 
         bool shiftPressed = InputHandler.Instance != null && InputHandler.Instance.GetKey("TakeAll");
 
+        // ============================================================
+        // 1. ОБРАБОТКА СТОПКИ
+        // ============================================================
         if (isStackable && stackSize > 1)
         {
             if (!shiftPressed)
             {
+                // Берём 1 карту из стопки
                 Log($"Берём 1 карту из стопки {cardName}. Осталось: {stackSize - 1}");
                 stackSize--;
 
@@ -278,11 +279,9 @@ public class CardObject : MonoBehaviour
 
                 if (newCard != null)
                 {
-                    // Настраиваем новую карту
+                    // Настраиваем новую карту (НЕ поднимаем!)
                     newCard.currentCell = null;
                     newCard.originalGridPos = new Vector2Int(currentCell.gridX, currentCell.gridY);
-                    // НЕ УСТАНАВЛИВАЕМ isDragging = true
-                    // НЕ ВЫЗЫВАЕМ LiftCardVisuals()
 
                     if (GridManager.Instance != null)
                     {
@@ -304,6 +303,7 @@ public class CardObject : MonoBehaviour
             }
             else
             {
+                // Берём всю стопку
                 Log($"Берём всю стопку {cardName}: {stackSize} шт.");
 
                 Cell currentCellCopy = currentCell;
@@ -316,7 +316,6 @@ public class CardObject : MonoBehaviour
                     newCard.isDragging = true;
                     newCard.currentCell = null;
                     newCard.originalGridPos = new Vector2Int(currentCellCopy.gridX, currentCellCopy.gridY);
-
                     newCard.LiftCardVisuals();
 
                     if (GridManager.Instance != null)
@@ -337,9 +336,15 @@ public class CardObject : MonoBehaviour
             }
         }
 
+        // ============================================================
+        // 2. ОБЫЧНАЯ КАРТА (НЕ В СТОПКЕ ИЛИ СТОПКА = 1)
+        // ============================================================
         PickUpSingle();
     }
 
+    /// <summary>
+    /// Поднимает одну карту (без учёта стопок)
+    /// </summary>
     private void PickUpSingle()
     {
         isDragging = true;
@@ -351,7 +356,6 @@ public class CardObject : MonoBehaviour
             currentCell = null;
         }
 
-
         LiftCardVisuals();
 
         // Устанавливаем позицию под курсором
@@ -359,19 +363,29 @@ public class CardObject : MonoBehaviour
         mouseWorldPos.z = 0;
         transform.position = mouseWorldPos;
 
+        OnCardPickedUp?.Invoke(this);
         Log($"Карта {cardName} поднята");
     }
 
+    /// <summary>
+    /// Поднимает визуальные слои карты (сортировка + масштаб)
+    /// </summary>
     public void LiftCardVisuals()
     {
-        visualController.LiftCard();
+        visualController?.LiftCard();
     }
 
+    /// <summary>
+    /// Опускает визуальные слои карты (восстанавливает сортировку + масштаб)
+    /// </summary>
     public void LowerCardVisuals()
     {
-        visualController.LowerCard();
+        visualController?.LowerCard();
     }
 
+    /// <summary>
+    /// Пытается разместить карту в указанной позиции. Возвращает true, если карта осталась под курсором
+    /// </summary>
     public bool Drop(Vector3 mouseWorldPos)
     {
         if (!isDragging) return false;
@@ -394,17 +408,11 @@ public class CardObject : MonoBehaviour
         }
     }
 
-    public bool Drop()
-    {
-        LogWarning("Используйте Drop(Vector3) вместо Drop()");
-        Vector3 mouseWorldPos = Camera.main?.ScreenToWorldPoint(Input.mousePosition) ?? Vector3.zero;
-        mouseWorldPos.z = 0;
-        return Drop(mouseWorldPos);
-    }
-
+    /// <summary>
+    /// Возвращает карту на исходную позицию (или в свободную ячейку)
+    /// </summary>
     public void ReturnToOriginalPosition()
     {
-        // Масштаб восстанавливается в LowerCardVisuals
         Log($"Возврат {cardName} на исходную позицию");
 
         if (currentCell != null)
@@ -413,6 +421,7 @@ public class CardObject : MonoBehaviour
             currentCell = null;
         }
 
+        // Пытаемся вернуть в исходную ячейку
         Cell originalCell = GridManager.Instance.GetCell(originalGridPos.x, originalGridPos.y);
         if (originalCell != null && originalCell.IsEmpty())
         {
@@ -422,6 +431,7 @@ public class CardObject : MonoBehaviour
         }
         else
         {
+            // Ищем любую свободную ячейку
             for (int x = 0; x < GridManager.Instance.gridWidth; x++)
             {
                 for (int y = 0; y < GridManager.Instance.gridHeight; y++)
@@ -447,6 +457,9 @@ public class CardObject : MonoBehaviour
         LowerCardVisuals();
     }
 
+    /// <summary>
+    /// Обновляет позицию карты при перетаскивании
+    /// </summary>
     public void UpdateDragPosition(Vector3 mouseWorldPos)
     {
         if (!isDragging) return;
