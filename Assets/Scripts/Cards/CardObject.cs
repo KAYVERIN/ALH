@@ -236,46 +236,6 @@ public class CardObject : MonoBehaviour
         }*/
     }
 
-    /// <summary>
-    /// Обновляет отображение имени карты
-    /// </summary>
-    public void UpdateCardNameText()
-    {
-        if (visualContainer == null) return;
-
-        // Ищем текст в VisualContainer
-        if (cardNameText == null)
-        {
-            cardNameText = visualContainer.GetComponentInChildren<TextMeshProUGUI>();
-
-            if (cardNameText == null)
-            {
-                LogWarning("TextMeshProUGUI не найден в VisualContainer!");
-                return;
-            }
-        }
-
-        // Проверяем, что объект всё ещё существует
-        if (cardNameText != null && cardNameText.gameObject != null)
-        {
-            // Отключаем Raycast чтобы клики проходили сквозь текст
-            cardNameText.raycastTarget = false;
-
-            // Устанавливаем имя карты
-            cardNameText.text = cardName;
-
-            // Убеждаемся, что Canvas правильно настроен
-            Canvas canvas = cardNameText.GetComponent<Canvas>();
-            if (canvas != null)
-            {
-                canvas.overrideSorting = true;
-                canvas.sortingOrder = 20;
-            }
-
-            Log($"Обновлено имя карты: {cardName}");
-        }
-    }
-
     // ============================================================
     //  ЗАГРУЗКА ДАННЫХ ИЗ CardData
     // ============================================================
@@ -356,10 +316,11 @@ public class CardObject : MonoBehaviour
         }
 
         // Загружаем настройки стопок
-        LoadStackSettings(data);
+        isStackable = data.isStackable;
+        maxStackSize = data.maxStackSize;
 
-        // Обновляем имя карты
-        UpdateCardNameText();
+        // Устанавливаем имя карты
+        cardNameText.text = cardName;
 
         Log($"Карта загружена: {cardName} (ID: {cardID})");
     }
@@ -391,18 +352,6 @@ public class CardObject : MonoBehaviour
         return Sprite.Create(tex, new Rect(0, 0, 64, 64), new Vector2(0.5f, 0.5f), 64);
     }
 
-    public void LoadStackSettings(CardData data)
-    {
-        if (data == null) return;
-
-        isStackable = data.isStackable;
-        maxStackSize = data.maxStackSize;
-
-        if (!isStackable)
-        {
-            stackSize = 1;
-        }
-    }
 
     public void SetDebugMode(bool enable)
     {
