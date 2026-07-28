@@ -229,7 +229,7 @@ public class DragController : MonoBehaviour
     }
 
     /// <summary>
-    /// Находит карту под курсором с помощью Raycast
+    /// Находит карту под курсором (поддерживает 2D и 3D коллайдеры)
     /// </summary>
     private CardObject GetCardUnderMouse()
     {
@@ -238,21 +238,65 @@ public class DragController : MonoBehaviour
         Vector3 mousePos = Input.mousePosition;
         Ray ray = mainCamera.ScreenPointToRay(mousePos);
 
-        // Используем слой карт
-        RaycastHit2D hit = Physics2D.Raycast(ray.origin, ray.direction, raycastDistance, cardLayer);
+        // ============================================================
+        // 1. ПРОВЕРКА 2D КОЛЛАЙДЕРОВ (SpriteRenderer, BoxCollider2D и т.д.)
+        // ============================================================
+        RaycastHit2D hit2D = Physics2D.Raycast(ray.origin, ray.direction, raycastDistance, cardLayer);
 
-        if (hit.collider != null)
+        if (hit2D.collider != null)
         {
-            CardObject card = hit.collider.GetComponent<CardObject>();
+            CardObject card = hit2D.collider.GetComponent<CardObject>();
             if (card != null)
             {
                 if (enableDebugLogs)
-                    Debug.Log($"Raycast найден: {card.cardName}");
+                    Debug.Log($"Raycast 2D найден: {card.cardName}");
                 return card;
             }
         }
 
-        return null;
+        // ============================================================
+        // 2. ПРОВЕРКА 3D КОЛЛАЙДЕРОВ (MeshCollider, BoxCollider и т.д.)
+        // ============================================================
+        RaycastHit hit3D;
+        if (Physics.Raycast(ray, out hit3D, raycastDistance, cardLayer))
+        {
+            CardObject card = hit3D.collider.GetComponent<CardObject>();
+            if (card != null)
+            {
+                if (enableDebugLogs)
+                    Debug.Log($"Raycast 3D найден: {card.cardName}");
+                return card;
+            }
+        }
+
+        // ============================================================
+        // 3. ЕСЛИ НИЧЕГО НЕ НАЙДЕНО - ПРОВЕРЯЕМ ПОЗИЦИЮ В МИРЕ
+        // ============================================================
+        // Если карта была создана из стопки, она может быть в мире, но без коллайдера
+        // Ищем ближайшую карту к позиции мыши
+        Vector3 worldPos = GetMouseWorldPosition();
+        CardObject[] allCards = FindObjectsOfType<CardObject>();
+
+        CardObject nearestCard = null;
+        float nearestDistance = float.MaxValue;
+
+        foreach (CardObject card in allCards)
+        {
+            // Проверяем, что карта не перетаскивается и не в ячейке
+            if (card.isDragging || card.currentCell != null) continue;
+
+            float dist = Vector3.Distance(worldPos, card.transform.position);
+            if (dist < nearestDistance && dist < 2f) // Максимальное расстояние 2 юнита
+            {
+                nearestDistance = dist;
+                nearestCard = card;
+            }
+        }
+
+        if (nearestCard != null && enableDebugLogs)
+            Debug.Log($"Найдена ближайшая карта: {nearestCard.cardName} (расстояние: {nearestDistance})");
+
+        return nearestCard;
     }
 
     // ============================================================
