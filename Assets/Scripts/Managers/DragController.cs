@@ -126,8 +126,8 @@ public class DragController : MonoBehaviour
             }
             else if (isMouseDown && clickedCard != null && !hasExceededThreshold)
             {
-                // Клик без перетаскивания - уведомляем CardObject
-                clickedCard.OnMouseUp();
+                // Клик без перетаскивания - вызываем событие
+                CardObject.OnCardClicked?.Invoke(clickedCard);
             }
 
             // Сбрасываем состояние нажатия
@@ -434,14 +434,6 @@ public class DragController : MonoBehaviour
         StartDrag(card);
     }
 
-    /// <summary>
-    /// Вызывается из CardObject при отпускании карты
-    /// </summary>
-    public void HandleMouseUp(CardObject card)
-    {
-        // Метод оставлен для совместимости, но логика теперь в Update
-        // Может быть удалён, если CardObject перестанет его вызывать
-    }
 
     public bool IsDragging => isDragging;
     public CardObject DraggedCard => draggedCard;
