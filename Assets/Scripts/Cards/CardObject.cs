@@ -258,11 +258,11 @@ public class CardObject : MonoBehaviour
 
     public void PickUp()
     {
-        if (isDragging) return;
+        //if (isDragging) return;
         if (currentCell == null)
         {
             LogWarning($"Карта {cardName} не находится в ячейке!");
-            return;
+            //return;
         }
 
         bool shiftPressed = InputHandler.Instance != null && InputHandler.Instance.GetKey("TakeAll");
@@ -347,11 +347,6 @@ public class CardObject : MonoBehaviour
             currentCell = null;
         }
 
-        // Масштаб теперь управляется через LiftCardVisuals
-        if (GridManager.Instance != null)
-        {
-            transform.SetParent(GridManager.Instance.transform.parent);
-        }
 
         LiftCardVisuals();
 
@@ -365,26 +360,12 @@ public class CardObject : MonoBehaviour
 
     public void LiftCardVisuals()
     {
-        if (visualController != null)
-        {
-            visualController.LiftCard();
-        }
-        else
-        {
-            LogWarning("VisualController не найден!");
-        }
+        visualController.LiftCard();
     }
 
     public void LowerCardVisuals()
     {
-        if (visualController != null)
-        {
-            visualController.LowerCard();
-        }
-        else
-        {
-            LogWarning("VisualController не найден!");
-        }
+        visualController.LowerCard();
     }
 
     public bool Drop(Vector3 mouseWorldPos)

@@ -176,8 +176,7 @@ public class CardVisualController : MonoBehaviour
     /// Поднимает карту на слой dragSortingOrder и увеличивает масштаб
     /// </summary>
     public void LiftCard()
-    {
-        LowerCard();
+    {        
         LiftCard(dragSortingOrder);
         isDragging = true;
     }
@@ -192,6 +191,7 @@ public class CardVisualController : MonoBehaviour
     /// <param name="offset">Величина смещения Sorting Order</param>
     public void LiftCard(int offset)
     {
+        LowerCard();
         Log($"Поднимаем карту на {offset}");
 
         // ============================================================
@@ -232,7 +232,7 @@ public class CardVisualController : MonoBehaviour
     }
 
     /// <summary>
-    /// Опускает все визуальные компоненты карты и восстанавливает масштаб
+    /// Опускает все визуальные компоненты карты и восстанавливает масштаб. До исходных значений.
     /// </summary>
     public void LowerCard()
     {
