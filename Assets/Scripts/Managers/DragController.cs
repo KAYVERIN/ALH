@@ -176,62 +176,48 @@ public class DragController : MonoBehaviour
                            InputHandler.Instance.GetKey("TakeAll");
 
         // ============================================================
-        // 1. ЕСЛИ КАРТА В СТОПКЕ И СТОПКА > 1
+        // 1. ЕСЛИ КАРТА В СТОПКЕ И СТОПКА > 1 И НЕ SHIFT
         // ============================================================
-        if (card.isStackable && card.stackSize > 1)
+        // Берём 1 карту из стопки
+        if (card.isStackable && card.stackSize > 1 && !shiftPressed)
         {
-            CardObject newCard = null;
-
-            if (!shiftPressed)
+            CardObject newCard = StackManager.Instance.CreateSingleCardFromStack(card);
+            if (newCard != null)
             {
-                // Берём 1 карту из стопки
-                newCard = StackManager.Instance.CreateSingleCardFromStack(card);
-                if (newCard != null)
-                {
-                    // Поднимаем новую карту
-                    newCard.PickUp();
-                    draggedCard = newCard;
-                    isDragging = true;
+                // Поднимаем новую карту
+                newCard.PickUp();
+                draggedCard = newCard;
+                isDragging = true;
 
-                    if (enableDebugLogs)
-                        Debug.Log($"Создана и поднята 1 карта из стопки: {newCard.cardName}");
-                }
-            }
-            else
-            {
-                // Берём всю стопку
-                newCard = StackManager.Instance.CreateCardFromStack(card, card.stackSize);
-                if (newCard != null)
-                {
-                    // Поднимаем новую карту
-                    newCard.PickUp();
-                    draggedCard = newCard;
-                    isDragging = true;
+                if (enableDebugLogs)
+                    Debug.Log($"Создана и поднята 1 карта из стопки: {newCard.cardName}");
 
-                    if (enableDebugLogs)
-                        Debug.Log($"Создана и поднята вся стопка: {newCard.cardName} ({newCard.stackSize} шт.)");
-                }
-            }
-
-            if (draggedCard != null)
-            {
-                // Обновляем ссылку на перетаскиваемую карту
                 clickedCard = draggedCard;
                 return;
             }
         }
 
         // ============================================================
-        // 2. ОБЫЧНАЯ КАРТА (НЕ В СТОПКЕ ИЛИ СТОПКА = 1)
+        // 2. ВСЕ ОСТАЛЬНЫЕ СЛУЧАИ - ПРОСТО ПОДНИМАЕМ КАРТУ
         // ============================================================
-        card.PickUp();
-        draggedCard = card;
-        isDragging = true;
+        // - Обычная карта (не стопка или стопка = 1)
+        // - Стопка > 1 с зажатым Shift (берём всю стопку)
+        // - Любая другая ситуация
 
-        if (enableDebugLogs)
-            Debug.Log($"Поднята карта: {card.cardName}");
+        if (card != null && card.gameObject != null)
+        {
+            card.PickUp();
+            draggedCard = card;
+            isDragging = true;
+
+            if (enableDebugLogs)
+                Debug.Log($"Поднята карта: {card.cardName}");
+        }
+        else
+        {
+            ResetDragState();
+        }
     }
-
     /// <summary>
     /// Завершает перетаскивание: пытается разместить карту или возвращает на место
     /// </summary>

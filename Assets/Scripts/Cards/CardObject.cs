@@ -306,84 +306,25 @@ public class CardObject : MonoBehaviour
     {
         if (isDragging) return;
 
-        bool shiftPressed = InputHandler.Instance != null && InputHandler.Instance.GetKey("TakeAll");
-
-        // ============================================================
-        // 1. ОБРАБОТКА СТОПКИ
-        // ============================================================
-        if (isStackable && stackSize > 1)
+        // Если карта в ячейке - убираем из неё
+        if (currentCell != null)
         {
-            if (!shiftPressed)
-            {
-                // Берём 1 карту из стопки
-                Log($"Берём 1 карту из стопки {cardName}. Осталось: {stackSize - 1}");
-                stackSize--;
-
-                CardObject newCard = StackManager.Instance.CreateSingleCardFromStack(this);
-
-                if (newCard != null)
-                {
-                    // Настраиваем новую карту (НЕ поднимаем!)
-                    newCard.currentCell = null;
-                    newCard.originalGridPos = new Vector2Int(currentCell.gridX, currentCell.gridY);
-
-                    if (GridManager.Instance != null)
-                    {
-                        newCard.transform.SetParent(GridManager.Instance.transform.parent);
-                    }
-
-                    // Позиционируем под курсором
-                    Vector3 mouseWorldPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-                    mouseWorldPos.z = 0;
-                    newCard.transform.position = mouseWorldPos;
-
-                    // Сбрасываем состояние старой карты
-                    this.isDragging = false;
-                    this.LowerCardVisuals();
-
-                    Log($"Создана карта {newCard.cardName} для перетаскивания");
-                    return;
-                }
-            }
-            else
-            {
-                // Берём всю стопку
-                Log($"Берём всю стопку {cardName}: {stackSize} шт.");
-
-                Cell currentCellCopy = currentCell;
-                int fullStackSize = stackSize;
-
-                CardObject newCard = StackManager.Instance.CreateCardFromStack(this, fullStackSize);
-
-                if (newCard != null)
-                {
-                    newCard.isDragging = true;
-                    newCard.currentCell = null;
-                    newCard.originalGridPos = new Vector2Int(currentCellCopy.gridX, currentCellCopy.gridY);
-                    newCard.LiftCardVisuals();
-
-                    if (GridManager.Instance != null)
-                    {
-                        newCard.transform.SetParent(GridManager.Instance.transform.parent);
-                    }
-
-                    if (currentCellCopy != null)
-                    {
-                        currentCellCopy.RemoveCard();
-                    }
-                    Destroy(gameObject);
-
-                    OnCardPickedUp?.Invoke(newCard);
-                    Log($"Взята вся стопка: {fullStackSize} шт.");
-                    return;
-                }
-            }
+            originalGridPos = new Vector2Int(currentCell.gridX, currentCell.gridY);
+            currentCell.RemoveCard();
+            currentCell = null;
         }
 
-        // ============================================================
-        // 2. ОБЫЧНАЯ КАРТА (НЕ В СТОПКЕ ИЛИ СТОПКА = 1)
-        // ============================================================
-        PickUpSingle();
+        // Поднимаем визуально
+        LiftCardVisuals();
+        isDragging = true;
+
+        // Устанавливаем позицию под курсором
+        Vector3 mouseWorldPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+        mouseWorldPos.z = 0;
+        transform.position = mouseWorldPos;
+
+        OnCardPickedUp?.Invoke(this);
+        Log($"Карта {cardName} поднята");
     }
 
     /// <summary>

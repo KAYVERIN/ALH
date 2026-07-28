@@ -154,36 +154,6 @@ public class StackManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Создаёт карту со всей стопкой (для перетаскивания)
-    /// </summary>
-    public CardObject CreateCardFromStack(CardObject source, int stackSize)
-    {
-        if (source == null) return null;
-
-        Vector3 spawnPos = source.transform.position;
-
-        CardObject newCard = CardLibrary.CreateCard(source.cardID, spawnPos, stackSize);
-
-        if (newCard == null) return null;
-
-        // Настраиваем для перетаскивания
-        newCard.currentCell = null;
-        newCard.originalGridPos = source.originalGridPos;
-        newCard.isDragging = true;
-
-        // Поднимаем визуально (масштаб управляется через CardVisualController)
-        newCard.LiftCardVisuals();
-
-        if (GridManager.Instance != null)
-        {
-            newCard.transform.SetParent(GridManager.Instance.transform.parent);
-        }
-
-        Debug.Log($"Создана карта {newCard.cardName} для перетаскивания (стопка: {stackSize})");
-        return newCard;
-    }
-
-    /// <summary>
     /// Копирует данные с одной карты на другую
     /// </summary>
     private void CopyCardData(CardObject source, CardObject target)
