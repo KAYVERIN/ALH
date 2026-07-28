@@ -476,11 +476,6 @@ public class CardObject : MonoBehaviour
             currentCell = null;
         }
 
-        // Масштаб теперь управляется через LiftCardVisuals
-        if (GridManager.Instance != null)
-        {
-            transform.SetParent(GridManager.Instance.transform.parent);
-        }
 
         LiftCardVisuals();
 
