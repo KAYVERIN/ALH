@@ -438,6 +438,53 @@ public class GridManager : MonoBehaviour
             highlightObject.SetActive(false);
     }
 
+    /// <summary>
+    /// Обновляет подсветку в зависимости от позиции курсора.
+    /// Содержит ВСЮ логику проверок:
+    /// - Над окном крафта ли курсор
+    /// - Над UI ли курсор
+    /// - В пределах ли сетки
+    /// </summary>
+    public void UpdateHighlight(Vector3 mouseWorldPos)
+    {
+        // Проверяем, не над окном крафта ли курсор
+        bool isOverCraftWindow = false;
+        if (CraftWindow.IsAnyOpen())
+        {
+            CraftWindow window = CraftWindow.GetCurrentWindow();
+            if (window != null)
+            {
+                isOverCraftWindow = window.IsMouseOverWindow(mouseWorldPos);
+            }
+        }
+
+        // Проверяем, не над UI ли курсор
+        bool isOverUI = false;
+        if (EventSystem.current != null)
+        {
+            isOverUI = EventSystem.current.IsPointerOverGameObject();
+        }
+
+        // Если курсор над UI или над окном крафта - скрываем подсветку
+        if (isOverCraftWindow || isOverUI)
+        {
+            HideHighlight();
+            return;
+        }
+
+        // Ищем ячейку под курсором
+        Cell nearestCell = GetCellAtWorldPosition(mouseWorldPos);
+
+        if (nearestCell != null)
+        {
+            ShowHighlight(nearestCell.gridX, nearestCell.gridY);
+        }
+        else
+        {
+            HideHighlight();
+        }
+    }
+
     // ============================================================
     //  ДОПОЛНИТЕЛЬНЫЕ МЕТОДЫ
     // ============================================================
