@@ -26,9 +26,6 @@ public class CardObject : MonoBehaviour
     // Контейнер для всех визуальных слоёв
     private GameObject visualContainer;
 
-    // Список всех визуальных слоёв
-    private List<CardVisualLayer> visualLayers = new List<CardVisualLayer>();
-
     // ============================================================
     //  КОМПОНЕНТЫ
     // ============================================================
@@ -167,22 +164,6 @@ public class CardObject : MonoBehaviour
     // ============================================================
     //  УПРАВЛЕНИЕ ВИЗУАЛЬНЫМИ СЛОЯМИ
     // ============================================================
-
-    /// <summary>
-    /// Добавляет визуальный слой
-    /// </summary>
-    public void AddVisualLayer(CardVisualLayer layer)
-    {
-        if (layer == null || layer.sprite == null) return;
-
-        visualLayers.Add(layer);
-        Log($"Добавлен слой: {layer.objectName}");
-
-        if (visualController != null)
-        {
-            visualController.RefreshRenderers();
-        }
-    }
 
     /// <summary>
     /// Создаёт слой из данных
