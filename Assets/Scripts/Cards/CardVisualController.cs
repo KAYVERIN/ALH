@@ -191,7 +191,7 @@ public class CardVisualController : MonoBehaviour
     /// <param name="offset">Величина смещения Sorting Order</param>
     public void LiftCard(int offset)
     {
-        LowerCard();
+        LowerCard();// востанавливаем исходную высоту
         Log($"Поднимаем карту на {offset}");
 
         // ============================================================
