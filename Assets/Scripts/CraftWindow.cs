@@ -236,7 +236,7 @@ public class CraftWindow : MonoBehaviour, ICardWindow
             if (targetSlot == null)
             {
                 Debug.Log("[CraftWindow] OnCardDroppedHandler: нет слота под мышью, возвращаем на поле");
-                CardLibrary.PlaceCardSmart(card);
+                //CardLibrary.PlaceCardSmart(card);
                 card.isDragging = false;
                 currentDraggedCard = null;
                 lastHighlightedSlot = null;
@@ -248,7 +248,7 @@ public class CraftWindow : MonoBehaviour, ICardWindow
             if (targetSlot.IsOccupied())
             {
                 Debug.Log($"[CraftWindow] OnCardDroppedHandler: слот {targetSlot.slotIndex} занят, возвращаем на поле");
-                CardLibrary.PlaceCardSmart(card);
+                //CardLibrary.PlaceCardSmart(card);
                 card.isDragging = false;
                 currentDraggedCard = null;
                 lastHighlightedSlot = null;
@@ -260,7 +260,7 @@ public class CraftWindow : MonoBehaviour, ICardWindow
             if (!targetSlot.CanPlaceCard(card))
             {
                 Debug.Log($"[CraftWindow] OnCardDroppedHandler: слот {targetSlot.slotIndex} НЕ подходит для {card.cardName}, возвращаем на поле");
-                CardLibrary.PlaceCardSmart(card);
+                //CardLibrary.PlaceCardSmart(card);
                 card.isDragging = false;
                 currentDraggedCard = null;
                 lastHighlightedSlot = null;
@@ -522,7 +522,7 @@ public class CraftWindow : MonoBehaviour, ICardWindow
             if (card != null)
             {
                 slot.RemoveCard();
-                CardLibrary.PlaceCardSmart(card);
+                //CardLibrary.PlaceCardSmart(card);
             }
         }
     }
