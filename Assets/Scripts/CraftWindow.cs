@@ -94,18 +94,9 @@ public class CraftWindow : MonoBehaviour, ICardWindow
     {
         if (slotContainer == null)
         {
-            Transform container = transform.Find("SlotContainer");
-            if (container != null)
-                slotContainer = container;
-            else
-                LogWarning("SlotContainer не назначен и не найден!");
+            LogWarning("SlotContainer не назначен");
+            return;
         }
-
-        if (backgroundRenderer == null)
-            backgroundRenderer = GetComponentInChildren<SpriteRenderer>();
-
-        if (backgroundCollider == null)
-            backgroundCollider = GetComponent<BoxCollider2D>();
 
         if (closeButton != null)
         {
@@ -123,11 +114,6 @@ public class CraftWindow : MonoBehaviour, ICardWindow
                 button.gameObject.SetActive(false);
             }
         }
-
-        gameObject.SetActive(false);
-        // Подписываемся на событие сброса карты
-        DragController.OnCardDropped += OnCardDroppedHandler;
-        CardObject.OnCardClicked += OnCardClickedHandler;
     }
 
     void Update()
