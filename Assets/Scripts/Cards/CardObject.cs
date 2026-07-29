@@ -308,8 +308,6 @@ public class CardObject : MonoBehaviour
         Log($"Карта {cardName} поднята");
     }
 
-
-
     /// <summary>
     /// Поднимает визуальные слои карты (сортировка + масштаб)
     /// </summary>
