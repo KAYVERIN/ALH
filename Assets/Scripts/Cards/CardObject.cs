@@ -370,9 +370,9 @@ public class CardObject : MonoBehaviour
         else
         {
             // Если не удалось разместить - возвращаем на место через DropLogic
-            DropLogic.ReturnToOriginalPosition(this);
+            //DropLogic.ReturnToOriginalPosition(this);
             Log($"{cardName} возвращена на место");
-            return false;
+            return true;
         }
     }
 
