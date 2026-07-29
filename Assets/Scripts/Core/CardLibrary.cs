@@ -164,12 +164,6 @@ public class CardLibrary : MonoBehaviour
     /// <returns>Созданный CardObject</returns>
     public static CardObject CreateCard(string cardID, Vector3 position, int stackSize = 1)
     {
-        if (Instance == null)
-        {
-            if (enableDebugLogs)
-                Debug.LogError("CardLibrary.Instance == null!");
-            return null;
-        }
 
         CardData data = Instance.GetCard(cardID);
         if (data == null)
@@ -214,13 +208,6 @@ public class CardLibrary : MonoBehaviour
         card.isStackable = data.isStackable;
         card.maxStackSize = data.maxStackSize;
 
-        // ============================================================
-        //  5. ОБНОВЛЯЕМ СЧЁТЧИК
-        // ============================================================
-        if (StackUpdateService.Instance != null)
-        {
-            StackUpdateService.Instance.UpdateCard(card);
-        }
         if (enableDebugLogs)
             Debug.Log($"[CardLibrary] Создана карта: {card.cardName} (ID: {cardID}, стопка: {card.stackSize}) в позиции {position}");
 
