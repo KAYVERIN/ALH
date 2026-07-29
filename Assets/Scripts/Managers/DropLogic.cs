@@ -492,7 +492,7 @@ public static class DropLogic
             //PlaceCardSmart(source);
 
             //GridManager.Instance.HideHighlight();
-            return false;
+            return true;
         }
     }
 
