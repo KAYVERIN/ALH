@@ -478,20 +478,20 @@ public static class DropLogic
             source.stackSize -= cardsToAdd;
 
             // Очищаем ячейку источника (он теперь летает)
-            if (source.currentCell != null)
-            {
-                source.currentCell.RemoveCard();
-                source.currentCell = null;
-            }
+            //if (source.currentCell != null)
+            //{
+            //    source.currentCell.RemoveCard();
+            //    source.currentCell = null;
+            //}
 
             // Останавливаем перетаскивание остатка
-            source.isDragging = false;
-            source.LowerCardVisuals();
+            //source.isDragging = false;
+            //source.LowerCardVisuals();
 
             // Умно размещаем остаток в ближайшее место
-            PlaceCardSmart(source);
+            //PlaceCardSmart(source);
 
-            GridManager.Instance.HideHighlight();
+            //GridManager.Instance.HideHighlight();
             return true;
         }
     }
