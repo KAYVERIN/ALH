@@ -308,30 +308,7 @@ public class CardObject : MonoBehaviour
         Log($"Карта {cardName} поднята");
     }
 
-    /// <summary>
-    /// Поднимает одну карту (без учёта стопок)
-    /// </summary>
-    private void PickUpSingle()
-    {
-        isDragging = true;
 
-        if (currentCell != null)
-        {
-            originalGridPos = new Vector2Int(currentCell.gridX, currentCell.gridY);
-            currentCell.RemoveCard();
-            currentCell = null;
-        }
-
-        LiftCardVisuals();
-
-        // Устанавливаем позицию под курсором
-        Vector3 mouseWorldPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-        mouseWorldPos.z = 0;
-        transform.position = mouseWorldPos;
-
-        OnCardPickedUp?.Invoke(this);
-        Log($"Карта {cardName} поднята");
-    }
 
     /// <summary>
     /// Поднимает визуальные слои карты (сортировка + масштаб)
@@ -369,61 +346,9 @@ public class CardObject : MonoBehaviour
         }
         else
         {
-            // Если не удалось разместить - возвращаем на место через DropLogic
-            //DropLogic.ReturnToOriginalPosition(this);
-            Log($"{cardName} возвращена на место");
             return true;
         }
     }
-
-    /// <summary>
-    /// Возвращает карту на исходную позицию (или в свободную ячейку)
-    /// </summary>
-   /* public void ReturnToOriginalPosition()
-    {
-        Log($"Возврат {cardName} на исходную позицию");
-
-        if (currentCell != null)
-        {
-            currentCell.RemoveCard();
-            currentCell = null;
-        }
-
-        // Пытаемся вернуть в исходную ячейку
-        Cell originalCell = GridManager.Instance.GetCell(originalGridPos.x, originalGridPos.y);
-        if (originalCell != null && originalCell.IsEmpty())
-        {
-            originalCell.PlaceCard(this);
-            currentCell = originalCell;
-            Log($"Карта {cardName} возвращена в ячейку ({originalGridPos.x}, {originalGridPos.y})");
-        }
-        else
-        {
-            // Ищем любую свободную ячейку
-            for (int x = 0; x < GridManager.Instance.gridWidth; x++)
-            {
-                for (int y = 0; y < GridManager.Instance.gridHeight; y++)
-                {
-                    Cell freeCell = GridManager.Instance.GetCell(x, y);
-                    if (freeCell != null && freeCell.IsEmpty())
-                    {
-                        freeCell.PlaceCard(this);
-                        currentCell = freeCell;
-                        Log($"Карта {cardName} помещена в свободную ячейку ({x}, {y})");
-                        break;
-                    }
-                }
-            }
-
-            if (currentCell == null)
-            {
-                LogWarning($"Нет свободных ячеек для {cardName}!");
-            }
-        }
-
-        isDragging = false;
-        LowerCardVisuals();
-    }*/
 
     /// <summary>
     /// Обновляет позицию карты при перетаскивании
