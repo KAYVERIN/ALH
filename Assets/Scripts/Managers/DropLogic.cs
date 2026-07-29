@@ -6,6 +6,19 @@ using UnityEngine;
 /// </summary>
 public static class DropLogic
 {
+    // ============================================================
+    //  НАСТРОЙКИ ЛОГИРОВАНИЯ
+    // ============================================================
+    private static bool enableDebugLogs = false;
+
+    /// <summary>
+    /// Включает/выключает логирование
+    /// </summary>
+    public static void SetDebugLogsEnabled(bool enabled)
+    {
+        enableDebugLogs = enabled;
+    }
+
     /// <summary>
     /// Главный метод обработки броска карты.
     /// Определяет, что делать с перетаскиваемой картой в зависимости от позиции курсора.
@@ -24,10 +37,10 @@ public static class DropLogic
         // ============================================================
         Cell targetCell = GridManager.Instance.GetCellAtWorldPosition(mouseWorldPos);
 
-        // Если ячейки нет (курсор за пределами сетки) - ищем ближайшее место через CardLibrary
+        // Если ячейки нет (курсор за пределами сетки) - ищем ближайшее место через PlaceCardSmart
         if (targetCell == null)
         {
-            CardLibrary.PlaceCardSmart(draggedCard);
+            PlaceCardSmart(draggedCard);
             return true;
         }
 
@@ -100,6 +113,10 @@ public static class DropLogic
         }
     }
 
+    // ============================================================
+    //  МЕТОДЫ РАБОТЫ СО СТОПКАМИ
+    // ============================================================
+
     /// <summary>
     /// Проверяет, можно ли сложить карты в стопку
     /// </summary>
@@ -121,6 +138,10 @@ public static class DropLogic
 
         return true;
     }
+
+    // ============================================================
+    //  МЕТОДЫ РАЗМЕЩЕНИЯ КАРТ
+    // ============================================================
 
     /// <summary>
     /// Размещает карту в указанной пустой ячейке.
@@ -150,6 +171,267 @@ public static class DropLogic
         // Скрываем подсветку сетки
         GridManager.Instance.HideHighlight();
     }
+
+    /// <summary>
+    /// Находит первую свободную ячейку в сетке
+    /// </summary>
+    public static Cell FindFreeCell()
+    {
+        if (GridManager.Instance == null) return null;
+
+        for (int x = 0; x < GridManager.Instance.gridWidth; x++)
+        {
+            for (int y = 0; y < GridManager.Instance.gridHeight; y++)
+            {
+                Cell cell = GridManager.Instance.GetCell(x, y);
+                if (cell != null && cell.IsEmpty())
+                {
+                    return cell;
+                }
+            }
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Размещает карту в первой свободной ячейке
+    /// </summary>
+    public static void PlaceCardInFreeCell(CardObject card)
+    {
+        if (card == null) return;
+
+        Cell freeCell = FindFreeCell();
+        if (freeCell != null)
+        {
+            freeCell.PlaceCard(card);
+            card.currentCell = freeCell;
+            card.originalGridPos = new Vector2Int(freeCell.gridX, freeCell.gridY);
+            if (enableDebugLogs)
+                Debug.Log($"Карта {card.cardName} размещена в свободной ячейке ({freeCell.gridX}, {freeCell.gridY})");
+        }
+        else
+        {
+            if (enableDebugLogs)
+                Debug.LogWarning($"Нет свободных ячеек для карты {card.cardName}!");
+        }
+    }
+
+    /// <summary>
+    /// Умное размещение карты: сначала ищет ближайшую стопку таких же карт,
+    /// если есть место — кладёт туда, иначе ищет ближайшую свободную ячейку
+    /// </summary>
+    public static void PlaceCardSmart(CardObject card)
+    {
+        if (enableDebugLogs)
+        {
+            Debug.Log($"[DropLogic] ===== НАЧАЛО PlaceCardSmart =====");
+            Debug.Log($"[DropLogic] card: {card.cardName} (стопка: {card.stackSize})");
+            Debug.Log($"[DropLogic] card.currentCell: {(card.currentCell != null ? $"{card.currentCell.gridX},{card.currentCell.gridY}" : "null")}");
+            Debug.Log($"[DropLogic] card.transform.position: {card.transform.position}");
+        }
+
+        if (card == null || GridManager.Instance == null)
+        {
+            if (enableDebugLogs)
+                Debug.LogWarning("[DropLogic] PlaceCardSmart: card или GridManager == null");
+            return;
+        }
+
+        // ============================================================
+        //  ШАГ 1: ИЩЕМ БЛИЖАЙШУЮ СТОПКУ ТАКИХ ЖЕ КАРТ
+        // ============================================================
+        CardObject nearestStack = FindNearestStack(card);
+        if (enableDebugLogs)
+            Debug.Log($"[DropLogic] nearestStack: {(nearestStack != null ? $"{nearestStack.cardName} (стопка: {nearestStack.stackSize}/{nearestStack.maxStackSize})" : "null")}");
+
+        if (nearestStack != null)
+        {
+            // Проверяем, есть ли место в стопке
+            if (nearestStack.stackSize < nearestStack.maxStackSize)
+            {
+                // Складываем в стопку
+                int cardsToAdd = Mathf.Min(card.stackSize, nearestStack.maxStackSize - nearestStack.stackSize);
+                nearestStack.stackSize += cardsToAdd;
+                card.stackSize -= cardsToAdd;
+                if (enableDebugLogs)
+                    Debug.Log($"[DropLogic] Добавлено {cardsToAdd} в стопку {nearestStack.cardName}, теперь {nearestStack.stackSize}");
+
+                if (StackUpdateService.Instance != null)
+                {
+                    StackUpdateService.Instance.UpdateCard(nearestStack);
+                }
+
+                if (card.stackSize <= 0)
+                {
+                    // Вся карта поместилась
+                    if (enableDebugLogs)
+                        Debug.Log($"[DropLogic] Вся карта поместилась в стопку, уничтожаем card: {card.gameObject.name}");
+                    if (card.currentCell != null)
+                    {
+                        if (enableDebugLogs)
+                            Debug.Log($"[DropLogic] Удаляем card из ячейки ({card.currentCell.gridX}, {card.currentCell.gridY})");
+                        card.currentCell.RemoveCard();
+                    }
+                    Object.Destroy(card.gameObject);
+                    return;
+                }
+                else
+                {
+                    if (enableDebugLogs)
+                        Debug.Log($"[DropLogic] Остаток {card.stackSize} после добавления в стопку, продолжаем поиск");
+                    // Рекурсивно ищем дальше
+                    PlaceCardSmart(card);
+                    return;
+                }
+            }
+            else
+            {
+                if (enableDebugLogs)
+                    Debug.Log($"[DropLogic] Стопка {nearestStack.cardName} полная ({nearestStack.stackSize}/{nearestStack.maxStackSize}), ищем ячейку");
+            }
+        }
+
+        // ============================================================
+        //  ШАГ 2: ИЩЕМ БЛИЖАЙШУЮ СВОБОДНУЮ ЯЧЕЙКУ
+        // ============================================================
+        if (enableDebugLogs)
+            Debug.Log($"[DropLogic] Ищем ближайшую свободную ячейку для card: {card.gameObject.name}");
+        Cell nearestCell = FindNearestFreeCell(card.transform.position);
+        if (enableDebugLogs)
+            Debug.Log($"[DropLogic] nearestCell: {(nearestCell != null ? $"{nearestCell.gridX},{nearestCell.gridY}" : "null")}");
+
+        if (nearestCell != null)
+        {
+            // Проверяем, не занята ли ячейка
+            if (!nearestCell.IsEmpty())
+            {
+                if (enableDebugLogs)
+                    Debug.LogWarning($"[DropLogic] Ячейка ({nearestCell.gridX}, {nearestCell.gridY}) не пуста!");
+                // Ищем другую
+                nearestCell = FindNearestFreeCell(card.transform.position);
+                if (nearestCell == null)
+                {
+                    if (enableDebugLogs)
+                        Debug.LogWarning($"[DropLogic] Нет свободных ячеек для карты {card.cardName}!");
+                    return;
+                }
+            }
+
+            // Удаляем из старой ячейки
+            if (card.currentCell != null)
+            {
+                if (enableDebugLogs)
+                    Debug.Log($"[DropLogic] Удаляем card из старой ячейки ({card.currentCell.gridX}, {card.currentCell.gridY})");
+                card.currentCell.RemoveCard();
+                card.currentCell = null;
+            }
+            if (enableDebugLogs)
+                Debug.Log($"[DropLogic] Размещаем card в ячейке ({nearestCell.gridX}, {nearestCell.gridY})");
+            nearestCell.PlaceCard(card);
+            card.currentCell = nearestCell;
+            card.originalGridPos = new Vector2Int(nearestCell.gridX, nearestCell.gridY);
+            if (enableDebugLogs)
+                Debug.Log($"[DropLogic] Карта {card.cardName} размещена в ячейке ({nearestCell.gridX}, {nearestCell.gridY})");
+        }
+        else
+        {
+            if (enableDebugLogs)
+                Debug.LogWarning($"[DropLogic] НЕТ СВОБОДНЫХ ЯЧЕЕК для карты {card.cardName}!");
+            // Если нет места - уничтожаем карту
+            if (card.currentCell != null)
+            {
+                if (enableDebugLogs)
+                    Debug.Log($"[DropLogic] Удаляем card из ячейки ({card.currentCell.gridX}, {card.currentCell.gridY})");
+                card.currentCell.RemoveCard();
+            }
+            if (enableDebugLogs)
+                Debug.Log($"[DropLogic] Уничтожаем card: {card.gameObject.name}");
+            Object.Destroy(card.gameObject);
+        }
+    }
+
+    /// <summary>
+    /// Находит ближайшую стопку таких же карт
+    /// </summary>
+    private static CardObject FindNearestStack(CardObject card)
+    {
+        if (card == null || GridManager.Instance == null) return null;
+
+        CardObject bestStack = null;
+        float bestDistance = float.MaxValue;
+        Vector3 cardPos = card.transform.position;
+
+        // Проходим по всем ячейкам сетки
+        for (int x = 0; x < GridManager.Instance.gridWidth; x++)
+        {
+            for (int y = 0; y < GridManager.Instance.gridHeight; y++)
+            {
+                Cell cell = GridManager.Instance.GetCell(x, y);
+                if (cell == null || cell.IsEmpty()) continue;
+
+                CardObject otherCard = cell.currentCard;
+                if (otherCard == null) continue;
+
+                // Проверяем, что это такая же карта и она стэкабельная
+                if (otherCard.cardID == card.cardID && otherCard.isStackable)
+                {
+                    // Проверяем, есть ли место в стопке
+                    if (otherCard.stackSize < otherCard.maxStackSize)
+                    {
+                        float dist = Vector3.Distance(cardPos, cell.worldPosition);
+                        if (dist < bestDistance)
+                        {
+                            bestDistance = dist;
+                            bestStack = otherCard;
+                        }
+                    }
+                }
+            }
+        }
+
+        return bestStack;
+    }
+
+    /// <summary>
+    /// Находит ближайшую свободную ячейку к указанной позиции
+    /// </summary>
+    private static Cell FindNearestFreeCell(Vector3 position)
+    {
+        if (GridManager.Instance == null) return null;
+        if (enableDebugLogs)
+            Debug.Log($"[DropLogic] FindNearestFreeCell: поиск от позиции {position}");
+
+        Cell bestCell = null;
+        float bestDistance = float.MaxValue;
+
+        for (int x = 0; x < GridManager.Instance.gridWidth; x++)
+        {
+            for (int y = 0; y < GridManager.Instance.gridHeight; y++)
+            {
+                Cell cell = GridManager.Instance.GetCell(x, y);
+                if (cell != null && cell.IsEmpty())
+                {
+                    float dist = Vector3.Distance(position, cell.worldPosition);
+                    if (enableDebugLogs)
+                        Debug.Log($"[DropLogic] Ячейка ({x},{y}) пуста, дистанция: {dist:F2}");
+                    if (dist < bestDistance)
+                    {
+                        bestDistance = dist;
+                        bestCell = cell;
+                        if (enableDebugLogs)
+                            Debug.Log($"[DropLogic] Новая лучшая ячейка: ({x},{y}) дистанция: {dist:F2}");
+                    }
+                }
+            }
+        }
+        if (enableDebugLogs)
+            Debug.Log($"[DropLogic] FindNearestFreeCell результат: {(bestCell != null ? $"{bestCell.gridX},{bestCell.gridY}" : "null")}");
+        return bestCell;
+    }
+
+    // ============================================================
+    //  МЕТОДЫ ОБРАБОТКИ СТОПОК
+    // ============================================================
 
     /// <summary>
     /// Обрабатывает слияние двух стопок карт.
@@ -207,7 +489,7 @@ public static class DropLogic
             source.LowerCardVisuals();
 
             // Умно размещаем остаток в ближайшее место
-            CardLibrary.PlaceCardSmart(source);
+            PlaceCardSmart(source);
 
             GridManager.Instance.HideHighlight();
             return true;
@@ -269,18 +551,9 @@ public static class DropLogic
         GridManager.Instance.HideHighlight();
     }
 
-    /// <summary>
-    /// Пытается выполнить взаимодействие между двумя картами (крафт).
-    /// </summary>
-    /// <param name="card1">Первая карта</param>
-    /// <param name="card2">Вторая карта</param>
-    /// <returns>true - взаимодействие выполнено, false - взаимодействие невозможно</returns>
-    private static bool TryInteraction(CardObject card1, CardObject card2)
-    {
-        // TODO: Реализовать систему крафта
-        // Логика взаимодействия карт
-        return false;
-    }
+    // ============================================================
+    //  МЕТОДЫ ВОЗВРАТА КАРТ
+    // ============================================================
 
     /// <summary>
     /// Возвращает карту на её исходную позицию (ячейку, где она была до перетаскивания).
@@ -341,36 +614,15 @@ public static class DropLogic
     }
 
     /// <summary>
-    /// Находит ближайшую свободную ячейку к указанной позиции.
+    /// Пытается выполнить взаимодействие между двумя картами (крафт).
     /// </summary>
-    /// <param name="position">Позиция в мировых координатах</param>
-    /// <returns>Ближайшая свободная ячейка или null</returns>
-    private static Cell FindNearestFreeCell(Vector3 position)
+    /// <param name="card1">Первая карта</param>
+    /// <param name="card2">Вторая карта</param>
+    /// <returns>true - взаимодействие выполнено, false - взаимодействие невозможно</returns>
+    private static bool TryInteraction(CardObject card1, CardObject card2)
     {
-        if (GridManager.Instance == null) return null;
-
-        Cell bestCell = null;
-        float bestDistance = float.MaxValue;
-
-        // Проходим по всем ячейкам сетки
-        for (int x = 0; x < GridManager.Instance.gridWidth; x++)
-        {
-            for (int y = 0; y < GridManager.Instance.gridHeight; y++)
-            {
-                Cell cell = GridManager.Instance.GetCell(x, y);
-                if (cell != null && cell.IsEmpty())
-                {
-                    // Вычисляем расстояние до позиции
-                    float dist = Vector3.Distance(position, cell.worldPosition);
-                    if (dist < bestDistance)
-                    {
-                        bestDistance = dist;
-                        bestCell = cell;
-                    }
-                }
-            }
-        }
-
-        return bestCell;
+        // TODO: Реализовать систему крафта
+        // Логика взаимодействия карт
+        return false;
     }
 }

@@ -121,7 +121,7 @@ public class TestCardSpawner : MonoBehaviour
             // Размещаем карту
             if (spawnData.useSmartPlacement)
             {
-                CardLibrary.PlaceCardSmart(card);
+                DropLogic.PlaceCardSmart(card);
                 if (logSpawnInfo)
                     Debug.Log($"Создана карта: {spawnData.cardData.cardName} ({spawnData.cardData.cardID}) x{spawnData.count} (умное размещение)");
             }
