@@ -491,26 +491,10 @@ public class CardLibrary : MonoBehaviour
         return null;
     }
 
-    public List<CardData> GetCardsByType(CardType type)
-    {
-        List<CardData> result = new List<CardData>();
-        foreach (var card in cardDictionary.Values)
-        {
-            if (card.Types.Contains(type))  // <-- НОВАЯ ПРОВЕРКА
-            {
-                result.Add(card);
-            }
-        }
-        return result;
-    }
-
     public bool IsReady()
     {
         return isReady && cardDictionary.Count > 0;
     }
 
-    public bool HasCard(string id)
-    {
-        return cardDictionary.ContainsKey(id);
-    }
+
 }
