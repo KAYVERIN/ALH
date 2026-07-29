@@ -11,18 +11,6 @@ public class StackManager : MonoBehaviour
     [Header("Настройки")]
     [SerializeField] private bool enableDebugLogs = true;
 
-    private void Awake()
-    {
-        if (Instance == null)
-        {
-            Instance = this;
-            Debug.Log("=== StackManager инициализирован! ===");
-        }
-        else
-        {
-            Destroy(gameObject);
-        }
-    }
 
     /// <summary>
     /// Проверяет, можно ли сложить карты в стопку
@@ -81,52 +69,6 @@ public class StackManager : MonoBehaviour
 
         // Удаляем объект
         Destroy(sourceCard.gameObject);
-    }
-
-    /// <summary>
-    /// Забирает одну карту из стопки
-    /// </summary>
-    public CardObject TakeOneFromStack(CardObject card)
-    {
-        if (card == null || card.stackSize <= 1) return card;
-
-        // Уменьшаем стопку
-        card.stackSize--;
-        if (StackUpdateService.Instance != null) StackUpdateService.Instance.UpdateCard(card);
-
-        // Создаём новую карту через CardLibrary
-        CardObject newCard = CardLibrary.CreateCard(card.cardID, card.transform.position, 1);
-
-        if (newCard != null && enableDebugLogs)
-            Debug.Log($"Взята 1 карта из стопки. Осталось: {card.stackSize}");
-
-        return newCard;
-    }
-
-    // УДАЛЯЕМ: CreateSingleCardFromStack() - больше не нужен
-
-    /// <summary>
-    /// Копирует данные с одной карты на другую
-    /// </summary>
-    private void CopyCardData(CardObject source, CardObject target)
-    {
-        if (source == null || target == null) return;
-
-        // Основные данные
-        target.cardID = source.cardID;
-        target.cardName = source.cardName;
-        target.description = source.description;
-
-        // Настройки стопок
-        target.isStackable = source.isStackable;
-        target.maxStackSize = source.maxStackSize;
-        target.stackSize = source.stackSize; // Будет перезаписано позже
-
-
-        // ============================================================
-        //  КОПИРУЕМ ВИЗУАЛЬНЫЕ СЛОИ
-        // ============================================================
-        CopyVisualLayers(source, target);
     }
 
     /// <summary>
