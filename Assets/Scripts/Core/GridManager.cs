@@ -1,5 +1,5 @@
 using UnityEngine;
-
+using UnityEngine.EventSystems;
 /// <summary>
 /// GridManager - главный менеджер игровой сетки.
 /// Отвечает за создание, управление и взаимодействие с ячейками игрового поля.
