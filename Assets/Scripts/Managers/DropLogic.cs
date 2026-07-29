@@ -47,7 +47,7 @@ public static class DropLogic
         if (targetCard == null) return false;
 
         // 3.1: ПРОВЕРЯЕМ ВОЗМОЖНОСТЬ СЛОЖЕНИЯ В СТОПКУ
-        bool canStack = StackManager.Instance.CanStack(targetCard, draggedCard);
+        bool canStack = CanStack(targetCard, draggedCard);
 
         if (canStack)
         {
@@ -98,6 +98,28 @@ public static class DropLogic
             // Нет места для обмена - карта возвращается в исходное положение
             return false;
         }
+    }
+
+    /// <summary>
+    /// Проверяет, можно ли сложить карты в стопку
+    /// </summary>
+    /// <param name="card1">Целевая карта (куда складываем)</param>
+    /// <param name="card2">Карта-источник (откуда берём)</param>
+    /// <returns>true - карты можно сложить в стопку</returns>
+    private static bool CanStack(CardObject card1, CardObject card2)
+    {
+        if (card1 == null || card2 == null) return false;
+        if (!card1.isStackable || !card2.isStackable) return false;
+        if (card1.cardID != card2.cardID) return false;
+
+        // Проверяем, есть ли место в целевой стопке
+        if (card1.stackSize >= card1.maxStackSize)
+        {
+            Debug.Log($"❌ CanStack: стопка {card1.cardName} полная ({card1.stackSize}/{card1.maxStackSize})");
+            return false;
+        }
+
+        return true;
     }
 
     /// <summary>
