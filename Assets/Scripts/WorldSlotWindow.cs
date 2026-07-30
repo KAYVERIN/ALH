@@ -140,9 +140,18 @@ public class WorldSlotWindow : MonoBehaviour, IBeginDragHandler, IDragHandler, I
 
     public bool PlaceCard(CardObject card)
     {
-        if (card == null) return false;
+        Log($"=== PlaceCard НАЧАЛО ===");
+        Log($"PlaceCard: card = {(card != null ? card.cardName : "null")}");
+        Log($"PlaceCard: HasCard = {HasCard}");
+        Log($"PlaceCard: slotRect == null = {slotRect == null}");
 
-        Log($"Помещаем карту {card.cardName} в слот");
+        if (card == null || HasCard || slotRect == null)
+        {
+            Log($"PlaceCard: проверка не пройдена, возвращаем false");
+            return false;
+        }
+
+        Log($"PlaceCard: помещаем карту {card.cardName} в слот");
 
         currentCard = card;
         card.transform.SetParent(slotRect, false);
@@ -151,6 +160,9 @@ public class WorldSlotWindow : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         card.LowerCardVisuals();
 
         HighlightSlot(false);
+
+        Log($"PlaceCard: карта {card.cardName} успешно помещена!");
+        Log($"=== PlaceCard КОНЕЦ ===");
 
         return true;
     }
