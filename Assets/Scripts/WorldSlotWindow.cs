@@ -5,7 +5,7 @@ using UnityEngine.UI;
 /// <summary>
 /// Мировое окно со слотом для карт. Поддерживает перетаскивание окна и приём карт.
 /// Карта становится дочерним объектом слота при помещении.
-/// При перетаскивании карты из слота - она автоматически открепляется.
+/// Автоматически отслеживает начало перетаскивания карты по изменению localPosition.
 /// </summary>
 public class WorldSlotWindow : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
 {
@@ -70,14 +70,25 @@ public class WorldSlotWindow : MonoBehaviour, IBeginDragHandler, IDragHandler, I
 
     private void Update()
     {
-        // Проверяем, не утащили ли карту из слота
+        // Проверяем, не начали ли перетаскивать карту из слота
         if (HasCard && currentCard != null)
         {
-            // Если карта больше не дочерняя слота - значит её забрали через DragController
-            if (currentCard.transform.parent != slotRect)
+            // Если локальная позиция изменилась (не равна нулю) - значит карту начали перетаскивать
+            // DragController уже вызвал PickUp() и изменил позицию карты
+            if (currentCard.transform.localPosition != Vector3.zero)
             {
-                Log($"Карта {currentCard.cardName} была извлечена из слота (родитель изменён)");
+                Log($"Карта {currentCard.cardName} извлечена из слота (обнаружено движение)");
+
+                // Сохраняем ссылку на карту
+                CardObject card = currentCard;
                 currentCard = null;
+
+                // Открепляем карту от слота
+                // worldPositionStays = true, чтобы сохранить текущую мировую позицию
+                card.transform.SetParent(null, true);
+
+                // НЕ вызываем PickUp() - DragController уже вызвал его!
+                // Карта уже в режиме перетаскивания
             }
         }
     }
@@ -100,11 +111,14 @@ public class WorldSlotWindow : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         if (card == null) return false;
         if (HasCard) return false;
 
+        Log($"Помещаем карту {card.cardName} в слот");
+
         currentCard = card;
 
         // Делаем карту дочерней к слоту
+        // worldPositionStays = false, чтобы обнулить локальную позицию
         Transform cardTransform = card.transform;
-        cardTransform.SetParent(slotRect, true);
+        cardTransform.SetParent(slotRect, false);
 
         // Обнуляем локальную позицию (центрируем в слоте)
         cardTransform.localPosition = Vector3.zero;
@@ -116,27 +130,6 @@ public class WorldSlotWindow : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         Log($"Карта {card.cardName} помещена в слот");
 
         return true;
-    }
-
-    /// <summary>
-    /// Извлечь карту из слота
-    /// </summary>
-    public CardObject TakeCard()
-    {
-        if (!HasCard) return null;
-
-        CardObject card = currentCard;
-        currentCard = null;
-
-        // Открепляем карту от слота
-        card.transform.SetParent(null, true);
-
-        // Поднимаем карту (она становится перетаскиваемой)
-        card.PickUp();
-
-        Log($"Карта {card.cardName} извлечена из слота");
-
-        return card;
     }
 
     /// <summary>
