@@ -80,7 +80,8 @@ public class DragController : MonoBehaviour
         {
             Vector3 mouseWorldPos = GetMouseWorldPosition();
             draggedCard.UpdateDragPosition(mouseWorldPos);
-            if (IsCardOverAnySlot(draggedCard))
+            // Проверяем, не над слотом ли карта
+            if (WorldSlotWindow.IsCardOverAnySlot(draggedCard))
             {
                 // Карта над слотом - скрываем подсветку сетки
                 GridManager.Instance?.HideHighlight();
@@ -280,6 +281,30 @@ public class DragController : MonoBehaviour
     // ============================================================
     //  ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ
     // ============================================================
+
+    // метод для поиска ближайшего слота
+    private WorldSlotWindow GetNearestSlot(CardObject card)
+    {
+        if (card == null) return null;
+
+        WorldSlotWindow nearest = null;
+        float nearestDistance = float.MaxValue;
+
+        foreach (WorldSlotWindow window in WorldSlotWindow.AllSlots)
+        {
+            if (window.HasCard) continue;
+            if (window.GetSlotRect() == null) continue;
+
+            float distance = Vector3.Distance(card.transform.position, window.GetSlotRect().position);
+            if (distance < nearestDistance)
+            {
+                nearestDistance = distance;
+                nearest = window;
+            }
+        }
+
+        return nearest;
+    }
 
     private CardObject GetCardUnderMouse()
     {
