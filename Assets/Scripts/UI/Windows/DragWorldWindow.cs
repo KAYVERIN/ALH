@@ -5,7 +5,7 @@ public class DragWorldWindow : MonoBehaviour
 {
     [Header("Settings")]
     [SerializeField] private bool enableDebugLogs = false;
-    [SerializeField] private LayerMask dragLayerMask = -1; // Все слои по умолчанию
+    [SerializeField] private LayerMask dragLayerMask = -1;
 
     [Header("References")]
     [SerializeField] private Canvas canvas;
@@ -15,7 +15,6 @@ public class DragWorldWindow : MonoBehaviour
     private RectTransform rectTransform;
     private Camera mainCamera;
     private bool isDragging = false;
-    private bool isPointerOverWindow = false;
 
     private void Awake()
     {
@@ -40,11 +39,11 @@ public class DragWorldWindow : MonoBehaviour
     {
         if (InputHandler.Instance != null && InputHandler.Instance.GetKeyDown("Drag"))
         {
-            // Проверяем, не над окном ли курсор
-            if (IsPointerOverWindow())
+            // Проверяем, не над окном ли курсор И не над картой ли курсор
+            if (IsPointerOverWindow() && !IsPointerOverCard())
             {
                 if (enableDebugLogs)
-                    Debug.Log("DragWorldWindow: Pointer over window, starting drag");
+                    Debug.Log("DragWorldWindow: Начало перетаскивания окна");
 
                 OnBeginDragInternal();
             }
@@ -52,16 +51,51 @@ public class DragWorldWindow : MonoBehaviour
 
         if (isDragging && InputHandler.Instance != null && InputHandler.Instance.GetKey("Drag"))
         {
+            // Если курсор над картой - останавливаем перетаскивание окна
+            if (IsPointerOverCard())
+            {
+                if (enableDebugLogs)
+                    Debug.Log("DragWorldWindow: Курсор над картой, останавливаем перетаскивание окна");
+                isDragging = false;
+                return;
+            }
             OnDragInternal();
         }
 
         if (isDragging && InputHandler.Instance != null && InputHandler.Instance.GetKeyUp("Drag"))
         {
             if (enableDebugLogs)
-                Debug.Log("DragWorldWindow: End drag");
+                Debug.Log("DragWorldWindow: Конец перетаскивания окна");
 
             isDragging = false;
         }
+    }
+
+    /// <summary>
+    /// Проверяет, находится ли курсор над картой
+    /// </summary>
+    private bool IsPointerOverCard()
+    {
+        if (mainCamera == null) return false;
+
+        Vector3 mousePos = Input.mousePosition;
+        Ray ray = mainCamera.ScreenPointToRay(mousePos);
+
+        int cardLayer = 1 << LayerMask.NameToLayer("Cards");
+        RaycastHit2D hit = Physics2D.Raycast(ray.origin, ray.direction, 20f, cardLayer);
+
+        if (hit.collider != null)
+        {
+            CardObject card = hit.collider.GetComponent<CardObject>();
+            if (card != null)
+            {
+                if (enableDebugLogs)
+                    Debug.Log($"DragWorldWindow: НАЙДЕНА КАРТА! {card.cardName}");
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /// <summary>
@@ -76,12 +110,28 @@ public class DragWorldWindow : MonoBehaviour
         }
 
         Vector3 mousePos = Input.mousePosition;
+
+        // Проверяем через RectTransform (самый надёжный способ)
+        if (rectTransform != null)
+        {
+            Vector2 localPoint;
+            RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                rectTransform,
+                mousePos,
+                mainCamera,
+                out localPoint
+            );
+
+            if (rectTransform.rect.Contains(localPoint))
+            {
+                if (enableDebugLogs)
+                    Debug.Log($"DragWorldWindow: Курсор внутри окна {rectTransform.rect}");
+                return true;
+            }
+        }
+
+        // Дополнительная проверка через 2D Raycast (для коллайдеров)
         Ray ray = mainCamera.ScreenPointToRay(mousePos);
-
-        if (enableDebugLogs)
-            Debug.Log($"DragWorldWindow: Луч из точки экрана {mousePos}");
-
-        // Получаем все попадания по слоям Slots и Cards
         int layerMask = (1 << LayerMask.NameToLayer("Slots")) | (1 << LayerMask.NameToLayer("Cards"));
         RaycastHit2D[] hits = Physics2D.RaycastAll(ray.origin, ray.direction, 20f, layerMask);
 
@@ -90,81 +140,36 @@ public class DragWorldWindow : MonoBehaviour
 
         if (hits.Length > 0)
         {
-            // Сортируем по расстоянию
             System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
-
-            if (enableDebugLogs)
-                Debug.Log($"DragWorldWindow: Первое попадание расстояние = {hits[0].distance}, объект = {hits[0].collider?.gameObject?.name}");
 
             foreach (var hit in hits)
             {
                 if (enableDebugLogs)
                     Debug.Log($"DragWorldWindow: Попадание: {hit.collider?.gameObject?.name}, слой = {LayerMask.LayerToName(hit.collider?.gameObject?.layer ?? 0)}");
 
-                // Если первый попавшийся объект - карта, то блокируем перетаскивание окна
-                CardObject card = hit.collider.GetComponent<CardObject>();
-                if (card != null)
-                {
-                    if (enableDebugLogs)
-                        Debug.Log($"DragWorldWindow: НАЙДЕНА КАРТА! Слой = {LayerMask.LayerToName(card.gameObject.layer)}. Блокируем перетаскивание окна.");
-                    return false;
-                }
-
                 // Если это окно - разрешаем перетаскивание
                 WorldSlotWindow slotWindow = hit.collider.GetComponentInParent<WorldSlotWindow>();
                 if (slotWindow != null && slotWindow.gameObject == this.gameObject)
                 {
                     if (enableDebugLogs)
-                        Debug.Log($"DragWorldWindow: НАЙДЕНО ОКНО! Разрешаем перетаскивание.");
+                        Debug.Log($"DragWorldWindow: НАЙДЕНО ОКНО!");
                     return true;
                 }
             }
         }
-        else
-        {
-            if (enableDebugLogs)
-                Debug.Log("DragWorldWindow: Попаданий не найдено");
-        }
-
-        if (enableDebugLogs)
-            Debug.Log("DragWorldWindow: Нет подходящего попадания, возвращаем false");
 
         return false;
-    }
-
-    /// <summary>
-    /// Проверяет, перетаскивается ли карта над окном (для блокировки)
-    /// </summary>
-    private bool IsCardDraggingOverWindow()
-    {
-        if (DragController.Instance == null) return false;
-        if (!DragController.Instance.IsDragging) return false;
-
-        CardObject draggedCard = DragController.Instance.DraggedCard;
-        if (draggedCard == null) return false;
-
-        // Проверяем расстояние до окна
-        float distance = Vector3.Distance(draggedCard.transform.position, rectTransform.position);
-        return distance < 5f; // Порог
     }
 
     private void OnBeginDragInternal()
     {
         if (mainCamera == null || canvas == null) return;
 
-        // Не начинаем перетаскивание, если над окном перетаскивается карта
-        if (IsCardDraggingOverWindow())
-        {
-            if (enableDebugLogs)
-                Debug.Log("DragWorldWindow: Card is dragging over window, blocking window drag");
-            return;
-        }
-
         isDragging = true;
         offset = rectTransform.position - GetMouseWorldPosition();
 
         if (enableDebugLogs)
-            Debug.Log($"DragWorldWindow: Begin drag at {rectTransform.position}");
+            Debug.Log($"DragWorldWindow: Начало перетаскивания в {rectTransform.position}");
     }
 
     private void OnDragInternal()
@@ -172,19 +177,11 @@ public class DragWorldWindow : MonoBehaviour
         if (mainCamera == null || canvas == null) return;
         if (!isDragging) return;
 
-        // Не двигаем окно, если над ним перетаскивается карта
-        if (IsCardDraggingOverWindow())
-        {
-            return;
-        }
-
         Vector3 mouseWorldPos = GetMouseWorldPosition();
         Vector3 newPosition = mouseWorldPos + offset;
         newPosition.z = rectTransform.position.z;
 
         rectTransform.position = newPosition;
-
-        //if (enableDebugLogs) Debug.Log($"DragWorldWindow: Dragging to {newPosition}");
     }
 
     private Vector3 GetMouseWorldPosition()
@@ -201,9 +198,6 @@ public class DragWorldWindow : MonoBehaviour
         return worldPos;
     }
 
-    /// <summary>
-    /// Устанавливает позицию окна в мировых координатах
-    /// </summary>
     public void SetPosition(Vector3 worldPosition)
     {
         if (rectTransform == null)
@@ -222,6 +216,6 @@ public class DragWorldWindow : MonoBehaviour
         rectTransform.position = newPos;
 
         if (enableDebugLogs)
-            Debug.Log($"DragWorldWindow: Position set to {newPos}");
+            Debug.Log($"DragWorldWindow: Позиция установлена в {newPos}");
     }
 }
