@@ -185,7 +185,7 @@ public class DragWorldWindow : MonoBehaviour
         rectTransform.position = newPosition;
 
         if (enableDebugLogs)
-            Debug.Log($"DragWorldWindow: Dragging to {newPosition}");
+            //Debug.Log($"DragWorldWindow: Dragging to {newPosition}");
     }
 
     private Vector3 GetMouseWorldPosition()
