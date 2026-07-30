@@ -20,6 +20,28 @@ public static class DropLogic
     }
 
     /// <summary>
+    /// Вспомогательный метод для условного логирования
+    /// </summary>
+    private static void Log(string message)
+    {
+        if (enableDebugLogs)
+        {
+            Debug.Log(message);
+        }
+    }
+
+    /// <summary>
+    /// Вспомогательный метод для условного предупреждения
+    /// </summary>
+    private static void LogWarning(string message)
+    {
+        if (enableDebugLogs)
+        {
+            Debug.LogWarning(message);
+        }
+    }
+
+    /// <summary>
     /// Главный метод обработки броска карты.
     /// Определяет, что делать с перетаскиваемой картой в зависимости от позиции курсора.
     /// </summary>
@@ -30,7 +52,7 @@ public static class DropLogic
     {
         if (draggedCard == null) return false;
 
-        Debug.Log($"[DropLogic] ProcessDrop: карта={draggedCard.cardName}, позиция мыши={mouseWorldPos}");
+        Log($"[DropLogic] ProcessDrop: карта={draggedCard.cardName}, позиция мыши={mouseWorldPos}");
 
         // ============================================================
         // ШАГ 1: ПРОВЕРЯЕМ, ЕСТЬ ЛИ ЯЧЕЙКА ПОД КУРСОРОМ
@@ -132,7 +154,7 @@ public static class DropLogic
         // Проверяем, есть ли место в целевой стопке
         if (card1.stackSize >= card1.maxStackSize)
         {
-            Debug.Log($"❌ CanStack: стопка {card1.cardName} полная ({card1.stackSize}/{card1.maxStackSize})");
+            Log($"❌ CanStack: стопка {card1.cardName} полная ({card1.stackSize}/{card1.maxStackSize})");
             return false;
         }
 
@@ -151,7 +173,7 @@ public static class DropLogic
     /// <param name="cell">Целевая ячейка</param>
     private static void PlaceCardInCell(CardObject card, Cell cell)
     {
-        Debug.Log($"[DropLogic] PlaceCardInCell: карта {card.cardName} → ячейка ({cell.gridX}, {cell.gridY})");
+        Log($"[DropLogic] PlaceCardInCell: карта {card.cardName} → ячейка ({cell.gridX}, {cell.gridY})");
 
         // Удаляем карту из старой ячейки, если она там была
         if (card.currentCell != null)
@@ -206,13 +228,11 @@ public static class DropLogic
             freeCell.PlaceCard(card);
             card.currentCell = freeCell;
             card.originalGridPos = new Vector2Int(freeCell.gridX, freeCell.gridY);
-            if (enableDebugLogs)
-                Debug.Log($"Карта {card.cardName} размещена в свободной ячейке ({freeCell.gridX}, {freeCell.gridY})");
+            Log($"Карта {card.cardName} размещена в свободной ячейке ({freeCell.gridX}, {freeCell.gridY})");
         }
         else
         {
-            if (enableDebugLogs)
-                Debug.LogWarning($"Нет свободных ячеек для карты {card.cardName}!");
+            LogWarning($"Нет свободных ячеек для карты {card.cardName}!");
         }
     }
 
@@ -232,8 +252,7 @@ public static class DropLogic
 
         if (card == null || GridManager.Instance == null)
         {
-            if (enableDebugLogs)
-                Debug.LogWarning("[DropLogic] PlaceCardSmart: card или GridManager == null");
+            LogWarning("[DropLogic] PlaceCardSmart: card или GridManager == null");
             return;
         }
 
@@ -305,14 +324,12 @@ public static class DropLogic
             // Проверяем, не занята ли ячейка
             if (!nearestCell.IsEmpty())
             {
-                if (enableDebugLogs)
-                    Debug.LogWarning($"[DropLogic] Ячейка ({nearestCell.gridX}, {nearestCell.gridY}) не пуста!");
+                LogWarning($"[DropLogic] Ячейка ({nearestCell.gridX}, {nearestCell.gridY}) не пуста!");
                 // Ищем другую
                 nearestCell = FindNearestFreeCell(card.transform.position);
                 if (nearestCell == null)
                 {
-                    if (enableDebugLogs)
-                        Debug.LogWarning($"[DropLogic] Нет свободных ячеек для карты {card.cardName}!");
+                    LogWarning($"[DropLogic] Нет свободных ячеек для карты {card.cardName}!");
                     return;
                 }
             }
@@ -330,13 +347,11 @@ public static class DropLogic
             nearestCell.PlaceCard(card);
             card.currentCell = nearestCell;
             card.originalGridPos = new Vector2Int(nearestCell.gridX, nearestCell.gridY);
-            if (enableDebugLogs)
-                Debug.Log($"[DropLogic] Карта {card.cardName} размещена в ячейке ({nearestCell.gridX}, {nearestCell.gridY})");
+            Log($"Карта {card.cardName} размещена в ячейке ({nearestCell.gridX}, {nearestCell.gridY})");
         }
         else
         {
-            if (enableDebugLogs)
-                Debug.LogWarning($"[DropLogic] НЕТ СВОБОДНЫХ ЯЧЕЕК для карты {card.cardName}!");
+            LogWarning($"[DropLogic] НЕТ СВОБОДНЫХ ЯЧЕЕК для карты {card.cardName}!");
             // Если нет места - уничтожаем карту
             if (card.currentCell != null)
             {
