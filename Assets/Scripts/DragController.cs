@@ -304,11 +304,7 @@ public class DragController : MonoBehaviour
 
         Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
 
-        RaycastHit2D hit2D = Physics2D.Raycast(ray.origin, ray.direction, raycastDistance, cardLayer);
-        if (hit2D.collider != null)
-        {
-            return hit2D.collider.GetComponent<CardObject>();
-        }
+
 
         RaycastHit hit3D;
         if (Physics.Raycast(ray, out hit3D, raycastDistance, cardLayer))
