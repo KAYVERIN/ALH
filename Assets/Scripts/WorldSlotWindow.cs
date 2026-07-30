@@ -140,7 +140,7 @@ public class WorldSlotWindow : MonoBehaviour, IBeginDragHandler, IDragHandler, I
 
     public bool PlaceCard(CardObject card)
     {
-      //  if (card == null || HasCard || slotRect == null) return false;
+        if (card == null) return false;
 
         Log($"Помещаем карту {card.cardName} в слот");
 
