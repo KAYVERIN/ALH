@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
-public class WorldSlotWindow : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
+public class WorldSlotWindow : MonoBehaviour
 {
     [Header("Components")]
     [SerializeField] private RectTransform windowRect;
