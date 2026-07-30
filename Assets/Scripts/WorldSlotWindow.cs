@@ -73,7 +73,9 @@ public class WorldSlotWindow : MonoBehaviour, IBeginDragHandler, IDragHandler, I
             // Если карта больше не дочерняя слота - её забрал DragController
             if (currentCard.transform.parent != slotRect)
             {
+                currentCard.SetParent(null, true);
                 Log($"Карта {currentCard.cardName} извлечена из слота (родитель изменён)");
+
                 currentCard = null;
             }
         }
