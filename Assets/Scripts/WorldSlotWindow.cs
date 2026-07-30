@@ -25,12 +25,14 @@ public class WorldSlotWindow : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         // Если не назначили в инспекторе - пробуем найти
         if (slotRect == null)
         {
-            slotRect = transform.Find("Slot") as RectTransform;
+            Log("Слот не назначили в инспекторе");
+            return;
         }
 
         if (windowRect == null)
         {
-            windowRect = GetComponent<RectTransform>();
+            Log("Окно не назначили в инспекторе");
+            return;
         }
 
         // Добавляем зону для приёма карт
