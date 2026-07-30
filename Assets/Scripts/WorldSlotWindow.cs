@@ -77,9 +77,7 @@ public class WorldSlotWindow : MonoBehaviour, IBeginDragHandler, IDragHandler, I
                 // Открепляем карту от слота
                 currentCard.transform.SetParent(null, true);
                 // Очищаем ссылку
-                currentCard = null;
                 Log($"Карта {currentCard.cardName} извлечена из слота (родитель изменён)");
-
                 currentCard = null;
             }
         }
