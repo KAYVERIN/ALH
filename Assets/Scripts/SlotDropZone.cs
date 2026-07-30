@@ -1,9 +1,10 @@
-// SlotDropZone.cs
 using UnityEngine;
+using UnityEngine.UI;
 using UnityEngine.EventSystems;
 
 /// <summary>
-/// Зона приёма карт для слота окна
+/// Зона приёма карт для слота окна.
+/// Обрабатывает Drop события от DragController.
 /// </summary>
 public class SlotDropZone : MonoBehaviour, IDropHandler, IPointerEnterHandler, IPointerExitHandler
 {
@@ -24,6 +25,9 @@ public class SlotDropZone : MonoBehaviour, IDropHandler, IPointerEnterHandler, I
         }
     }
 
+    /// <summary>
+    /// Обработка дропа карты на слот
+    /// </summary>
     public void OnDrop(PointerEventData eventData)
     {
         Log("Drop событие в слоте");
@@ -31,8 +35,8 @@ public class SlotDropZone : MonoBehaviour, IDropHandler, IPointerEnterHandler, I
         if (slotWindow == null) return;
         if (slotWindow.HasCard) return;
 
-        // Получаем карту из DragController
-        CardObject draggedCard = DragController.Instance?.GetDraggedCard();
+        // Получаем перетаскиваемую карту из DragController
+        CardObject draggedCard = DragController.Instance?.DraggedCard;
         if (draggedCard == null)
         {
             Log("Нет перетаскиваемой карты");
@@ -46,21 +50,20 @@ public class SlotDropZone : MonoBehaviour, IDropHandler, IPointerEnterHandler, I
             return;
         }
 
-        // Завершаем перетаскивание через DragController
+        // Завершаем перетаскивание
         DragController.Instance?.EndDrag();
 
         // Помещаем карту в слот
         slotWindow.PlaceCard(draggedCard);
 
-        Log($"Карта {draggedCard.name} помещена в слот через дроп");
+        Log($"Карта {draggedCard.cardName} помещена в слот через дроп");
     }
 
     public void OnPointerEnter(PointerEventData eventData)
     {
         if (slotWindow == null || slotWindow.HasCard) return;
-        if (DragController.Instance?.GetDraggedCard() == null) return;
+        if (DragController.Instance?.DraggedCard == null) return;
 
-        // Подсвечиваем слот при наведении с картой
         HighlightSlot(true);
         Log("Наведение на слот с картой");
     }

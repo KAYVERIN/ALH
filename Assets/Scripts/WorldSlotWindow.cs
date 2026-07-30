@@ -1,22 +1,23 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
-using System;
 
 /// <summary>
-/// Мировое окно со слотом для карт. Поддерживает перетаскивание и вставку карт.
+/// Мировое окно со слотом для карт. Поддерживает перетаскивание окна и приём карт.
+/// Карта становится дочерним объектом слота при помещении.
+/// При перетаскивании карты из слота - она автоматически открепляется.
 /// </summary>
 public class WorldSlotWindow : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
 {
     [Header("Components")]
     [SerializeField] private RectTransform windowRect;
-    [SerializeField] private Image slotBackground; // Рамка слота
-    [SerializeField] private Image windowBackground; // Фон окна
+    [SerializeField] private Image slotBackground;
+    [SerializeField] private Image windowBackground;
 
     [Header("Settings")]
     [SerializeField] private bool enableDebugLogs = false;
 
-    // Ссылка на карту в слоте
+    // Текущая карта в слоте
     private CardObject currentCard;
     private RectTransform slotRect;
 
@@ -24,23 +25,18 @@ public class WorldSlotWindow : MonoBehaviour, IBeginDragHandler, IDragHandler, I
     private Vector2 dragOffset;
     private bool isDraggingWindow = false;
 
-    // События
-    public event Action<CardObject> OnCardPlaced;
-    public event Action<CardObject> OnCardRemoved;
-
     // Свойства
     public CardObject CurrentCard => currentCard;
     public bool HasCard => currentCard != null;
 
     private void Awake()
     {
-        // Находим слот (первый дочерний Image или по имени)
+        // Находим слот
         if (slotBackground == null)
         {
             slotBackground = GetComponentInChildren<Image>();
             if (slotBackground != null && slotBackground.transform.parent != transform)
             {
-                // Ищем именно слот, а не фон окна
                 foreach (Transform child in transform)
                 {
                     if (child.name.Contains("Slot") || child.name.Contains("слот"))
@@ -68,13 +64,26 @@ public class WorldSlotWindow : MonoBehaviour, IBeginDragHandler, IDragHandler, I
             windowRect = GetComponent<RectTransform>();
         }
 
-        // Создаём зону для дропа, если её нет
+        // Добавляем зону для приёма карт
         SetupDropZone();
+    }
+
+    private void Update()
+    {
+        // Проверяем, не утащили ли карту из слота
+        if (HasCard && currentCard != null)
+        {
+            // Если карта больше не дочерняя слота - значит её забрали через DragController
+            if (currentCard.transform.parent != slotRect)
+            {
+                Log($"Карта {currentCard.cardName} была извлечена из слота (родитель изменён)");
+                currentCard = null;
+            }
+        }
     }
 
     private void SetupDropZone()
     {
-        // Добавляем компонент для приёма карт
         var dropZone = gameObject.GetComponent<SlotDropZone>();
         if (dropZone == null)
         {
@@ -91,22 +100,20 @@ public class WorldSlotWindow : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         if (card == null) return false;
         if (HasCard) return false;
 
-        // Сохраняем карту
         currentCard = card;
 
         // Делаем карту дочерней к слоту
         Transform cardTransform = card.transform;
         cardTransform.SetParent(slotRect, true);
 
-        // Центрируем карту в слоте
+        // Обнуляем локальную позицию (центрируем в слоте)
         cardTransform.localPosition = Vector3.zero;
         cardTransform.localScale = Vector3.one * 0.8f; // Немного уменьшаем для слота
 
-        // Отключаем перетаскивание карты пока она в слоте
-        card.SetDraggable(false);
+        // Опускаем визуал карты (она не должна быть поднятой)
+        card.LowerCardVisuals();
 
-        Log($"Карта {card.name} помещена в слот");
-        OnCardPlaced?.Invoke(card);
+        Log($"Карта {card.cardName} помещена в слот");
 
         return true;
     }
@@ -123,10 +130,11 @@ public class WorldSlotWindow : MonoBehaviour, IBeginDragHandler, IDragHandler, I
 
         // Открепляем карту от слота
         card.transform.SetParent(null, true);
-        card.SetDraggable(true);
 
-        Log($"Карта {card.name} извлечена из слота");
-        OnCardRemoved?.Invoke(card);
+        // Поднимаем карту (она становится перетаскиваемой)
+        card.PickUp();
+
+        Log($"Карта {card.cardName} извлечена из слота");
 
         return card;
     }
@@ -146,7 +154,6 @@ public class WorldSlotWindow : MonoBehaviour, IBeginDragHandler, IDragHandler, I
     {
         if (eventData.button != PointerEventData.InputButton.Left) return;
 
-        // Начинаем перетаскивание окна
         isDraggingWindow = true;
         RectTransformUtility.ScreenPointToLocalPointInRectangle(
             windowRect,
@@ -179,7 +186,6 @@ public class WorldSlotWindow : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         Log("Конец перетаскивания окна");
     }
 
-    // === Вспомогательные методы ===
     private void Log(string message)
     {
         if (enableDebugLogs)
@@ -188,9 +194,6 @@ public class WorldSlotWindow : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         }
     }
 
-    /// <summary>
-    /// Включить/выключить дебаг логи
-    /// </summary>
     public void SetDebugLogsEnabled(bool enabled)
     {
         enableDebugLogs = enabled;

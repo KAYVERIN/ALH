@@ -356,4 +356,6 @@ public class CardObject : MonoBehaviour
         if (!isDragging) return;
         transform.position = new Vector3(mouseWorldPos.x, mouseWorldPos.y, 0);
     }
+
+
 }

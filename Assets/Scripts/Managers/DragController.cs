@@ -204,7 +204,7 @@ public class DragController : MonoBehaviour
         }
     }
 
-    private void EndDrag()
+    public void EndDrag()
     {
         if (enableDebugLogs)
             Debug.Log($"EndDrag: {draggedCard.cardName}");
