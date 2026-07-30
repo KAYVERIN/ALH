@@ -251,11 +251,9 @@ public class DragController : MonoBehaviour
             if (enableDebugLogs)
                 Debug.Log($"Карта {draggedCard.cardName} брошена на слот");
 
-            // Завершаем перетаскивание
-            ResetDragState();
-
-            // Кладём карту в слот
-            targetSlot.PlaceCard(draggedCard);
+            CardObject cardToPlace = draggedCard; 
+            ResetDragState(); 
+            targetSlot.PlaceCard(cardToPlace);
             return;
         }
 
