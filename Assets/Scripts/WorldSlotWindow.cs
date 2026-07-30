@@ -34,9 +34,6 @@ public class WorldSlotWindow : MonoBehaviour, IBeginDragHandler, IDragHandler, I
             Log("Окно не назначили в инспекторе");
             return;
         }
-
-        // Добавляем зону для приёма карт
-        SetupDropZone();
     }
 
     private void Update()
@@ -55,19 +52,6 @@ public class WorldSlotWindow : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         }
     }
 
-    private void SetupDropZone()
-    {
-        // Добавляем SlotDropZone на слот
-        if (slotRect != null)
-        {
-            SlotDropZone dropZone = slotRect.GetComponent<SlotDropZone>();
-            if (dropZone == null)
-            {
-                dropZone = slotRect.gameObject.AddComponent<SlotDropZone>();
-            }
-            dropZone.Initialize(this);
-        }
-    }
 
     public bool PlaceCard(CardObject card)
     {
