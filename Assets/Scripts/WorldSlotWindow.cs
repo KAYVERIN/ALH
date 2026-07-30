@@ -181,42 +181,6 @@ public class WorldSlotWindow : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         }
     }
 
-    // ============================================================
-    //  ПЕРЕТАСКИВАНИЕ ОКНА
-    // ============================================================
-
-    public void OnBeginDrag(PointerEventData eventData)
-    {
-        if (eventData.button != PointerEventData.InputButton.Left) return;
-
-        isDraggingWindow = true;
-        RectTransformUtility.ScreenPointToLocalPointInRectangle(
-            windowRect,
-            eventData.position,
-            eventData.pressEventCamera,
-            out dragOffset
-        );
-    }
-
-    public void OnDrag(PointerEventData eventData)
-    {
-        if (!isDraggingWindow) return;
-
-        if (RectTransformUtility.ScreenPointToLocalPointInRectangle(
-            windowRect.parent as RectTransform,
-            eventData.position,
-            eventData.pressEventCamera,
-            out Vector2 localPointerPosition))
-        {
-            windowRect.localPosition = localPointerPosition;
-        }
-    }
-
-    public void OnEndDrag(PointerEventData eventData)
-    {
-        isDraggingWindow = false;
-    }
-
     private void Log(string message)
     {
         if (enableDebugLogs)
