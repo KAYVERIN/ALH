@@ -69,28 +69,44 @@ public class DragWorldWindow : MonoBehaviour
     /// </summary>
     private bool IsPointerOverWindow()
     {
-        if (mainCamera == null) return false;
+        if (mainCamera == null)
+        {
+            if (enableDebugLogs) Debug.Log("DragWorldWindow: mainCamera == null");
+            return false;
+        }
 
         Vector3 mousePos = Input.mousePosition;
         Ray ray = mainCamera.ScreenPointToRay(mousePos);
 
+        if (enableDebugLogs)
+            Debug.Log($"DragWorldWindow: Raycast from screen point {mousePos}");
+
         // Получаем все попадания по слоям slots и cards
-        int layerMask = (1 << LayerMask.NameToLayer("Slots")) | (1 << LayerMask.NameToLayer("Cards"));
+        int layerMask = (1 << LayerMask.NameToLayer("slots")) | (1 << LayerMask.NameToLayer("cards"));
         RaycastHit2D[] hits = Physics2D.RaycastAll(ray.origin, ray.direction, 100f, layerMask);
+
+        if (enableDebugLogs)
+            Debug.Log($"DragWorldWindow: Raycast hits = {hits.Length}");
 
         if (hits.Length > 0)
         {
             // Сортируем по расстоянию
             System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
 
+            if (enableDebugLogs)
+                Debug.Log($"DragWorldWindow: First hit distance = {hits[0].distance}, object = {hits[0].collider?.gameObject?.name}");
+
             foreach (var hit in hits)
             {
+                if (enableDebugLogs)
+                    Debug.Log($"DragWorldWindow: Hit: {hit.collider?.gameObject?.name}, layer = {LayerMask.LayerToName(hit.collider?.gameObject?.layer ?? 0)}");
+
                 // Если первый попавшийся объект - карта, то блокируем перетаскивание окна
                 CardObject card = hit.collider.GetComponent<CardObject>();
                 if (card != null)
                 {
                     if (enableDebugLogs)
-                        Debug.Log("DragWorldWindow: Card blocks window drag");
+                        Debug.Log($"DragWorldWindow: CARD found! Layer = {LayerMask.LayerToName(card.gameObject.layer)}. Blocking window drag.");
                     return false;
                 }
 
@@ -98,10 +114,20 @@ public class DragWorldWindow : MonoBehaviour
                 WorldSlotWindow slotWindow = hit.collider.GetComponentInParent<WorldSlotWindow>();
                 if (slotWindow != null && slotWindow.gameObject == this.gameObject)
                 {
+                    if (enableDebugLogs)
+                        Debug.Log($"DragWorldWindow: WINDOW found! Allowing drag.");
                     return true;
                 }
             }
         }
+        else
+        {
+            if (enableDebugLogs)
+                Debug.Log("DragWorldWindow: No hits found");
+        }
+
+        if (enableDebugLogs)
+            Debug.Log("DragWorldWindow: No valid hit, returning false");
 
         return false;
     }
