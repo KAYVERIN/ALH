@@ -100,14 +100,7 @@ public class WorldSlotWindow : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         {
             Log($"Карта {card.cardName} вышла из зоны слота");
             HighlightSlot(false);
-
-            // Опускаем карту (восстанавливаем исходный уровень)
-            CardVisualController visualController = card.GetComponent<CardVisualController>();
-            if (visualController != null)
-            {
-                visualController.LowerCard();
-                Log($"Карта {card.cardName} опущена");
-            }
+            // НЕ трогаем визуал карты - DragController сам всё сделает
         }
     }
 
