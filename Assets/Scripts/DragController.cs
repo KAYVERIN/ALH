@@ -227,7 +227,9 @@ public class DragController : MonoBehaviour
             return;
         }
 
-        // Проверяем слоты
+        // ============================================================
+        // ПРОВЕРЯЕМ, НЕ НАД СЛОТОМ ЛИ КУРСОР
+        // ============================================================
         WorldSlotWindow targetSlot = null;
         float minDistance = float.MaxValue;
 
@@ -237,7 +239,7 @@ public class DragController : MonoBehaviour
             if (window.GetSlotRect() == null) continue;
 
             float distance = Vector3.Distance(mouseWorldPos, window.GetSlotRect().position);
-            if (distance < window.SlotDetectionRadius && distance < minDistance)
+            if (distance < window.slotDetectionRadius && distance < minDistance)
             {
                 minDistance = distance;
                 targetSlot = window;
@@ -249,11 +251,11 @@ public class DragController : MonoBehaviour
             if (enableDebugLogs)
                 Debug.Log($"Карта {draggedCard.cardName} брошена на слот");
 
-            // СОХРАНЯЕМ ССЫЛКУ ПЕРЕД СБРОСОМ!
-            CardObject cardToPlace = draggedCard;
-
+            // Завершаем перетаскивание
             ResetDragState();
-            targetSlot.PlaceCard(cardToPlace);
+
+            // Кладём карту в слот
+            targetSlot.PlaceCard(draggedCard);
             return;
         }
 
@@ -261,10 +263,11 @@ public class DragController : MonoBehaviour
         if (IsPointerOverUI())
         {
             DropLogic.ReturnToOriginalPosition(draggedCard);
+            //ResetDragState();
             return;
         }
 
-        // Стандартная логика через DropLogic
+
         bool cardRemainsUnderCursor = draggedCard.Drop(mouseWorldPos);
 
         if (cardRemainsUnderCursor)
