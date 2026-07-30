@@ -80,9 +80,17 @@ public class DragController : MonoBehaviour
         {
             Vector3 mouseWorldPos = GetMouseWorldPosition();
             draggedCard.UpdateDragPosition(mouseWorldPos);
+            if (IsCardOverAnySlot(draggedCard))
+            {
+                // Карта над слотом - скрываем подсветку сетки
+                GridManager.Instance?.HideHighlight();
+            }
+            else
+            {
+                // Карта не над слотом - показываем подсветку сетки
+                GridManager.Instance?.UpdateHighlight(mouseWorldPos);
+            }
 
-            // Просто передаём позицию в GridManager - он сам разберётся
-            GridManager.Instance?.UpdateHighlight(mouseWorldPos);
         }
 
         // ============================================================
@@ -217,11 +225,21 @@ public class DragController : MonoBehaviour
             return;
         }
 
+        // Проверяем, не над слотом ли карта
+        if (IsCardOverAnySlot(draggedCard))
+        {
+            // Карта над слотом - слот сам обработает через IDropHandler
+            if (enableDebugLogs)
+                Debug.Log($"Карта {draggedCard.cardName} над слотом, ожидаем обработку UI");
+            //ResetDragState();
+            return;
+        }
+
         // Проверяем UI
         if (IsPointerOverUI())
         {
             DropLogic.ReturnToOriginalPosition(draggedCard);
-            ResetDragState();
+            //ResetDragState();
             return;
         }
 
@@ -291,6 +309,38 @@ public class DragController : MonoBehaviour
         Vector3 world = mainCamera.ScreenToWorldPoint(new Vector3(mousePos.x, mousePos.y, 0));
         world.z = 0;
         return world;
+    }
+
+    /// <summary>
+    /// Проверяет, находится ли карта над каким-либо слотом
+    /// </summary>
+    private bool IsCardOverAnySlot(CardObject card)
+    {
+        if (card == null) return false;
+
+        // Находим все окна со слотами
+        WorldSlotWindow[] slotWindows = FindObjectsOfType<WorldSlotWindow>();
+
+        foreach (WorldSlotWindow window in slotWindows)
+        {
+            // Если слот уже занят - пропускаем
+            if (window.HasCard) continue;
+
+            // Получаем позицию слота
+            RectTransform slotRect = window.GetSlotRect();
+            if (slotRect == null) continue;
+
+            // Проверяем расстояние между картой и слотом
+            float distance = Vector3.Distance(card.transform.position, slotRect.position);
+
+            // Если карта близко к слоту
+            if (distance < 2f) // Порог можно вынести в настройки
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private bool IsPointerOverUI()

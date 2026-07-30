@@ -106,6 +106,11 @@ public class WorldSlotWindow : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         isDraggingWindow = false;
     }
 
+    public RectTransform GetSlotRect()
+    {
+        return slotRect;
+    }
+
     private void Log(string message)
     {
         if (enableDebugLogs)
