@@ -216,6 +216,7 @@ public class CardVisualController : MonoBehaviour
         {
             if (canvas != null)
             {
+                canvas.overrideSorting = true;
                 int oldOrder = canvas.sortingOrder;
                 canvas.sortingOrder = oldOrder + offset;
                 Log($"{canvas.gameObject.name}: {oldOrder} → {canvas.sortingOrder}");
