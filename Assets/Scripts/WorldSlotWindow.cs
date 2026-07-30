@@ -67,16 +67,14 @@ public class WorldSlotWindow : MonoBehaviour, IBeginDragHandler, IDragHandler, I
 
     private void Update()
     {
-        // Проверяем, не начали ли перетаскивать карту из слота
+        // Проверяем, не забрали ли карту из слота
         if (HasCard && currentCard != null)
         {
-            if (currentCard.transform.localPosition != Vector3.zero)
+            // Если карта больше не дочерняя слота - её забрал DragController
+            if (currentCard.transform.parent != slotRect)
             {
-                Log($"Карта {currentCard.cardName} извлечена из слота (обнаружено движение)");
-
-                CardObject card = currentCard;
+                Log($"Карта {currentCard.cardName} извлечена из слота (родитель изменён)");
                 currentCard = null;
-                card.transform.SetParent(null, true);
             }
         }
     }
@@ -102,6 +100,14 @@ public class WorldSlotWindow : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         {
             Log($"Карта {card.cardName} вышла из зоны слота");
             HighlightSlot(false);
+
+            // Опускаем карту (восстанавливаем исходный уровень)
+            CardVisualController visualController = card.GetComponent<CardVisualController>();
+            if (visualController != null)
+            {
+                visualController.LowerCard();
+                Log($"Карта {card.cardName} опущена");
+            }
         }
     }
 
@@ -140,30 +146,18 @@ public class WorldSlotWindow : MonoBehaviour, IBeginDragHandler, IDragHandler, I
 
     public bool PlaceCard(CardObject card)
     {
-        Log($"=== PlaceCard НАЧАЛО ===");
-        Log($"PlaceCard: card = {(card != null ? card.cardName : "null")}");
-        Log($"PlaceCard: HasCard = {HasCard}");
-        Log($"PlaceCard: slotRect == null = {slotRect == null}");
+        if (card == null || HasCard || slotRect == null) return false;
 
-        if (card == null || HasCard || slotRect == null)
-        {
-            Log($"PlaceCard: проверка не пройдена, возвращаем false");
-            return false;
-        }
-
-        Log($"PlaceCard: помещаем карту {card.cardName} в слот");
+        Log($"Помещаем карту {card.cardName} в слот");
 
         currentCard = card;
         card.transform.SetParent(slotRect, false);
         card.transform.localPosition = Vector3.zero;
         card.transform.localScale = Vector3.one * 0.8f;
-        card.LowerCardVisuals();
 
         HighlightSlot(false);
 
         Log($"PlaceCard: карта {card.cardName} успешно помещена!");
-        Log($"=== PlaceCard КОНЕЦ ===");
-
         return true;
     }
 
@@ -232,5 +226,25 @@ public class WorldSlotWindow : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         {
             Debug.Log($"[WorldSlotWindow] {message}");
         }
+    }
+
+    /// <summary>
+    /// Получить Sorting Order слота (максимальный среди всех Canvas на слоте)
+    /// </summary>
+    public int GetSlotSortingOrder()
+    {
+        if (slotRect == null) return 0;
+
+        int maxOrder = 0;
+        Canvas[] canvases = slotRect.GetComponentsInChildren<Canvas>(true);
+        foreach (var canvas in canvases)
+        {
+            if (canvas != null && canvas.sortingOrder > maxOrder)
+            {
+                maxOrder = canvas.sortingOrder;
+            }
+        }
+
+        return maxOrder;
     }
 }
