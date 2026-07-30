@@ -11,7 +11,7 @@ public class WorldSlotWindow : MonoBehaviour, IBeginDragHandler, IDragHandler, I
     [SerializeField] private Image windowBackground;
 
     [Header("Settings")]
-    [SerializeField] private float slotDetectionRadius = 2f;
+    [SerializeField] public float slotDetectionRadius = 2f;
     [SerializeField] private bool enableDebugLogs = false;
 
     private CardObject currentCard;

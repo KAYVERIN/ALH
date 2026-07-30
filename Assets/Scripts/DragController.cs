@@ -14,6 +14,7 @@ public class DragController : MonoBehaviour
     [SerializeField] private float raycastDistance = 100f;
     [SerializeField] private LayerMask cardLayer;
 
+
     [Header("Отладка")]
     [SerializeField] private bool enableDebugLogs = true;
 
@@ -226,20 +227,36 @@ public class DragController : MonoBehaviour
             return;
         }
 
-        // Проверяем, не над слотом ли карта
-        if (WorldSlotWindow.IsCardOverAnySlot(draggedCard))
-        {
-            // Карта над слотом - ищем ближайший слот и кладём туда
-            WorldSlotWindow nearestSlot = GetNearestSlot(draggedCard);
-            if (nearestSlot != null && nearestSlot.CanPlaceCard(draggedCard))
-            {
-                // Завершаем перетаскивание
-                ResetDragState();
+        // ============================================================
+        // ПРОВЕРЯЕМ, НЕ НАД СЛОТОМ ЛИ КУРСОР
+        // ============================================================
+        WorldSlotWindow targetSlot = null;
+        float minDistance = float.MaxValue;
 
-                // Кладём карту в слот
-                nearestSlot.PlaceCard(draggedCard);
-                return;
+        foreach (WorldSlotWindow window in WorldSlotWindow.AllSlots)
+        {
+            if (window.HasCard) continue;
+            if (window.GetSlotRect() == null) continue;
+
+            float distance = Vector3.Distance(mouseWorldPos, window.GetSlotRect().position);
+            if (distance < window.slotDetectionRadius && distance < minDistance)
+            {
+                minDistance = distance;
+                targetSlot = window;
             }
+        }
+
+        if (targetSlot != null && targetSlot.CanPlaceCard(draggedCard))
+        {
+            if (enableDebugLogs)
+                Debug.Log($"Карта {draggedCard.cardName} брошена на слот");
+
+            // Завершаем перетаскивание
+            ResetDragState();
+
+            // Кладём карту в слот
+            targetSlot.PlaceCard(draggedCard);
+            return;
         }
 
         // Проверяем UI
@@ -282,29 +299,6 @@ public class DragController : MonoBehaviour
     //  ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ
     // ============================================================
 
-    // метод для поиска ближайшего слота
-    private WorldSlotWindow GetNearestSlot(CardObject card)
-    {
-        if (card == null) return null;
-
-        WorldSlotWindow nearest = null;
-        float nearestDistance = float.MaxValue;
-
-        foreach (WorldSlotWindow window in WorldSlotWindow.AllSlots)
-        {
-            if (window.HasCard) continue;
-            if (window.GetSlotRect() == null) continue;
-
-            float distance = Vector3.Distance(card.transform.position, window.GetSlotRect().position);
-            if (distance < nearestDistance)
-            {
-                nearestDistance = distance;
-                nearest = window;
-            }
-        }
-
-        return nearest;
-    }
 
     private CardObject GetCardUnderMouse()
     {
