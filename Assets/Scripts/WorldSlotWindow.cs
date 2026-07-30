@@ -71,9 +71,13 @@ public class WorldSlotWindow : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         if (HasCard && currentCard != null)
         {
             // Если карта больше не дочерняя слота - её забрал DragController
-            if (currentCard.transform.parent != slotRect)
+            if (Mathf.Abs(currentCard.transform.localPosition.x) > 3f ||
+            Mathf.Abs(currentCard.transform.localPosition.y) > 3f)
             {
-                currentCard.SetParent(null, true);
+                // Открепляем карту от слота
+                currentCard.transform.SetParent(null, true);
+                // Очищаем ссылку
+                currentCard = null;
                 Log($"Карта {currentCard.cardName} извлечена из слота (родитель изменён)");
 
                 currentCard = null;
