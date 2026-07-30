@@ -225,17 +225,6 @@ public class DragController : MonoBehaviour
             return;
         }
 
-        // Проверяем окно крафта
-        if (CraftWindow.IsAnyOpen())
-        {
-            CraftWindow window = CraftWindow.GetCurrentWindow();
-            if (window != null && window.IsMouseOverWindow(mouseWorldPos))
-            {
-                OnCardDropped?.Invoke(draggedCard);
-                ResetDragState();
-                return;
-            }
-        }
 
         bool cardRemainsUnderCursor = draggedCard.Drop(mouseWorldPos);
 
@@ -262,7 +251,6 @@ public class DragController : MonoBehaviour
         }
 
         ResetDragState();
-        GridManager.Instance?.HideHighlight();
     }
 
     // ============================================================
