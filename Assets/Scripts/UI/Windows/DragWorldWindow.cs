@@ -82,7 +82,7 @@ public class DragWorldWindow : MonoBehaviour
             Debug.Log($"DragWorldWindow: Raycast from screen point {mousePos}");
 
         // Получаем все попадания по слоям slots и cards
-        int layerMask = (1 << LayerMask.NameToLayer("slots")) | (1 << LayerMask.NameToLayer("cards"));
+        int layerMask = (1 << LayerMask.NameToLayer("Slots")) | (1 << LayerMask.NameToLayer("Cards"));
         RaycastHit2D[] hits = Physics2D.RaycastAll(ray.origin, ray.direction, 100f, layerMask);
 
         if (enableDebugLogs)
