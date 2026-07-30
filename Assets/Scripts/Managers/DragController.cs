@@ -226,13 +226,19 @@ public class DragController : MonoBehaviour
         }
 
         // Проверяем, не над слотом ли карта
-        if (IsCardOverAnySlot(draggedCard))
+        if (WorldSlotWindow.IsCardOverAnySlot(draggedCard))
         {
-            // Карта над слотом - слот сам обработает через IDropHandler
-            if (enableDebugLogs)
-                Debug.Log($"Карта {draggedCard.cardName} над слотом, ожидаем обработку UI");
-            //ResetDragState();
-            return;
+            // Карта над слотом - ищем ближайший слот и кладём туда
+            WorldSlotWindow nearestSlot = GetNearestSlot(draggedCard);
+            if (nearestSlot != null && nearestSlot.CanPlaceCard(draggedCard))
+            {
+                // Завершаем перетаскивание
+                ResetDragState();
+
+                // Кладём карту в слот
+                nearestSlot.PlaceCard(draggedCard);
+                return;
+            }
         }
 
         // Проверяем UI
@@ -311,38 +317,7 @@ public class DragController : MonoBehaviour
         return world;
     }
 
-    /// <summary>
-    /// Проверяет, находится ли карта над каким-либо слотом
-    /// </summary>
-    private bool IsCardOverAnySlot(CardObject card)
-    {
-        if (card == null) return false;
-
-        // Находим все окна со слотами
-        WorldSlotWindow[] slotWindows = FindObjectsOfType<WorldSlotWindow>();
-
-        foreach (WorldSlotWindow window in slotWindows)
-        {
-            // Если слот уже занят - пропускаем
-            if (window.HasCard) continue;
-
-            // Получаем позицию слота
-            RectTransform slotRect = window.GetSlotRect();
-            if (slotRect == null) continue;
-
-            // Проверяем расстояние между картой и слотом
-            float distance = Vector3.Distance(card.transform.position, slotRect.position);
-
-            // Если карта близко к слоту
-            if (distance < 2f) // Порог можно вынести в настройки
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
+    
     private bool IsPointerOverUI()
     {
         if (EventSystem.current == null) return false;
