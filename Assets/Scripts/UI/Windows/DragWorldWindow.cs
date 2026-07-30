@@ -71,27 +71,35 @@ public class DragWorldWindow : MonoBehaviour
     {
         if (mainCamera == null) return false;
 
-        // Создаем луч от камеры к позиции мыши
         Vector3 mousePos = Input.mousePosition;
         Ray ray = mainCamera.ScreenPointToRay(mousePos);
 
-        // 2D Raycast
-        RaycastHit2D hit = Physics2D.Raycast(ray.origin, ray.direction, 100f, dragLayerMask);
+        // Получаем все попадания по слоям slots и cards
+        int layerMask = (1 << LayerMask.NameToLayer("slots")) | (1 << LayerMask.NameToLayer("cards"));
+        RaycastHit2D[] hits = Physics2D.RaycastAll(ray.origin, ray.direction, 100f, layerMask);
 
-        if (hit.collider != null)
+        if (hits.Length > 0)
         {
-            // Проверяем, является ли объект частью нашего окна
-            WorldSlotWindow slotWindow = hit.collider.GetComponentInParent<WorldSlotWindow>();
-            if (slotWindow != null && slotWindow.gameObject == this.gameObject)
-            {
-                return true;
-            }
+            // Сортируем по расстоянию
+            System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
 
-            // Или проверяем, что это фон окна
-            if (hit.collider.gameObject == gameObject ||
-                hit.collider.transform.parent == transform)
+            foreach (var hit in hits)
             {
-                return true;
+                // Если первый попавшийся объект - карта, то блокируем перетаскивание окна
+                CardObject card = hit.collider.GetComponent<CardObject>();
+                if (card != null)
+                {
+                    if (enableDebugLogs)
+                        Debug.Log("DragWorldWindow: Card blocks window drag");
+                    return false;
+                }
+
+                // Если это окно - разрешаем перетаскивание
+                WorldSlotWindow slotWindow = hit.collider.GetComponentInParent<WorldSlotWindow>();
+                if (slotWindow != null && slotWindow.gameObject == this.gameObject)
+                {
+                    return true;
+                }
             }
         }
 
