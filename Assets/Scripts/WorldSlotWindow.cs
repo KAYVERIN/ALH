@@ -1,8 +1,8 @@
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
-using System.Collections.Generic;
 
-public class WorldSlotWindow : MonoBehaviour
+public class WorldSlotWindow : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
 {
     [Header("Components")]
     [SerializeField] private RectTransform windowRect;
@@ -15,9 +15,11 @@ public class WorldSlotWindow : MonoBehaviour
     [SerializeField] private bool enableDebugLogs = false;
 
     private CardObject currentCard;
-    private DragWorldWindow dragWindow;
+    private bool isDraggingWindow = false;
+    private Vector2 dragOffset;
 
-    public static List<WorldSlotWindow> AllSlots = new List<WorldSlotWindow>();
+    // Статический список всех слотов для быстрого доступа
+    public static System.Collections.Generic.List<WorldSlotWindow> AllSlots = new System.Collections.Generic.List<WorldSlotWindow>();
 
     public CardObject CurrentCard => currentCard;
     public bool HasCard => currentCard != null;
@@ -34,49 +36,8 @@ public class WorldSlotWindow : MonoBehaviour
             windowRect = GetComponent<RectTransform>();
         }
 
-        // ============================================================
-        // НАСТРАИВАЕМ UI ДЛЯ ПЕРЕТАСКИВАНИЯ
-        // ============================================================
-        SetupDragHandler();
+        // Добавляем коллайдер для детекции карты (если нет)
         SetupCollider();
-    }
-
-    private void SetupDragHandler()
-    {
-        // Получаем или добавляем DragWorldWindow
-        dragWindow = GetComponent<DragWorldWindow>();
-        if (dragWindow == null)
-        {
-            dragWindow = gameObject.AddComponent<DragWorldWindow>();
-        }
-
-        // Убеждаемся, что на фоне есть Image с Raycast Target
-        if (windowBackground == null)
-        {
-            windowBackground = GetComponent<Image>();
-            if (windowBackground == null)
-            {
-                windowBackground = gameObject.AddComponent<Image>();
-                windowBackground.color = new Color(0, 0, 0, 0.1f); // Почти прозрачный
-            }
-        }
-
-        // Включаем Raycast Target для перетаскивания
-        if (windowBackground != null)
-        {
-            windowBackground.raycastTarget = true;
-        }
-
-        // Убеждаемся, что на Canvas есть GraphicRaycaster
-        Canvas canvas = GetComponent<Canvas>();
-        if (canvas != null)
-        {
-            GraphicRaycaster raycaster = GetComponent<GraphicRaycaster>();
-            if (raycaster == null)
-            {
-                raycaster = gameObject.AddComponent<GraphicRaycaster>();
-            }
-        }
     }
 
     private void OnEnable()
@@ -94,7 +55,7 @@ public class WorldSlotWindow : MonoBehaviour
     {
         if (slotRect == null) return;
 
-        // Добавляем BoxCollider на слот для детекции карты
+        // Добавляем BoxCollider на слот для детекции входа/выхода карты
         BoxCollider collider = slotRect.gameObject.GetComponent<BoxCollider>();
         if (collider == null)
         {
@@ -106,19 +67,25 @@ public class WorldSlotWindow : MonoBehaviour
 
     private void Update()
     {
+        // Проверяем, не забрали ли карту из слота
         if (HasCard && currentCard != null)
         {
+            // Если карта больше не дочерняя слота - её забрал DragController
             if (Mathf.Abs(currentCard.transform.localPosition.x) > 3f ||
-                Mathf.Abs(currentCard.transform.localPosition.y) > 3f)
+            Mathf.Abs(currentCard.transform.localPosition.y) > 3f)
             {
-                Log($"Карта {currentCard.cardName} извлечена из слота");
-
-                // Открепляем карту
+                // Открепляем карту от слота
                 currentCard.transform.SetParent(null, true);
+                // Очищаем ссылку
+                Log($"Карта {currentCard.cardName} извлечена из слота (родитель изменён)");
                 currentCard = null;
             }
         }
     }
+
+    // ============================================================
+    //  ОБНАРУЖЕНИЕ КАРТЫ НАД СЛОТОМ
+    // ============================================================
 
     private void OnTriggerEnter(Collider other)
     {
@@ -137,8 +104,13 @@ public class WorldSlotWindow : MonoBehaviour
         {
             Log($"Карта {card.cardName} вышла из зоны слота");
             HighlightSlot(false);
+            // НЕ трогаем визуал карты - DragController сам всё сделает
         }
     }
+
+    // ============================================================
+    //  ПРОВЕРКА, НАХОДИТСЯ ЛИ КАРТА НАД СЛОТОМ (ДЛЯ DRAGCONTROLLER)
+    // ============================================================
 
     public static bool IsCardOverAnySlot(CardObject card)
     {
@@ -149,6 +121,7 @@ public class WorldSlotWindow : MonoBehaviour
             if (window.HasCard) continue;
             if (window.slotRect == null) continue;
 
+            // Проверяем расстояние
             float distance = Vector3.Distance(card.transform.position, window.slotRect.position);
             if (distance < window.slotDetectionRadius)
             {
@@ -164,6 +137,10 @@ public class WorldSlotWindow : MonoBehaviour
         return slotRect;
     }
 
+    // ============================================================
+    //  ПОМЕЩЕНИЕ/ИЗВЛЕЧЕНИЕ КАРТЫ
+    // ============================================================
+
     public bool PlaceCard(CardObject card)
     {
         if (card == null || HasCard || slotRect == null) return false;
@@ -174,7 +151,6 @@ public class WorldSlotWindow : MonoBehaviour
         card.transform.SetParent(slotRect, false);
         card.transform.localPosition = Vector3.zero;
         card.transform.localScale = Vector3.one * 0.8f;
-        card.LowerCardVisuals();
 
         HighlightSlot(false);
 
@@ -187,18 +163,58 @@ public class WorldSlotWindow : MonoBehaviour
         return card != null && !HasCard && slotRect != null;
     }
 
+    // ============================================================
+    //  ВИЗУАЛЬНАЯ ОБРАТНАЯ СВЯЗЬ
+    // ============================================================
+
     private void HighlightSlot(bool highlight)
     {
         if (slotBackground == null) return;
 
-      /*  if (highlight)
+        if (highlight)
         {
-            slotBackground.color = new Color(1f, 1f, 0f, 0.5f);
+            slotBackground.color = new Color(1f, 1f, 0f, 0.5f); // Желтая подсветка
         }
         else
         {
             slotBackground.color = Color.white;
-        }*/
+        }
+    }
+
+    // ============================================================
+    //  ПЕРЕТАСКИВАНИЕ ОКНА
+    // ============================================================
+
+    public void OnBeginDrag(PointerEventData eventData)
+    {
+        if (eventData.button != PointerEventData.InputButton.Left) return;
+
+        isDraggingWindow = true;
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(
+            windowRect,
+            eventData.position,
+            eventData.pressEventCamera,
+            out dragOffset
+        );
+    }
+
+    public void OnDrag(PointerEventData eventData)
+    {
+        if (!isDraggingWindow) return;
+
+        if (RectTransformUtility.ScreenPointToLocalPointInRectangle(
+            windowRect.parent as RectTransform,
+            eventData.position,
+            eventData.pressEventCamera,
+            out Vector2 localPointerPosition))
+        {
+            windowRect.localPosition = localPointerPosition;
+        }
+    }
+
+    public void OnEndDrag(PointerEventData eventData)
+    {
+        isDraggingWindow = false;
     }
 
     private void Log(string message)
@@ -207,5 +223,25 @@ public class WorldSlotWindow : MonoBehaviour
         {
             Debug.Log($"[WorldSlotWindow] {message}");
         }
+    }
+
+    /// <summary>
+    /// Получить Sorting Order слота (максимальный среди всех Canvas на слоте)
+    /// </summary>
+    public int GetSlotSortingOrder()
+    {
+        if (slotRect == null) return 0;
+
+        int maxOrder = 0;
+        Canvas[] canvases = slotRect.GetComponentsInChildren<Canvas>(true);
+        foreach (var canvas in canvases)
+        {
+            if (canvas != null && canvas.sortingOrder > maxOrder)
+            {
+                maxOrder = canvas.sortingOrder;
+            }
+        }
+
+        return maxOrder;
     }
 }
