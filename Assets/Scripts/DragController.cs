@@ -343,6 +343,7 @@ public class DragController : MonoBehaviour
 
     private void ResetDragState()
     {
+        draggedCard.isDragging = false;
         isDragging = false;
         draggedCard = null;
         GridManager.Instance?.HideHighlight();
