@@ -4,7 +4,7 @@ public class CursorDepthRaycast : MonoBehaviour
 {
     [Header("Настройки луча")]
     [SerializeField] private float startDepth = -100f;  // Откуда стреляем
-    [SerializeField] private float endDepth = 0f;       // Куда целимя
+    [SerializeField] private float endDepth = 50f;       // Куда целимя
     [SerializeField] private float maxDistance = 200f;
     [SerializeField] private LayerMask layerMask = ~0;
 
@@ -36,21 +36,15 @@ public class CursorDepthRaycast : MonoBehaviour
 
         // 3D луч
         RaycastHit hit;
-        if (Physics.Raycast(origin, direction, out hit, distance, layerMask))
+        if (Physics.Raycast(origin, direction, out hit, distance))
         {
             Debug.Log($"Попали в: {hit.collider.name} (расстояние: {hit.distance:F2})");
 
-            if (showDebug)
-            {
+            //if (showDebug)
+            //{
                 Debug.DrawLine(origin, hit.point, Color.red, 2f);
-            }
+           // }
         }
-        else
-        {
-            if (showDebug)
-            {
-                Debug.DrawRay(origin, direction * distance, Color.green, 2f);
-            }
-        }
+      
     }
 }
