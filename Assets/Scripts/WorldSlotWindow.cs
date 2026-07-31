@@ -61,7 +61,7 @@ public class WorldSlotWindow : MonoBehaviour
         {
             collider = slotRect.gameObject.AddComponent<BoxCollider>();
             collider.isTrigger = true;
-            collider.size = new Vector3(3f, 3f, 0.5f);
+            collider.size = new Vector3(3f, 3f, 0.3f);
         }
     }
 
