@@ -13,10 +13,10 @@ public class CursorDepthRaycast : MonoBehaviour
 
     void Update()
     {
-        if (Input.GetMouseButtonDown(0))
-        {
+        //if (Input.GetMouseButtonDown(0))
+        //{
             PerformRaycast();
-        }
+        //}
     }
 
     void PerformRaycast()
