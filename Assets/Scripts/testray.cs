@@ -23,7 +23,7 @@ public class Raycast2DPerspective : MonoBehaviour
             RaycastHit2D hit2D = Physics2D.Raycast(hitPoint, Vector2.zero, 0.01f);
             if (hit2D.collider != null)
             {
-                Debug.Log("Есть коллайдер под курсором!");
+                Debug.Log("Попали в 2D объект: " + hit2D.collider.gameObject.name);
             }
             else
             {
