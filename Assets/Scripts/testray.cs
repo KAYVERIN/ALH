@@ -1,33 +1,55 @@
 using UnityEngine;
 
-public class Raycast2DPerspective : MonoBehaviour
+public class CursorDepthRaycast : MonoBehaviour
 {
+    [Header("Настройки луча")]
+    [SerializeField] private float startDepth = -100f;  // Откуда стреляем
+    [SerializeField] private float endDepth = 0f;       // Куда целимя
+    [SerializeField] private float maxDistance = 200f;
+    [SerializeField] private LayerMask layerMask = ~0;
+
+    [Header("Отладка")]
+    [SerializeField] private bool showDebug = true;
+
     void Update()
     {
-        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-
-        // Рисуем луч в 3D (зеленый)
-        Debug.DrawRay(ray.origin, ray.direction * 100f, Color.green, 1f);
-
-        // Находим пересечение с Z = 0
-        Plane plane = new Plane(Vector3.forward, Vector3.zero);
-        float distance;
-        if (plane.Raycast(ray, out distance))
+        if (Input.GetMouseButtonDown(0))
         {
-            Vector3 hitPoint = ray.GetPoint(distance);
+            PerformRaycast();
+        }
+    }
 
-            // Рисуем красную точку на Z = 0
-            Debug.DrawLine(ray.origin, hitPoint, Color.red, 1f);
+    void PerformRaycast()
+    {
+        // Начальная точка (под курсором на глубине startDepth)
+        Vector3 origin = Camera.main.ScreenToWorldPoint(
+            new Vector3(Input.mousePosition.x, Input.mousePosition.y, startDepth)
+        );
 
-            // Проверяем, есть ли там 2D коллайдер
-            RaycastHit2D hit2D = Physics2D.Raycast(hitPoint, Vector2.zero, 0.01f);
-            if (hit2D.collider != null)
+        // Целевая точка (под курсором на глубине endDepth)
+        Vector3 target = Camera.main.ScreenToWorldPoint(
+            new Vector3(Input.mousePosition.x, Input.mousePosition.y, endDepth)
+        );
+
+        Vector3 direction = (target - origin).normalized;
+        float distance = Vector3.Distance(origin, target) + 10f;
+
+        // 3D луч
+        RaycastHit hit;
+        if (Physics.Raycast(origin, direction, out hit, distance, layerMask))
+        {
+            Debug.Log($"Попали в: {hit.collider.name} (расстояние: {hit.distance:F2})");
+
+            if (showDebug)
             {
-                Debug.Log("Попали в 2D объект: " + hit2D.collider.gameObject.name);
+                Debug.DrawLine(origin, hit.point, Color.red, 2f);
             }
-            else
+        }
+        else
+        {
+            if (showDebug)
             {
-                Debug.Log("Под курсором нет коллайдера на Z=0");
+                Debug.DrawRay(origin, direction * distance, Color.green, 2f);
             }
         }
     }
