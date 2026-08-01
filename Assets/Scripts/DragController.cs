@@ -268,11 +268,12 @@ public class DragController : MonoBehaviour
         // ============================================================
         // 1. ПРОВЕРЯЕМ СЛОТЫ КРАФТА (ПРИОРИТЕТ 1)
         // ============================================================
-        CraftSlot craftSlot = GetCraftSlotUnderMouse();
-        bool craftSlotTru = craftSlot.CanPlaceCard(draggedCard);
-        if (craftSlot != null && craftSlotTru)
+        // проверяем что карта над слотом
+        CraftSlot craftSlot = GetCraftSlotUnderMouse();           
+        if (craftSlot != null)
         {
-            if (craftSlotTru)
+            // проверяем что карта может поместиться в слот
+            if (craftSlot.CanPlaceCard(draggedCard))
             {
                 if (enableDebugLogs)
                     Debug.Log($"Карта {draggedCard.cardName} брошена на слот крафта {craftSlot.SlotIndex}");
@@ -288,7 +289,8 @@ public class DragController : MonoBehaviour
                 draggedCard.UpdateDragPosition(mouseWorldPos);
             }
             return;
-        } 
+        }
+        
 
         // ============================================================
         // 2. ПРОВЕРЯЕМ ОБЫЧНЫЕ СЛОТЫ (WorldSlotWindow)
