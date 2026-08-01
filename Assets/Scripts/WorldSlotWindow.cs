@@ -36,8 +36,7 @@ public class WorldSlotWindow : MonoBehaviour
             windowRect = GetComponent<RectTransform>();
         }
 
-        // Добавляем коллайдер для детекции карты (если нет)
-        SetupCollider();
+
     }
 
     private void OnEnable()
@@ -51,19 +50,7 @@ public class WorldSlotWindow : MonoBehaviour
         AllSlots.Remove(this);
     }
 
-    private void SetupCollider()
-    {
-        if (slotRect == null) return;
 
-        // Добавляем BoxCollider на слот для детекции входа/выхода карты
-        BoxCollider collider = slotRect.gameObject.GetComponent<BoxCollider>();
-        if (collider == null)
-        {
-            collider = slotRect.gameObject.AddComponent<BoxCollider>();
-            collider.isTrigger = true;
-            collider.size = new Vector3(3f, 3f, 0.3f);
-        }
-    }
 
     private void Update()
     {
