@@ -47,6 +47,24 @@ public class CraftSlot : MonoBehaviour
         Log($"Слот {index} инициализирован, разрешено типов: {allowedTypes.Count}");
     }
 
+    private void Update()
+    {
+        // Проверяем, не забрали ли карту из слота
+        if (HasCard && currentCard != null)
+        {
+            // Если карта больше не дочерняя слота - её забрал DragController
+            if (Mathf.Abs(currentCard.transform.localPosition.x) > 2f ||
+            Mathf.Abs(currentCard.transform.localPosition.y) > 2f)
+            {
+                // Открепляем карту от слота
+                currentCard.transform.SetParent(null, true);
+                // Очищаем ссылку
+                Log($"Карта {currentCard.cardName} извлечена из слота (родитель изменён)");
+                currentCard = null;
+            }
+        }
+    }
+
     // ============================================================
     //  ОБНАРУЖЕНИЕ КАРТЫ
     // ============================================================
