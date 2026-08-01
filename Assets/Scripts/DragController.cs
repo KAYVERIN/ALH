@@ -90,6 +90,8 @@ public class DragController : MonoBehaviour
             draggedCard.UpdateDragPosition(mouseWorldPos);
 
 
+                GridManager.Instance?.UpdateHighlight(mouseWorldPos);
+
         }
 
         // ============================================================
