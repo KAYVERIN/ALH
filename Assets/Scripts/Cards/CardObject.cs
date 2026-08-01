@@ -299,10 +299,10 @@ public class CardObject : MonoBehaviour
         LiftCardVisuals();
         isDragging = true;
 
-        // Устанавливаем позицию под курсором
+        // Устанавливаем позицию под курсором, сохраняя Z
         Vector3 mouseWorldPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-        //mouseWorldPos.z = 0;
-        transform.position = mouseWorldPos;
+        Vector3 currentPos = transform.position;
+        transform.position = new Vector3(mouseWorldPos.x, mouseWorldPos.y, currentPos.z);
 
         OnCardPickedUp?.Invoke(this);
         Log($"Карта {cardName} поднята");
@@ -354,8 +354,9 @@ public class CardObject : MonoBehaviour
     public void UpdateDragPosition(Vector3 mouseWorldPos)
     {
         if (!isDragging) return;
-        //transform.position = new Vector3(mouseWorldPos.x, mouseWorldPos.y, 0);
-        transform.position = mouseWorldPos;
+        // Сохраняем текущий Z
+        Vector3 currentPos = transform.position;
+        transform.position = new Vector3(mouseWorldPos.x, mouseWorldPos.y, currentPos.z);
     }
 
 
