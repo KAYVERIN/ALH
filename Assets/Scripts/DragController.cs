@@ -382,7 +382,7 @@ public class DragController : MonoBehaviour
 
         Vector3 mousePos = Input.mousePosition;
         Vector3 world = mainCamera.ScreenToWorldPoint(new Vector3(mousePos.x, mousePos.y, 0));
-        world.z = 0;    // Z всегда 0 (управляется VisualController)
+        //world.z = 0;    // Z всегда 0 (управляется VisualController)
         return world;
     }
 

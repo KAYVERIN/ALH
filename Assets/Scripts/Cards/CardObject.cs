@@ -354,7 +354,8 @@ public class CardObject : MonoBehaviour
     public void UpdateDragPosition(Vector3 mouseWorldPos)
     {
         if (!isDragging) return;
-        transform.position = new Vector3(mouseWorldPos.x, mouseWorldPos.y, 0);
+        //transform.position = new Vector3(mouseWorldPos.x, mouseWorldPos.y, 0);
+        transform.position = mouseWorldPos;
     }
 
 
