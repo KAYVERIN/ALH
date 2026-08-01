@@ -89,17 +89,7 @@ public class DragController : MonoBehaviour
             // Обновляем позицию карты (только X и Y, Z управляется VisualController)
             draggedCard.UpdateDragPosition(mouseWorldPos);
 
-            // Проверяем, не над слотом ли карта
-            if (WorldSlotWindow.IsCardOverAnySlot(draggedCard))
-            {
-                // Карта над слотом - скрываем подсветку сетки
-                GridManager.Instance?.HideHighlight();
-            }
-            else
-            {
-                // Карта не над слотом - показываем подсветку сетки
-                GridManager.Instance?.UpdateHighlight(mouseWorldPos);
-            }
+
         }
 
         // ============================================================
