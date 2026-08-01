@@ -413,6 +413,29 @@ public class DragController : MonoBehaviour
         hasExceededThreshold = false;
     }
 
+    /// <summary>
+    /// Проверяет, находится ли карта над слотом крафта
+    /// </summary>
+    private CraftSlot GetCraftSlotUnderMouse()
+    {
+        if (mainCamera == null) return null;
+
+        Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
+        RaycastHit hit;
+
+        // Ищем слоты на слое "Slots"
+        if (Physics.Raycast(ray, out hit, raycastDistance, 1 << LayerMask.NameToLayer("Slots")))
+        {
+            CraftSlot slot = hit.collider.GetComponent<CraftSlot>();
+            if (slot != null && slot.IsSlotActive && !slot.HasCard)
+            {
+                return slot;
+            }
+        }
+
+        return null;
+    }
+
     // ============================================================
     //  ПУБЛИЧНЫЕ МЕТОДЫ
     // ============================================================
