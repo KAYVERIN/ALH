@@ -194,6 +194,7 @@ public class CardVisualController : MonoBehaviour
                 int oldOrder = canvas.sortingOrder;
                 canvas.sortingOrder = oldOrder + offset;
                 Log($"{canvas.gameObject.name}: {oldOrder} → {canvas.sortingOrder}");
+                Debug.Log($"ПОСЛЕ изменения Z: {transform.position.z}"); // Лог ПОСЛЕ изменения
             }
         }
         currentOffset = offset;
