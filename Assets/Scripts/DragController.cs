@@ -264,39 +264,32 @@ public class DragController : MonoBehaviour
             return;
         }
 
-        // ============================================================
-        // ПРОВЕРЯЕМ, НЕ НАД СЛОТОМ ЛИ КУРСОР
-        // ============================================================
-        WorldSlotWindow targetSlot = null;
-        float minDistance = float.MaxValue;
+        // В EndDrag() замените проверку на слот крафта на это:
 
-        // Ищем ближайший свободный слот
-        foreach (WorldSlotWindow window in WorldSlotWindow.AllSlots)
+        // ============================================================
+        // 1. ПРОВЕРЯЕМ СЛОТЫ КРАФТА
+        // ============================================================
+        CraftSlot craftSlot = GetCraftSlotUnderMouse();
+        if (craftSlot != null)
         {
-            if (window.HasCard) continue;              // Слот занят - пропускаем
-            if (window.GetSlotRect() == null) continue;
-
-            // Вычисляем расстояние до слота
-            float distance = Vector3.Distance(mouseWorldPos, window.GetSlotRect().position);
-
-            // Если слот в радиусе обнаружения и ближе предыдущего
-            if (distance < window.slotDetectionRadius && distance < minDistance)
+            if (craftSlot.CanPlaceCard(draggedCard))
             {
-                minDistance = distance;
-                targetSlot = window;
+                // Карта подходит - кладём
+                CardObject cardToPlace = draggedCard;
+                ResetDragState();
+                craftSlot.PlaceCard(cardToPlace);
+                return;
             }
-        }
+            else
+            {
+                // Карта не подходит - возвращаем на место и завершаем драг
+                if (enableDebugLogs)
+                    Debug.Log($"Карта {draggedCard.cardName} не подходит для слота {craftSlot.SlotIndex}");
 
-        // Если найден подходящий слот - кладём карту на слот
-        if (targetSlot != null && targetSlot.CanPlaceCard(draggedCard))
-        {
-            if (enableDebugLogs)
-                Debug.Log($"Карта {draggedCard.cardName} брошена на слот");
-
-            CardObject cardToPlace = draggedCard;
-            ResetDragState();           // Сбрасываем состояние до броска
-            targetSlot.PlaceCard(cardToPlace);  // Кладём карту на слот
-            return;
+                DropLogic.ReturnToOriginalPosition(draggedCard);
+                ResetDragState();
+                return;
+            }
         }
 
         // Проверяем, не над UI ли курсор
