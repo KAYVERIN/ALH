@@ -281,6 +281,8 @@ public class DragController : MonoBehaviour
             }
             else 
             {
+                if (enableDebugLogs)
+                    Debug.Log($"{draggedCard.cardName} продолжает перетаскивание");
                 draggedCard.UpdateDragPosition(mouseWorldPos);                
             }
             return;
