@@ -1,6 +1,9 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
 
+/// <summary>
+/// Контроллер перетаскивания карт. Обрабатывает ввод мыши и управляет процессом драга.
+/// </summary>
 public class DragController : MonoBehaviour
 {
     // ============================================================
@@ -10,33 +13,32 @@ public class DragController : MonoBehaviour
     public static DragController Instance => instance;
 
     [Header("Настройки")]
-    [SerializeField] private float dragThreshold = 10f;
-    [SerializeField] private float raycastDistance = 100f;
-    [SerializeField] private LayerMask cardLayer;
-
+    [SerializeField] private float dragThreshold = 10f;        // Порог чувствительности для начала перетаскивания
+    [SerializeField] private float raycastDistance = 100f;      // Дистанция для рейкаста
+    [SerializeField] private LayerMask cardLayer;               // Слой для карт
 
     [Header("Отладка")]
-    [SerializeField] private bool enableDebugLogs = true;
+    [SerializeField] private bool enableDebugLogs = true;       // Включить логи
 
     // ============================================================
     //  ПРИВАТНЫЕ ПЕРЕМЕННЫЕ
     // ============================================================
-    private Camera mainCamera;
+    private Camera mainCamera;                                  // Основная камера
 
     // Состояние перетаскивания
-    private CardObject draggedCard = null;
-    private bool isDragging = false;
+    private CardObject draggedCard = null;                      // Текущая перетаскиваемая карта
+    private bool isDragging = false;                            // Флаг перетаскивания
 
     // Состояние нажатия
-    private CardObject clickedCard = null;
-    private Vector2 mouseDownPosition;
-    private bool isMouseDown = false;
-    private bool hasExceededThreshold = false;
+    private CardObject clickedCard = null;                      // Карта на которую нажали
+    private Vector2 mouseDownPosition;                          // Позиция нажатия мыши
+    private bool isMouseDown = false;                           // Флаг нажатия
+    private bool hasExceededThreshold = false;                  // Превышен ли порог драга
 
     // ============================================================
     //  СОБЫТИЯ
     // ============================================================
-    public static System.Action<CardObject> OnCardDropped;
+    public static System.Action<CardObject> OnCardDropped;     // Событие при броске карты
 
     // ============================================================
     //  ЖИЗНЕННЫЙ ЦИКЛ
@@ -44,6 +46,7 @@ public class DragController : MonoBehaviour
 
     private void Awake()
     {
+        // Реализация синглтона
         if (instance == null)
         {
             instance = this;
@@ -55,9 +58,10 @@ public class DragController : MonoBehaviour
             return;
         }
 
+        // Получаем основную камеру
         mainCamera = Camera.main;
 
-        // Автоматически определяем слой карт
+        // Автоматически определяем слой карт, если он не задан
         if (cardLayer == 0)
         {
             CardObject anyCard = FindAnyObjectByType<CardObject>();
@@ -79,8 +83,12 @@ public class DragController : MonoBehaviour
         // ============================================================
         if (isDragging && draggedCard != null)
         {
+            // Получаем позицию мыши в мировых координатах
             Vector3 mouseWorldPos = GetMouseWorldPosition();
+
+            // Обновляем позицию карты (только X и Y, Z управляется VisualController)
             draggedCard.UpdateDragPosition(mouseWorldPos);
+
             // Проверяем, не над слотом ли карта
             if (WorldSlotWindow.IsCardOverAnySlot(draggedCard))
             {
@@ -92,7 +100,6 @@ public class DragController : MonoBehaviour
                 // Карта не над слотом - показываем подсветку сетки
                 GridManager.Instance?.UpdateHighlight(mouseWorldPos);
             }
-
         }
 
         // ============================================================
@@ -100,9 +107,13 @@ public class DragController : MonoBehaviour
         // ============================================================
         if (InputHandler.Instance != null && InputHandler.Instance.GetKeyDown("Drag"))
         {
+            // Проверяем, что клик не по UI
             if (!IsPointerOverUI())
             {
+                // Пытаемся найти карту под курсором
                 CardObject card = GetCardUnderMouse();
+
+                // Если карта найдена и она доступна для перетаскивания
                 if (card != null && !card.isBlocked && !card.isDragging)
                 {
                     StartDrag(card);
@@ -115,8 +126,10 @@ public class DragController : MonoBehaviour
         // ============================================================
         if (isMouseDown && !isDragging && clickedCard != null)
         {
+            // Вычисляем расстояние от точки нажатия до текущей позиции мыши
             float dragDistance = Vector2.Distance(mouseDownPosition, Input.mousePosition);
 
+            // Если расстояние превысило порог, начинаем перетаскивание
             if (dragDistance > dragThreshold && !hasExceededThreshold)
             {
                 hasExceededThreshold = true;
@@ -129,11 +142,13 @@ public class DragController : MonoBehaviour
         // ============================================================
         if (InputHandler.Instance != null && InputHandler.Instance.GetKeyUp("Drag"))
         {
+            // Если карта перетаскивалась - завершаем драг
             if (isDragging && draggedCard != null)
             {
                 EndDrag();
             }
 
+            // Сбрасываем состояние мыши
             ResetMouseState();
         }
 
@@ -142,6 +157,7 @@ public class DragController : MonoBehaviour
         // ============================================================
         if (InputHandler.Instance != null && InputHandler.Instance.GetKeyDown("Pause"))
         {
+            // Если карта перетаскивается - отменяем драг
             if (isDragging && draggedCard != null)
             {
                 CancelDrag();
@@ -153,35 +169,50 @@ public class DragController : MonoBehaviour
     //  ОСНОВНЫЕ МЕТОДЫ ДРАГА
     // ============================================================
 
+    /// <summary>
+    /// Начинает процесс перетаскивания (запоминает начальную позицию)
+    /// </summary>
+    /// <param name="card">Карта, которую начинаем перетаскивать</param>
     private void StartDrag(CardObject card)
     {
         if (enableDebugLogs)
             Debug.Log($"StartDrag: {card.cardName}");
 
         clickedCard = card;
-        mouseDownPosition = Input.mousePosition;
+        mouseDownPosition = Input.mousePosition;    // Запоминаем позицию нажатия
         isMouseDown = true;
         hasExceededThreshold = false;
     }
 
+    /// <summary>
+    /// Поднимает карту для перетаскивания (создаёт копию, если нужно)
+    /// </summary>
+    /// <param name="card">Карта, которую поднимаем</param>
     private void PickUpCardForDrag(CardObject card)
     {
         if (enableDebugLogs)
             Debug.Log($"PickUpCardForDrag: {card.cardName}");
 
+        // Проверяем, зажат ли Shift (для взятия всех карт из стопки)
         bool shiftPressed = InputHandler.Instance != null &&
                            InputHandler.Instance.GetKey("TakeAll");
 
+        // Если карта стакается и в стопке больше 1 карты, и Shift не зажат
         if (card.isStackable && card.stackSize > 1 && !shiftPressed)
         {
+            // Создаём новую карту из библиотеки
             CardObject newCard = CardLibrary.CreateCard(card.cardID, card.transform.position, 1);
+
+            // Уменьшаем стопку исходной карты
             card.stackSize--;
 
             if (newCard != null)
             {
+                // Настраиваем новую карту для перетаскивания
                 newCard.currentCell = null;
                 newCard.originalGridPos = card.originalGridPos;
-                newCard.PickUp();
+                newCard.PickUp();               // Поднимаем карту (визуальный подъём)
+
                 draggedCard = newCard;
                 isDragging = true;
 
@@ -199,9 +230,10 @@ public class DragController : MonoBehaviour
             }
         }
 
+        // Обычный подъём карты (без создания копии)
         if (card != null && card.gameObject != null)
         {
-            card.PickUp();
+            card.PickUp();      // Поднимаем карту (визуальный подъём)
             draggedCard = card;
             isDragging = true;
 
@@ -214,13 +246,18 @@ public class DragController : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Завершает перетаскивание - пытается положить карту на слот или в сетку
+    /// </summary>
     public void EndDrag()
     {
         if (enableDebugLogs)
             Debug.Log($"EndDrag: {draggedCard.cardName}");
 
+        // Получаем позицию мыши в мировых координатах
         Vector3 mouseWorldPos = GetMouseWorldPosition();
 
+        // Проверяем, что карта существует
         if (draggedCard == null || draggedCard.gameObject == null)
         {
             ResetDragState();
@@ -233,12 +270,16 @@ public class DragController : MonoBehaviour
         WorldSlotWindow targetSlot = null;
         float minDistance = float.MaxValue;
 
+        // Ищем ближайший свободный слот
         foreach (WorldSlotWindow window in WorldSlotWindow.AllSlots)
         {
-            if (window.HasCard) continue;
+            if (window.HasCard) continue;              // Слот занят - пропускаем
             if (window.GetSlotRect() == null) continue;
 
+            // Вычисляем расстояние до слота
             float distance = Vector3.Distance(mouseWorldPos, window.GetSlotRect().position);
+
+            // Если слот в радиусе обнаружения и ближе предыдущего
             if (distance < window.slotDetectionRadius && distance < minDistance)
             {
                 minDistance = distance;
@@ -246,28 +287,30 @@ public class DragController : MonoBehaviour
             }
         }
 
+        // Если найден подходящий слот - кладём карту на слот
         if (targetSlot != null && targetSlot.CanPlaceCard(draggedCard))
         {
             if (enableDebugLogs)
                 Debug.Log($"Карта {draggedCard.cardName} брошена на слот");
 
-            CardObject cardToPlace = draggedCard; 
-            ResetDragState(); 
-            targetSlot.PlaceCard(cardToPlace);
+            CardObject cardToPlace = draggedCard;
+            ResetDragState();           // Сбрасываем состояние до броска
+            targetSlot.PlaceCard(cardToPlace);  // Кладём карту на слот
             return;
         }
 
-        // Проверяем UI
+        // Проверяем, не над UI ли курсор
         if (IsPointerOverUI())
         {
+            // Если над UI - возвращаем карту на исходную позицию
             DropLogic.ReturnToOriginalPosition(draggedCard);
-            //ResetDragState();
             return;
         }
 
-
+        // Пытаемся уронить карту в игровой мир
         bool cardRemainsUnderCursor = draggedCard.Drop(mouseWorldPos);
 
+        // Если осталась часть стопки под курсором - продолжаем перетаскивание
         if (cardRemainsUnderCursor)
         {
             if (enableDebugLogs)
@@ -277,9 +320,13 @@ public class DragController : MonoBehaviour
             return;
         }
 
+        // Сбрасываем состояние
         ResetDragState();
     }
 
+    /// <summary>
+    /// Отменяет перетаскивание (возвращает карту на исходную позицию)
+    /// </summary>
     private void CancelDrag()
     {
         if (enableDebugLogs)
@@ -287,6 +334,7 @@ public class DragController : MonoBehaviour
 
         if (draggedCard != null)
         {
+            // Возвращаем карту на исходную позицию
             DropLogic.ReturnToOriginalPosition(draggedCard);
         }
 
@@ -297,54 +345,74 @@ public class DragController : MonoBehaviour
     //  ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ
     // ============================================================
 
-
+    /// <summary>
+    /// Получает карту под курсором мыши
+    /// </summary>
     private CardObject GetCardUnderMouse()
     {
         if (mainCamera == null) return null;
 
+        // Создаём луч от камеры через позицию мыши
         Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
 
-
-
+        // Выполняем рейкаст
         RaycastHit hit3D;
         if (Physics.Raycast(ray, out hit3D, raycastDistance))
         {
+            // Возвращаем компонент CardObject, если он есть
             return hit3D.collider.GetComponent<CardObject>();
         }
 
         return null;
     }
 
+    /// <summary>
+    /// Получает позицию мыши в мировых координатах (Z всегда 0)
+    /// </summary>
     private Vector3 GetMouseWorldPosition()
     {
+        // Если есть GridManager - используем его для привязки к сетке
         if (GridManager.Instance != null)
         {
             return GridManager.Instance.GetMouseWorldPositionOnGrid();
         }
 
+        // Иначе стандартное преобразование
         if (mainCamera == null) return Vector3.zero;
 
         Vector3 mousePos = Input.mousePosition;
         Vector3 world = mainCamera.ScreenToWorldPoint(new Vector3(mousePos.x, mousePos.y, 0));
-        world.z = 0;
+        world.z = 0;    // Z всегда 0 (управляется VisualController)
         return world;
     }
 
-    
+    /// <summary>
+    /// Проверяет, находится ли курсор над UI элементом
+    /// </summary>
     private bool IsPointerOverUI()
     {
         if (EventSystem.current == null) return false;
         return EventSystem.current.IsPointerOverGameObject();
     }
 
+    /// <summary>
+    /// Сбрасывает состояние перетаскивания
+    /// </summary>
     private void ResetDragState()
     {
-        draggedCard.isDragging = false;
+        if (draggedCard != null)
+            draggedCard.isDragging = false;
+
         isDragging = false;
         draggedCard = null;
+
+        // Скрываем подсветку сетки
         GridManager.Instance?.HideHighlight();
     }
 
+    /// <summary>
+    /// Сбрасывает состояние мыши
+    /// </summary>
     private void ResetMouseState()
     {
         isMouseDown = false;
@@ -356,6 +424,6 @@ public class DragController : MonoBehaviour
     //  ПУБЛИЧНЫЕ МЕТОДЫ
     // ============================================================
 
-    public bool IsDragging => isDragging;
-    public CardObject DraggedCard => draggedCard;
+    public bool IsDragging => isDragging;           // Идёт ли перетаскивание
+    public CardObject DraggedCard => draggedCard;   // Текущая перетаскиваемая карта
 }
