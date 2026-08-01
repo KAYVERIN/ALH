@@ -173,12 +173,9 @@ public class CraftSlot : MonoBehaviour
     {
         isSlotActive = active;
 
-        if (slotCollider != null)
-            slotCollider.enabled = active;
-
         // Скрываем/показываем визуал
-        if (highlightObject != null)
-            highlightObject.SetActive(false);
+        //if (highlightObject != null)
+        //    highlightObject.SetActive(false);
 
         Log($"Слот {slotIndex} {(active ? "активирован" : "деактивирован")}");
     }
