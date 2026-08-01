@@ -95,8 +95,11 @@ public class DragController : MonoBehaviour
             CraftSlot craftSlot = GetCraftSlotUnderMouse();
             if (craftSlot != null && craftSlot.IsSlotActive && !craftSlot.HasCard)
             {
-                // Включаем подсветку слота
-                craftSlot.HighlightSlot(true);
+                // Проверяем, валидна ли карта для этого слота
+                bool isValid = craftSlot.IsCardValidForSlot(draggedCard);
+
+                // Включаем подсветку с соответствующим цветом
+                craftSlot.HighlightSlot(true, isValid);
             }
             else
             {
@@ -510,7 +513,7 @@ public class DragController : MonoBehaviour
         CraftSlot[] allSlots = FindObjectsOfType<CraftSlot>();
         foreach (CraftSlot slot in allSlots)
         {
-            slot.HighlightSlot(false);
+            slot.HighlightSlot(false, false);
         }
     }
 

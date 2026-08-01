@@ -9,10 +9,15 @@ public class CraftSlot : MonoBehaviour
     [Header("Components")]
     [SerializeField] private Collider slotCollider;          // 3D коллайдер для Raycast
     [SerializeField] private GameObject highlightObject;     // Объект подсветки
+    [SerializeField] private SpriteRenderer highlightRenderer; // SpriteRenderer для изменения цвета
 
     [Header("Settings")]
     [SerializeField] private float slotDetectionRadius = 1.5f;
     [SerializeField] private bool enableDebugLogs = false;
+
+    [Header("Highlight Colors")]
+    [SerializeField] private Color validHighlightColor = new Color(0f, 1f, 0f, 0.5f);    // Зелёный
+    [SerializeField] private Color invalidHighlightColor = new Color(1f, 0f, 0f, 0.5f);  // Красный
 
     [Header("Filter")]
     [SerializeField] private List<CardType> allowedCardTypes = new List<CardType>();
@@ -43,6 +48,12 @@ public class CraftSlot : MonoBehaviour
         // Включаем коллайдер
         if (slotCollider != null)
             slotCollider.enabled = true;
+
+        // Инициализируем спрайт подсветки
+        if (highlightRenderer == null && highlightObject != null)
+        {
+            highlightRenderer = highlightObject.GetComponent<SpriteRenderer>();
+        }
 
         Log($"Слот {index} инициализирован, разрешено типов: {allowedTypes.Count}");
     }
@@ -110,7 +121,7 @@ public class CraftSlot : MonoBehaviour
         card.transform.localRotation = Quaternion.identity;
         // card.transform.localScale = Vector3.one * 0.8f; // если нужно уменьшить
 
-        HighlightSlot(false);
+        HighlightSlot(false, false);
 
         // Уведомляем окно, что слот заполнен
         parentWindow?.OnSlotFilled(this);
@@ -156,18 +167,53 @@ public class CraftSlot : MonoBehaviour
     /// <summary>
     /// Публичный метод для внешней подсветки слота (используется DragController)
     /// </summary>
-    public void HighlightSlot(bool highlight)
+    /// <param name="highlight">Включить подсветку</param>
+    /// <param name="isValid">Валидна ли карта для слота (true - зелёный, false - красный)</param>
+    public void HighlightSlot(bool highlight, bool isValid = true)
     {
-        if (isHighlighted == highlight) return;
+        if (isHighlighted == highlight && highlight)
+            return;
 
         isHighlighted = highlight;
 
         if (highlightObject != null)
+        {
             highlightObject.SetActive(highlight);
 
-        Log($"Подсветка слота {slotIndex}: {(highlight ? "вкл" : "выкл")}");
+            // Меняем цвет если есть SpriteRenderer
+            if (highlightRenderer != null)
+            {
+                highlightRenderer.color = isValid ? validHighlightColor : invalidHighlightColor;
+            }
+        }
+
+        Log($"Подсветка слота {slotIndex}: {(highlight ? "вкл" : "выкл")}, {(highlight ? (isValid ? "валидна" : "невалидна") : "")}");
     }
 
+    /// <summary>
+    /// Проверяет, валидна ли карта для слота (без учёта занятости)
+    /// Используется для подсветки при наведении
+    /// </summary>
+    public bool IsCardValidForSlot(CardObject card)
+    {
+        if (card == null || !isSlotActive)
+            return false;
+
+        if (allowedCardTypes == null || allowedCardTypes.Count == 0)
+            return true;
+
+        CardData cardData = card.GetCardData();
+        if (cardData == null)
+            return false;
+
+        foreach (CardType cardType in cardData.Types)
+        {
+            if (allowedCardTypes.Contains(cardType))
+                return true;
+        }
+
+        return false;
+    }
     // ============================================================
     //  УПРАВЛЕНИЕ АКТИВНОСТЬЮ СЛОТА
     // ============================================================
