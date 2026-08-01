@@ -93,7 +93,7 @@ public class DragController : MonoBehaviour
             {
                 // Карта над окном крафта - скрываем подсветку сетки
                 GridManager.Instance?.HideHighlight();
-                return; // Выходим, чтобы не показывать подсветку сетки
+                //return; // Выходим, чтобы не показывать подсветку сетки
             }
             else  GridManager.Instance?.UpdateHighlight(mouseWorldPos);
 
