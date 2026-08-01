@@ -483,10 +483,10 @@ public class DragController : MonoBehaviour
         {
             // Проверяем, что это окно крафта (а не слот)
             CraftWindowController window = hit.collider.GetComponent<CraftWindowController>();
-            if (window != null)
-            {
-                return true;
-            }
+            //if (window != null)
+            //{
+            //    return true;
+            //}
 
             // Также проверяем, не является ли коллайдер частью окна (например, фон)
             // Если у окна есть коллайдер на дочернем объекте
