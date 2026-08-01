@@ -278,6 +278,8 @@ public class DragController : MonoBehaviour
                 CardObject cardToPlace = draggedCard;
                 ResetDragState();
                 craftSlot.PlaceCard(cardToPlace);
+                if (enableDebugLogs)
+                    Debug.Log($"Карта {draggedCard.cardName} подходит для слота {craftSlot.SlotIndex}");
                 return;
             }
             else
@@ -352,8 +354,10 @@ public class DragController : MonoBehaviour
         RaycastHit hit3D;
         if (Physics.Raycast(ray, out hit3D, raycastDistance))
         {
+            if (enableDebugLogs)
+                Debug.Log($"подднята : {draggedCard?.cardName ?? "null"}");
             // Возвращаем компонент CardObject, если он есть
-            return hit3D.collider.GetComponent<CardObject>();
+            return hit3D.collider.GetComponent<CardObject>();            
         }
 
         return null;
