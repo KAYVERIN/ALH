@@ -307,7 +307,7 @@ public class DragController : MonoBehaviour
 
 
         RaycastHit hit3D;
-        if (Physics.Raycast(ray, out hit3D, raycastDistance, cardLayer))
+        if (Physics.Raycast(ray, out hit3D, raycastDistance))
         {
             return hit3D.collider.GetComponent<CardObject>();
         }
