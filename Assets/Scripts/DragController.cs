@@ -274,8 +274,15 @@ public class DragController : MonoBehaviour
                 Debug.Log($"Карта {draggedCard.cardName} брошена на слот крафта {craftSlot.SlotIndex}");
 
             CardObject cardToPlace = draggedCard;
-            ResetDragState();           // Сбрасываем состояние до броска
-            craftSlot.PlaceCard(cardToPlace);  // Кладём карту на слот крафта
+            
+            if (craftSlot.PlaceCard(cardToPlace))
+            {
+                ResetDragState();           // Сбрасываем состояние до броска                
+            }
+            else 
+            {
+                draggedCard.UpdateDragPosition(mouseWorldPos);                
+            }
             return;
         }
 

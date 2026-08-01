@@ -65,22 +65,6 @@ public class CraftSlot : MonoBehaviour
         }
     }
 
-    // ============================================================
-    //  ОБНАРУЖЕНИЕ КАРТЫ
-    // ============================================================
-
-    private void OnTriggerEnter(Collider other)
-    {
-        CardObject card = other.GetComponent<CardObject>();
-        Log($"Карта {card.cardName} вошла в зону слота {slotIndex}");
-        HighlightSlot(true);
-        if (card != null && card.isDragging && CanPlaceCard(card))
-        {
-            Log($"Карта {card.cardName} вошла в зону слота {slotIndex}");
-            HighlightSlot(true);
-        }
-    }
-
 
     // ============================================================
     //  ПРОВЕРКА КАРТЫ НА СООТВЕТСТВИЕ ФИЛЬТРУ
@@ -173,7 +157,7 @@ public class CraftSlot : MonoBehaviour
     //  ВИЗУАЛЬНАЯ ОБРАТНАЯ СВЯЗЬ
     // ============================================================
 
-    private void HighlightSlot(bool highlight)
+    public void HighlightSlot(bool highlight)
     {
         isHighlighted = highlight;
 
