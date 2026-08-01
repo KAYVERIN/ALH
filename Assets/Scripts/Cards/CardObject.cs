@@ -301,7 +301,7 @@ public class CardObject : MonoBehaviour
 
         // Устанавливаем позицию под курсором
         Vector3 mouseWorldPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-        mouseWorldPos.z = 0;
+        //mouseWorldPos.z = 0;
         transform.position = mouseWorldPos;
 
         OnCardPickedUp?.Invoke(this);
