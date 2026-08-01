@@ -54,23 +54,15 @@ public class CraftSlot : MonoBehaviour
     private void OnTriggerEnter(Collider other)
     {
         CardObject card = other.GetComponent<CardObject>();
-
-        if (card != null )
+        Log($"Карта {card.cardName} вошла в зону слота {slotIndex}");
+        HighlightSlot(true);
+        if (card != null && card.isDragging && CanPlaceCard(card))
         {
             Log($"Карта {card.cardName} вошла в зону слота {slotIndex}");
             HighlightSlot(true);
         }
     }
 
-    private void OnTriggerExit(Collider other)
-    {
-        CardObject card = other.GetComponent<CardObject>();
-        if (card != null && card.isDragging)
-        {
-            Log($"Карта {card.cardName} вышла из зоны слота {slotIndex}");
-            HighlightSlot(false);
-        }
-    }
 
     // ============================================================
     //  ПРОВЕРКА КАРТЫ НА СООТВЕТСТВИЕ ФИЛЬТРУ
