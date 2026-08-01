@@ -54,8 +54,8 @@ public class WorldSlotWindow : MonoBehaviour
         if (HasCard && currentCard != null)
         {
             // Если карта больше не дочерняя слота - её забрал DragController
-            if (Mathf.Abs(currentCard.transform.localPosition.x) > 3f ||
-            Mathf.Abs(currentCard.transform.localPosition.y) > 3f)
+            if (Mathf.Abs(currentCard.transform.localPosition.x) > 2f ||
+            Mathf.Abs(currentCard.transform.localPosition.y) > 2f)
             {
                 // Открепляем карту от слота
                 currentCard.transform.SetParent(null, true);
@@ -133,7 +133,7 @@ public class WorldSlotWindow : MonoBehaviour
         currentCard = card;
         card.transform.SetParent(slotRect, false);
         card.transform.localPosition = Vector3.zero;
-        card.transform.localScale = Vector3.one * 0.8f;
+        //card.transform.localScale = Vector3.one * 0.8f;
 
         HighlightSlot(false);
 
