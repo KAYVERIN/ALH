@@ -264,34 +264,51 @@ public class DragController : MonoBehaviour
             return;
         }
 
-        // В EndDrag() замените проверку на слот крафта на это:
-
         // ============================================================
-        // 1. ПРОВЕРЯЕМ СЛОТЫ КРАФТА
+        // 1. ПРОВЕРЯЕМ СЛОТЫ КРАФТА (ПРИОРИТЕТ 1)
         // ============================================================
         CraftSlot craftSlot = GetCraftSlotUnderMouse();
-        if (craftSlot != null)
+        if (craftSlot != null && craftSlot.CanPlaceCard(draggedCard))
         {
-            if (craftSlot.CanPlaceCard(draggedCard))
-            {
-                // Карта подходит - кладём
-                CardObject cardToPlace = draggedCard;
-                ResetDragState();
-                craftSlot.PlaceCard(cardToPlace);
-                if (enableDebugLogs)
-                    Debug.Log($"Карта {draggedCard.cardName} подходит для слота {craftSlot.SlotIndex}");
-                return;
-            }
-            else
-            {
-                // Карта не подходит - возвращаем на место и завершаем драг
-                if (enableDebugLogs)
-                    Debug.Log($"Карта {draggedCard.cardName} не подходит для слота {craftSlot.SlotIndex}");
+            if (enableDebugLogs)
+                Debug.Log($"Карта {draggedCard.cardName} брошена на слот крафта {craftSlot.SlotIndex}");
 
-                DropLogic.ReturnToOriginalPosition(draggedCard);
-                ResetDragState();
-                return;
+            CardObject cardToPlace = draggedCard;
+            ResetDragState();           // Сбрасываем состояние до броска
+            craftSlot.PlaceCard(cardToPlace);  // Кладём карту на слот крафта
+            return;
+        }
+
+        // ============================================================
+        // 2. ПРОВЕРЯЕМ ОБЫЧНЫЕ СЛОТЫ (WorldSlotWindow)
+        // ============================================================
+        WorldSlotWindow targetSlot = null;
+        float minDistance = float.MaxValue;
+
+        // Ищем ближайший свободный слот
+        foreach (WorldSlotWindow window in WorldSlotWindow.AllSlots)
+        {
+            if (window.HasCard) continue;
+            if (window.GetSlotRect() == null) continue;
+
+            float distance = Vector3.Distance(mouseWorldPos, window.GetSlotRect().position);
+            if (distance < window.slotDetectionRadius && distance < minDistance)
+            {
+                minDistance = distance;
+                targetSlot = window;
             }
+        }
+
+        // Если найден подходящий слот - кладём карту на слот
+        if (targetSlot != null && targetSlot.CanPlaceCard(draggedCard))
+        {
+            if (enableDebugLogs)
+                Debug.Log($"Карта {draggedCard.cardName} брошена на обычный слот");
+
+            CardObject cardToPlace = draggedCard;
+            ResetDragState();
+            targetSlot.PlaceCard(cardToPlace);
+            return;
         }
 
         // Проверяем, не над UI ли курсор
