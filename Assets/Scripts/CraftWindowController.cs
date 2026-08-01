@@ -8,14 +8,14 @@ using UnityEngine.UI;
 public class CraftWindowController : MonoBehaviour, ICardWindow
 {
     [Header("References")]
-    [SerializeField] private RectTransform windowRect;          // Основной RectTransform окна
-    [SerializeField] private RectTransform slotsContainer;      // Контейнер для слотов (Horizontal Layout Group)
-    [SerializeField] private Button craftButton;               // Кнопка крафта
-    [SerializeField] private GameObject slotPrefab;            // Префаб слота
+    [SerializeField] private RectTransform windowRect;
+    [SerializeField] private RectTransform slotsContainer;
+    [SerializeField] private Button craftButton;
+    [SerializeField] private GameObject slotPrefab;
 
     [Header("Slot Settings")]
     [SerializeField] private Vector2 slotSize = new Vector2(1.95f, 2.84f);
-    [SerializeField] private float slotSpacing = 0.5f;         // Расстояние между слотами
+    [SerializeField] private float slotSpacing = 0.5f;
 
     [Header("Window Settings")]
     [SerializeField] private Vector2 windowPadding = new Vector2(0.5f, 0.5f);
@@ -26,11 +26,11 @@ public class CraftWindowController : MonoBehaviour, ICardWindow
     [SerializeField] private bool enableDebugLogs = true;
 
     // Данные
-    private CardObject sourceCard;                              // Карта, по которой открыли окно
-    private CardData sourceCardData;                            // Данные этой карты
-    private List<CraftSlot> slots = new List<CraftSlot>();     // Все слоты
-    private int totalSlotsCount = 0;                            // Общее количество слотов из CardData
-    private bool isRecipeBookMode = false;                     // Режим книги рецептов
+    private CardObject sourceCard;
+    private CardData sourceCardData;
+    private List<CraftSlot> slots = new List<CraftSlot>();
+    private int totalSlotsCount = 0;
+    private bool isRecipeBookMode = false;
 
     // ============================================================
     //  ЖИЗНЕННЫЙ ЦИКЛ
@@ -74,7 +74,6 @@ public class CraftWindowController : MonoBehaviour, ICardWindow
             return;
         }
 
-        // Проверяем наличие крафт-взаимодействий
         if (!sourceCardData.HasCraftInteractions())
         {
             Debug.LogWarning($"[CraftWindowController] У {card.cardName} нет крафт-взаимодействий!");
@@ -82,7 +81,6 @@ public class CraftWindowController : MonoBehaviour, ICardWindow
             return;
         }
 
-        // Инициализируем окно
         InitializeWindow();
     }
 
@@ -92,40 +90,33 @@ public class CraftWindowController : MonoBehaviour, ICardWindow
 
     private void InitializeWindow()
     {
-        // Получаем общее количество слотов из CardData
         totalSlotsCount = sourceCardData.GetSlotCount();
-
         Log($"Инициализация окна крафта для {sourceCard.cardName}, слотов: {totalSlotsCount}");
 
-        // Очищаем старые слоты
         ClearSlots();
 
         // Проверяем, является ли карта книгой рецептов или рецептом
-        //isRecipeBookMode = IsRecipeBookOrRecipe();
+        isRecipeBookMode = IsRecipeBookOrRecipe();
 
         // Создаём первый слот (всегда открыт)
         CreateSlot(0);
 
-        // Если книга рецептов - сразу создаём все слоты
-        //if (isRecipeBookMode)
-        //{
-        //    for (int i = 1; i < totalSlotsCount; i++)
-        //    {
-        //        CreateSlot(i);
-        //    }
-            // Все слоты созданы, но кнопка неактивна до заполнения всех
-        //}
+        // Если книга рецептов или рецепт - сразу создаём все слоты
+        if (isRecipeBookMode)
+        {
+            for (int i = 1; i < totalSlotsCount; i++)
+            {
+                CreateSlot(i);
+            }
+        }
 
         // Обновляем размер окна
-        //UpdateWindowSize();
+        UpdateWindowSize();
 
-        // Деактивируем кнопку (она активируется при заполнении нужных слотов)
+        // Деактивируем кнопку
         UpdateCraftButton();
     }
 
-    /// <summary>
-    /// Проверяет, является ли карта книгой рецептов или рецептом
-    /// </summary>
     private bool IsRecipeBookOrRecipe()
     {
         if (sourceCardData == null || sourceCardData.Types == null)
@@ -139,9 +130,6 @@ public class CraftWindowController : MonoBehaviour, ICardWindow
     //  УПРАВЛЕНИЕ СЛОТАМИ
     // ============================================================
 
-    /// <summary>
-    /// Создаёт новый слот
-    /// </summary>
     private void CreateSlot(int index)
     {
         if (index >= totalSlotsCount)
@@ -150,21 +138,17 @@ public class CraftWindowController : MonoBehaviour, ICardWindow
             return;
         }
 
-        // Получаем разрешённые типы для этого слота
         List<CardType> allowedTypes = sourceCardData.GetAllowedTypesForSlot(index);
 
-        // Создаём префаб
         GameObject slotObject = Instantiate(slotPrefab, slotsContainer);
         slotObject.name = $"Slot_{index}";
 
-        // Настраиваем RectTransform
         RectTransform slotRect = slotObject.GetComponent<RectTransform>();
         if (slotRect != null)
         {
             slotRect.sizeDelta = slotSize;
         }
 
-        // Получаем и инициализируем компонент CraftSlot
         CraftSlot slot = slotObject.GetComponent<CraftSlot>();
         if (slot == null)
         {
@@ -178,30 +162,45 @@ public class CraftWindowController : MonoBehaviour, ICardWindow
 
         Log($"Создан слот {index}, разрешено типов: {allowedTypes.Count}");
 
-        // Если слот не первый - деактивируем его (он откроется позже)
-        //if (index > 0)
-        //{
-        //    slot.SetSlotActive(false);
-        //}
-
-        // Обновляем размер окна
         UpdateWindowSize();
     }
 
     /// <summary>
     /// Проверяет, нужно ли добавить новый слот. также должен проверить какая карта помещена в слот
-    /// если книга рецептов или рецепт то открыть колличество слотов указаных в рецепте или книге рецептов
+    /// если книга рецептов или рецепт то открыть количество слотов указанных в рецепте или книге рецептов
     /// </summary>
     public void OnSlotFilled(CraftSlot slot)
     {
-        Log($"Слот {slot.SlotIndex} заполнен");
+        Log($"Слот {slot.SlotIndex} заполнен картой {slot.CurrentCard?.cardName}");
+
+        // Проверяем, является ли помещённая карта книгой рецептов или рецептом
+        CardData placedCardData = slot.CurrentCard?.GetCardData();
+        if (placedCardData != null && IsRecipeBookOrRecipeData(placedCardData))
+        {
+            // Если в слоте 0 оказалась книга рецептов - открываем все слоты
+            if (slot.SlotIndex == 0)
+            {
+                Log($"В слот 0 помещена книга рецептов! Открываем все слоты");
+                isRecipeBookMode = true;
+                
+                // Создаём все недостающие слоты
+                for (int i = slots.Count; i < totalSlotsCount; i++)
+                {
+                    CreateSlot(i);
+                }
+                
+                UpdateWindowSize();
+                UpdateCraftButton();
+                return;
+            }
+        }
 
         // Если книга рецептов - просто обновляем кнопку
-        /*if (isRecipeBookMode)
+        if (isRecipeBookMode)
         {
             UpdateCraftButton();
             return;
-        }*/
+        }
 
         // Проверяем, есть ли незаполненные слоты
         int lastFilledIndex = GetLastFilledSlotIndex();
@@ -215,23 +214,37 @@ public class CraftWindowController : MonoBehaviour, ICardWindow
                 CreateSlot(lastFilledIndex + 1);
             }
 
-
-            // Обновляем размер окна
             UpdateWindowSize();
         }
 
-        // Обновляем кнопку
         UpdateCraftButton();
     }
 
     /// <summary>
     /// Обработка удаления карты из слота. если удален рецепт или книга рецептов то очищаем и удаляем все слоты кроме нулевого.
     /// если нет рецепта или книги то проверяем пусты ли последние 2 слота если пусты то последний слот удаляем
-    ///  на окне не должно быть неактивных слотов. Если слот создан и виден то он должен быть активен.
+    /// на окне не должно быть неактивных слотов. Если слот создан и виден то он должен быть активен.
     /// </summary>
     public void OnSlotEmptied(CraftSlot slot)
     {
         Log($"Слот {slot.SlotIndex} опустошён");
+
+        // Если из слота 0 удалили книгу рецептов - переключаемся в обычный режим
+        if (slot.SlotIndex == 0 && isRecipeBookMode)
+        {
+            Log($"Из слота 0 удалена книга рецептов! Переключаемся в обычный режим");
+            isRecipeBookMode = false;
+            
+            // Удаляем все слоты кроме 0
+            for (int i = slots.Count - 1; i > 0; i--)
+            {
+                RemoveSlot(i);
+            }
+            
+            UpdateWindowSize();
+            UpdateCraftButton();
+            return;
+        }
 
         // Если книга рецептов - просто обновляем кнопку
         if (isRecipeBookMode)
@@ -240,51 +253,38 @@ public class CraftWindowController : MonoBehaviour, ICardWindow
             return;
         }
 
-        // Проверяем, все ли слоты пустые после этого слота
-        bool allAfterEmpty = true;
-        for (int i = slot.SlotIndex + 1; i < slots.Count; i++)
+        // Проверяем, пустые ли последние 2 слота (включая текущий)
+        int lastFilledIndex = GetLastFilledSlotIndex();
+        
+        // Если есть пустые слоты в конце - удаляем их
+        if (slots.Count > 1)
         {
-            if (slots[i].HasCard)
+            // Проверяем, заполнен ли предпоследний слот
+            bool secondLastEmpty = true;
+            if (slots.Count >= 2)
             {
-                allAfterEmpty = false;
-                break;
+                CraftSlot secondLastSlot = slots[slots.Count - 2];
+                if (secondLastSlot.HasCard)
+                    secondLastEmpty = false;
+            }
+            
+            // Если последний слот пуст и предпоследний тоже пуст - удаляем последний
+            if (!slot.HasCard && secondLastEmpty && slot.SlotIndex == slots.Count - 1)
+            {
+                RemoveSlot(slots.Count - 1);
+                UpdateWindowSize();
+            }
+            else if (!slot.HasCard && slot.SlotIndex == slots.Count - 1 && slots.Count > 1)
+            {
+                // Если последний слот пуст - удаляем его
+                RemoveSlot(slots.Count - 1);
+                UpdateWindowSize();
             }
         }
 
-        // Если все слоты после пустые - удаляем лишние слоты (кроме первого)
-        if (allAfterEmpty && slot.SlotIndex > 0)
-        {
-            // Удаляем все слоты после этого
-            for (int i = slots.Count - 1; i > slot.SlotIndex; i--)
-            {
-                RemoveSlot(i);
-            }
-
-            // Деактивируем текущий слот (если он не первый)
-            if (slot.SlotIndex > 0)
-            {
-                slot.SetSlotActive(false);
-
-                // Если в слоте есть карта - возвращаем её
-                if (slot.HasCard)
-                {
-                    CardObject card = slot.TakeCard();
-                    // Возвращаем карту на исходную позицию
-                    DropLogic.ReturnToOriginalPosition(card);
-                }
-            }
-        }
-
-        // Обновляем размер окна
-        UpdateWindowSize();
-
-        // Обновляем кнопку
         UpdateCraftButton();
     }
 
-    /// <summary>
-    /// Удаляет слот по индексу
-    /// </summary>
     private void RemoveSlot(int index)
     {
         if (index < 0 || index >= slots.Count)
@@ -292,41 +292,35 @@ public class CraftWindowController : MonoBehaviour, ICardWindow
 
         CraftSlot slot = slots[index];
 
-        // Если в слоте есть карта - возвращаем её
         if (slot.HasCard)
         {
             CardObject card = slot.TakeCard();
-            DropLogic.ReturnToOriginalPosition(card);
+            // Используем PlaceCardSmart для возврата карты на поле
+            DropLogic.PlaceCardSmart(card);
         }
 
-        // Удаляем объект
         Destroy(slot.gameObject);
         slots.RemoveAt(index);
 
         Log($"Слот {index} удалён");
     }
 
-    /// <summary>
-    /// Очищает все слоты
-    /// </summary>
     private void ClearSlots()
     {
         foreach (CraftSlot slot in slots)
         {
             if (slot != null)
             {
-                // Возвращаем карты на поле
                 if (slot.HasCard)
                 {
                     CardObject card = slot.TakeCard();
-                    DropLogic.ReturnToOriginalPosition(card);
+                    DropLogic.PlaceCardSmart(card);
                 }
                 Destroy(slot.gameObject);
             }
         }
         slots.Clear();
 
-        // Очищаем дочерние объекты контейнера
         foreach (Transform child in slotsContainer)
         {
             Destroy(child.gameObject);
@@ -337,9 +331,6 @@ public class CraftWindowController : MonoBehaviour, ICardWindow
     //  ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ
     // ============================================================
 
-    /// <summary>
-    /// Получает индекс последнего заполненного слота
-    /// </summary>
     private int GetLastFilledSlotIndex()
     {
         for (int i = slots.Count - 1; i >= 0; i--)
@@ -350,9 +341,6 @@ public class CraftWindowController : MonoBehaviour, ICardWindow
         return -1;
     }
 
-    /// <summary>
-    /// Проверяет, заполнены ли все слоты (для книги рецептов)
-    /// </summary>
     private bool AreAllSlotsFilled()
     {
         if (slots.Count < totalSlotsCount)
@@ -366,19 +354,23 @@ public class CraftWindowController : MonoBehaviour, ICardWindow
         return true;
     }
 
-    /// <summary>
-    /// Проверяет, нужно ли активировать кнопку крафта
-    /// </summary>
+    private bool IsRecipeBookOrRecipeData(CardData data)
+    {
+        if (data == null || data.Types == null)
+            return false;
+
+        return data.Types.Contains(CardType.RecipleBook) ||
+               data.Types.Contains(CardType.Reciple);
+    }
+
     private bool ShouldCraftButtonBeActive()
     {
         if (isRecipeBookMode)
         {
-            // В режиме книги: кнопка активна только когда все слоты заполнены
             return AreAllSlotsFilled();
         }
         else
         {
-            // В обычном режиме: кнопка активна когда заполнены минимум 2 слота
             int filledCount = 0;
             foreach (CraftSlot slot in slots)
             {
@@ -386,7 +378,20 @@ public class CraftWindowController : MonoBehaviour, ICardWindow
                     filledCount++;
             }
 
-            return filledCount >= 2;
+            // Кнопка активна если заполнено минимум 2 слота
+            // и нет пустых слотов между заполненными
+            if (filledCount < 2)
+                return false;
+
+            // Проверяем, что все слоты до последнего заполненного заполнены
+            int lastFilled = GetLastFilledSlotIndex();
+            for (int i = 0; i <= lastFilled; i++)
+            {
+                if (!slots[i].HasCard)
+                    return false;
+            }
+
+            return true;
         }
     }
 
@@ -394,24 +399,16 @@ public class CraftWindowController : MonoBehaviour, ICardWindow
     //  УПРАВЛЕНИЕ ВИЗУАЛОМ
     // ============================================================
 
-    /// <summary>
-    /// Обновляет размер окна в зависимости от количества слотов
-    /// </summary>
     private void UpdateWindowSize()
     {
         if (slotsContainer == null || windowRect == null)
             return;
 
-        // Количество видимых слотов
-        int visibleSlots = 0;
-        foreach (CraftSlot slot in slots)
-        {
-            if (slot.IsSlotActive)
-                visibleSlots++;
-        }
+        // Количество видимых слотов (все слоты всегда активны)
+        int visibleSlots = slots.Count;
 
-        // Если нет активных слотов - оставляем хотя бы один
-        if (visibleSlots == 0 && slots.Count > 0)
+        // Если нет слотов - оставляем хотя бы один
+        if (visibleSlots == 0)
             visibleSlots = 1;
 
         // Вычисляем ширину
@@ -431,9 +428,6 @@ public class CraftWindowController : MonoBehaviour, ICardWindow
         Log($"Размер окна обновлён: {windowRect.sizeDelta}, слотов: {visibleSlots}");
     }
 
-    /// <summary>
-    /// Обновляет состояние кнопки крафта
-    /// </summary>
     private void UpdateCraftButton()
     {
         if (craftButton == null)
@@ -454,12 +448,6 @@ public class CraftWindowController : MonoBehaviour, ICardWindow
         Log("Нажата кнопка крафта!");
 
         // TODO: Здесь будет логика крафта
-        // 1. Собрать карты из слотов
-        // 2. Проверить рецепт
-        // 3. Создать результат
-        // 4. Удалить ингредиенты
-
-        // Временная заглушка
         Debug.Log($"[CraftWindowController] КРАФТ! Ингредиенты: {GetIngredientsList()}");
     }
 
@@ -480,13 +468,12 @@ public class CraftWindowController : MonoBehaviour, ICardWindow
 
     public void CloseWindow()
     {
-        // Возвращаем все карты на поле
         foreach (CraftSlot slot in slots)
         {
             if (slot.HasCard)
             {
                 CardObject card = slot.TakeCard();
-                DropLogic.ReturnToOriginalPosition(card);
+                DropLogic.PlaceCardSmart(card);
             }
         }
 
