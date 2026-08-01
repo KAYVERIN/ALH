@@ -89,6 +89,21 @@ public class DragController : MonoBehaviour
             // Обновляем позицию карты (только X и Y, Z управляется VisualController)
             draggedCard.UpdateDragPosition(mouseWorldPos);
 
+            // ============================================================
+            // ПРОВЕРЯЕМ ПОДСВЕТКУ СЛОТА КРАФТА
+            // ============================================================
+            CraftSlot craftSlot = GetCraftSlotUnderMouse();
+            if (craftSlot != null && craftSlot.IsSlotActive && !craftSlot.HasCard)
+            {
+                // Включаем подсветку слота
+                craftSlot.HighlightSlot(true);
+            }
+            else
+            {
+                // Выключаем подсветку всех слотов
+                HideAllCraftSlotHighlights();
+            }
+
             if (IsPointerOverCraftWindow())
             {
                 // Карта над окном крафта - скрываем подсветку сетки
@@ -431,6 +446,8 @@ public class DragController : MonoBehaviour
 
         // Скрываем подсветку сетки
         GridManager.Instance?.HideHighlight();
+        // Скрываем подсветку всех слотов крафта
+        HideAllCraftSlotHighlights();
     }
 
     /// <summary>
@@ -485,20 +502,17 @@ public class DragController : MonoBehaviour
 
         return false;
     }
-
     /// <summary>
     /// Скрывает подсветку всех слотов крафта
     /// </summary>
     private void HideAllCraftSlotHighlights()
     {
-        // Найти все CraftSlot на сцене и убрать подсветку
         CraftSlot[] allSlots = FindObjectsOfType<CraftSlot>();
         foreach (CraftSlot slot in allSlots)
         {
             slot.HighlightSlot(false);
         }
     }
-
 
     // ============================================================
     //  ПУБЛИЧНЫЕ МЕТОДЫ
