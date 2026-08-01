@@ -269,21 +269,26 @@ public class DragController : MonoBehaviour
         // 1. ПРОВЕРЯЕМ СЛОТЫ КРАФТА (ПРИОРИТЕТ 1)
         // ============================================================
         CraftSlot craftSlot = GetCraftSlotUnderMouse();
-        if (craftSlot != null && craftSlot.CanPlaceCard(draggedCard))
+        bool craftSlotTru = craftSlot.CanPlaceCard(draggedCard)
+        if (craftSlot != null && craftSlotTru)
         {
-            if (enableDebugLogs)
-                Debug.Log($"Карта {draggedCard.cardName} брошена на слот крафта {craftSlot.SlotIndex}");
+            if (craftSlotTru)
+            {
+                if (enableDebugLogs)
+                    Debug.Log($"Карта {draggedCard.cardName} брошена на слот крафта {craftSlot.SlotIndex}");
 
-            CardObject cardToPlace = draggedCard;
-            ResetDragState();           // Сбрасываем состояние до броска
-            craftSlot.PlaceCard(cardToPlace);  // Кладём карту на слот крафта
+                CardObject cardToPlace = draggedCard;
+                ResetDragState();           // Сбрасываем состояние до броска
+                craftSlot.PlaceCard(cardToPlace);  // Кладём карту на слот крафта
+            }
+            else
+            {
+                if (enableDebugLogs)
+                    Debug.Log($"{draggedCard.cardName} продолжает перетаскивание");
+                draggedCard.UpdateDragPosition(mouseWorldPos);
+            }
             return;
-        } elseif(!craftSlot.CanPlaceCard(draggedCard)){
-            if (enableDebugLogs)
-                Debug.Log($"{draggedCard.cardName} продолжает перетаскивание");
-            draggedCard.UpdateDragPosition(mouseWorldPos);
-            return;
-        }
+        } 
 
         // ============================================================
         // 2. ПРОВЕРЯЕМ ОБЫЧНЫЕ СЛОТЫ (WorldSlotWindow)
