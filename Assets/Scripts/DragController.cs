@@ -264,6 +264,7 @@ public class DragController : MonoBehaviour
             return;
         }
 
+
         // ============================================================
         // 1. ПРОВЕРЯЕМ СЛОТЫ КРАФТА (ПРИОРИТЕТ 1)
         // ============================================================
@@ -274,17 +275,13 @@ public class DragController : MonoBehaviour
                 Debug.Log($"Карта {draggedCard.cardName} брошена на слот крафта {craftSlot.SlotIndex}");
 
             CardObject cardToPlace = draggedCard;
-            
-            if (craftSlot.PlaceCard(cardToPlace))
-            {
-                ResetDragState();           // Сбрасываем состояние до броска                
-            }
-            else 
-            {
-                if (enableDebugLogs)
-                    Debug.Log($"{draggedCard.cardName} продолжает перетаскивание");
-                draggedCard.UpdateDragPosition(mouseWorldPos);                
-            }
+            ResetDragState();           // Сбрасываем состояние до броска
+            craftSlot.PlaceCard(cardToPlace);  // Кладём карту на слот крафта
+            return;
+        } elseif(!craftSlot.CanPlaceCard(draggedCard)){
+            if (enableDebugLogs)
+                Debug.Log($"{draggedCard.cardName} продолжает перетаскивание");
+            draggedCard.UpdateDragPosition(mouseWorldPos);
             return;
         }
 
