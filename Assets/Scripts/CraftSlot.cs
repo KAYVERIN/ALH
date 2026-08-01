@@ -153,12 +153,19 @@ public class CraftSlot : MonoBehaviour
     //  ВИЗУАЛЬНАЯ ОБРАТНАЯ СВЯЗЬ
     // ============================================================
 
+    /// <summary>
+    /// Публичный метод для внешней подсветки слота (используется DragController)
+    /// </summary>
     public void HighlightSlot(bool highlight)
     {
+        if (isHighlighted == highlight) return;
+
         isHighlighted = highlight;
 
         if (highlightObject != null)
             highlightObject.SetActive(highlight);
+
+        Log($"Подсветка слота {slotIndex}: {(highlight ? "вкл" : "выкл")}");
     }
 
     // ============================================================

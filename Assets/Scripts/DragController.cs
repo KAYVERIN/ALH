@@ -488,6 +488,14 @@ public class DragController : MonoBehaviour
         if (Physics.Raycast(ray, out hit, raycastDistance, 1 << LayerMask.NameToLayer("Slots")))
         {
             CraftSlot slot = hit.collider.GetComponent<CraftSlot>();
+
+            // Проверяем, не является ли коллайдер частью окна (а не слота)
+            if (slot == null)
+            {
+                // Может быть коллайдер на дочернем объекте слота
+                slot = hit.collider.GetComponentInParent<CraftSlot>();
+            }
+
             if (slot != null && slot.IsSlotActive && !slot.HasCard)
             {
                 return slot;
