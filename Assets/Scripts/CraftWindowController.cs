@@ -179,10 +179,10 @@ public class CraftWindowController : MonoBehaviour, ICardWindow
         Log($"Создан слот {index}, разрешено типов: {allowedTypes.Count}");
 
         // Если слот не первый - деактивируем его (он откроется позже)
-        if (index > 0)
-        {
-            slot.SetSlotActive(false);
-        }
+        //if (index > 0)
+        //{
+        //    slot.SetSlotActive(false);
+        //}
 
         // Обновляем размер окна
         UpdateWindowSize();
