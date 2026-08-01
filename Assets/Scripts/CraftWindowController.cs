@@ -189,18 +189,19 @@ public class CraftWindowController : MonoBehaviour, ICardWindow
     }
 
     /// <summary>
-    /// Проверяет, нужно ли открыть новый слот
+    /// Проверяет, нужно ли добавить новый слот. также должен проверить какая карта помещена в слот
+    /// если книга рецептов или рецепт то открыть колличество слотов указаных в рецепте или книге рецептов
     /// </summary>
     public void OnSlotFilled(CraftSlot slot)
     {
         Log($"Слот {slot.SlotIndex} заполнен");
 
         // Если книга рецептов - просто обновляем кнопку
-        if (isRecipeBookMode)
+        /*if (isRecipeBookMode)
         {
             UpdateCraftButton();
             return;
-        }
+        }*/
 
         // Проверяем, есть ли незаполненные слоты
         int lastFilledIndex = GetLastFilledSlotIndex();
@@ -213,11 +214,7 @@ public class CraftWindowController : MonoBehaviour, ICardWindow
             {
                 CreateSlot(lastFilledIndex + 1);
             }
-            else
-            {
-                // Активируем существующий слот
-                slots[lastFilledIndex + 1].SetSlotActive(true);
-            }
+
 
             // Обновляем размер окна
             UpdateWindowSize();
@@ -228,7 +225,9 @@ public class CraftWindowController : MonoBehaviour, ICardWindow
     }
 
     /// <summary>
-    /// Обработка удаления карты из слота
+    /// Обработка удаления карты из слота. если удален рецепт или книга рецептов то очищаем и удаляем все слоты кроме нулевого.
+    /// если нет рецепта или книги то проверяем пусты ли последние 2 слота если пусты то последний слот удаляем
+    ///  на окне не должно быть неактивных слотов. Если слот создан и виден то он должен быть активен.
     /// </summary>
     public void OnSlotEmptied(CraftSlot slot)
     {
