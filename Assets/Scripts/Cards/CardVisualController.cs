@@ -1,279 +1,429 @@
 using UnityEngine;
-using System.Collections.Generic;
+using UnityEngine.EventSystems;
 
 /// <summary>
-/// Управляет визуальными слоями карты (поднятие/опускание SpriteRenderer и Canvas)
+/// Контроллер перетаскивания карт. Обрабатывает ввод мыши и управляет процессом драга.
 /// </summary>
-public class CardVisualController : MonoBehaviour
+public class DragController : MonoBehaviour
 {
-    [Header("На сколько слоёв поднимаем")]
-    [SerializeField] private int dragSortingOrder = 100;
+    // ============================================================
+    //  СИНГЛТОН
+    // ============================================================
+    private static DragController instance;
+    public static DragController Instance => instance;
 
-    [Header("VisualContainer")]
-    [SerializeField] private GameObject visualContainer;
+    [Header("Настройки")]
+    [SerializeField] private float dragThreshold = 10f;        // Порог чувствительности для начала перетаскивания
+    [SerializeField] private float raycastDistance = 100f;      // Дистанция для рейкаста
+    [SerializeField] private LayerMask cardLayer;               // Слой для карт
 
     [Header("Отладка")]
-    [SerializeField] private bool enableDebugLogs = false;
-
-    // Компоненты
-    private Canvas containerCanvas;
-    private SpriteRenderer[] allRenderers;
-    private int[] originalOrders;
-    private bool isDragging = false;
-    private int currentOffset = 0;
+    [SerializeField] private bool enableDebugLogs = true;       // Включить логи
 
     // ============================================================
-    //  УПРАВЛЕНИЕ Canvas внутри VisualContainer
+    //  ПРИВАТНЫЕ ПЕРЕМЕННЫЕ
     // ============================================================
+    private Camera mainCamera;                                  // Основная камера
 
-    private List<CanvasData> childCanvases = new List<CanvasData>();
+    // Состояние перетаскивания
+    private CardObject draggedCard = null;                      // Текущая перетаскиваемая карта
+    private bool isDragging = false;                            // Флаг перетаскивания
 
-    /// <summary>
-    /// Данные Canvas для сохранения и восстановления
-    /// </summary>
-    private class CanvasData
-    {
-        public Canvas canvas;
-        public int originalSortingOrder;
-        public string originalSortingLayer;
-        public bool wasOverriding;
-    }
-
-    // Рамка карты
-    private SpriteRenderer cardFrame;
-    private int originalFrameOrder = 0;
+    // Состояние нажатия
+    private CardObject clickedCard = null;                      // Карта на которую нажали
+    private Vector2 mouseDownPosition;                          // Позиция нажатия мыши
+    private bool isMouseDown = false;                           // Флаг нажатия
+    private bool hasExceededThreshold = false;                  // Превышен ли порог драга
 
     // ============================================================
-    //  МЕТОДЫ ЛОГИРОВАНИЯ
+    //  СОБЫТИЯ
     // ============================================================
-
-    private void Log(string message)
-    {
-        if (enableDebugLogs)
-            Debug.Log($"[CardVisualController] {message}");
-    }
-
-    private void LogWarning(string message)
-    {
-        if (enableDebugLogs)
-            Debug.LogWarning($"[CardVisualController] {message}");
-    }
+    public static System.Action<CardObject> OnCardDropped;     // Событие при броске карты
 
     // ============================================================
     //  ЖИЗНЕННЫЙ ЦИКЛ
     // ============================================================
 
-    void Awake()
+    private void Awake()
     {
-        if (visualContainer == null)
+        // Реализация синглтона
+        if (instance == null)
         {
-            LogWarning($"VisualContainer НЕ найден!");
-            return;
-        }
-
-        // Находим Canvas на VisualContainer
-        containerCanvas = visualContainer.GetComponent<Canvas>();
-        if (containerCanvas != null)
-        {
-            containerCanvas.overrideSorting = true;
-            Log($"Canvas найден на VisualContainer, sortingOrder: {containerCanvas.sortingOrder}");
+            instance = this;
+            DontDestroyOnLoad(gameObject);
         }
         else
         {
-            LogWarning($"Canvas НЕ найден на VisualContainer!");
+            Destroy(gameObject);
+            return;
         }
 
-        // Находим рамку
-        cardFrame = GetComponent<SpriteRenderer>();
-        if (cardFrame != null)
+        // Получаем основную камеру
+        mainCamera = Camera.main;
+
+        // Автоматически определяем слой карт, если он не задан
+        if (cardLayer == 0)
         {
-            originalFrameOrder = cardFrame.sortingOrder;
-            Log($"Рамка найдена, originalOrder: {originalFrameOrder}");
+            CardObject anyCard = FindAnyObjectByType<CardObject>();
+            if (anyCard != null)
+            {
+                cardLayer = 1 << anyCard.gameObject.layer;
+            }
+            else
+            {
+                cardLayer = 1 << LayerMask.NameToLayer("Cards");
+            }
         }
-
-        // Сохраняем все данные
-        SaveAllData();
     }
 
-    // ============================================================
-    //  СОХРАНЕНИЕ ВСЕХ ДАННЫХ
-    // ============================================================
-
-    /// <summary>
-    /// Сохраняет все данные: SpriteRenderer и Canvas
-    /// </summary>
-    private void SaveAllData()
+    private void Update()
     {
         // ============================================================
-        // 1. ВСЕ SPRITE RENDERERS - от корневого объекта и всех дочерних
+        // 1. ОБНОВЛЕНИЕ ПОЗИЦИИ ПЕРЕТАСКИВАЕМОЙ КАРТЫ И ПОДСВЕТКИ
         // ============================================================
-        allRenderers = GetComponentsInChildren<SpriteRenderer>(true);
-        originalOrders = new int[allRenderers.Length];
-
-        for (int i = 0; i < allRenderers.Length; i++)
+        if (isDragging && draggedCard != null)
         {
-            if (allRenderers[i] != null)
+            // Получаем позицию мыши в мировых координатах
+            Vector3 mouseWorldPos = GetMouseWorldPosition();
+
+            // Обновляем позицию карты (только X и Y, Z управляется VisualController)
+            draggedCard.UpdateDragPosition(mouseWorldPos);
+
+            // Проверяем, не над слотом ли карта
+            if (WorldSlotWindow.IsCardOverAnySlot(draggedCard))
             {
-                originalOrders[i] = allRenderers[i].sortingOrder;
-                Log($"{allRenderers[i].gameObject.name} - originalOrder: {originalOrders[i]}");
+                // Карта над слотом - скрываем подсветку сетки
+                GridManager.Instance?.HideHighlight();
+            }
+            else
+            {
+                // Карта не над слотом - показываем подсветку сетки
+                GridManager.Instance?.UpdateHighlight(mouseWorldPos);
             }
         }
 
         // ============================================================
-        // 2. ВСЕ CANVAS - от корневого объекта и всех дочерних
+        // 2. ОБРАБОТКА НАЖАТИЯ ЛКМ
         // ============================================================
-        childCanvases.Clear();
-
-        Canvas[] canvases = GetComponentsInChildren<Canvas>(true);
-        foreach (Canvas canvas in canvases)
+        if (InputHandler.Instance != null && InputHandler.Instance.GetKeyDown("Drag"))
         {
-            if (canvas != null)
+            // Проверяем, что клик не по UI
+            if (!IsPointerOverUI())
             {
-                CanvasData data = new CanvasData
+                // Пытаемся найти карту под курсором
+                CardObject card = GetCardUnderMouse();
+
+                // Если карта найдена и она доступна для перетаскивания
+                if (card != null && !card.isBlocked && !card.isDragging)
                 {
-                    canvas = canvas,
-                    originalSortingOrder = canvas.sortingOrder,
-                    originalSortingLayer = canvas.sortingLayerName,
-                    wasOverriding = canvas.overrideSorting
-                };
-                childCanvases.Add(data);
-                Log($"Сохранён Canvas: {canvas.gameObject.name}, Order={data.originalSortingOrder}, Layer={data.originalSortingLayer}");
+                    StartDrag(card);
+                }
+            }
+        }
+
+        // ============================================================
+        // 3. ОБРАБОТКА ДВИЖЕНИЯ МЫШИ (превышение порога)
+        // ============================================================
+        if (isMouseDown && !isDragging && clickedCard != null)
+        {
+            // Вычисляем расстояние от точки нажатия до текущей позиции мыши
+            float dragDistance = Vector2.Distance(mouseDownPosition, Input.mousePosition);
+
+            // Если расстояние превысило порог, начинаем перетаскивание
+            if (dragDistance > dragThreshold && !hasExceededThreshold)
+            {
+                hasExceededThreshold = true;
+                PickUpCardForDrag(clickedCard);
+            }
+        }
+
+        // ============================================================
+        // 4. ОБРАБОТКА ОТПУСКАНИЯ ЛКМ
+        // ============================================================
+        if (InputHandler.Instance != null && InputHandler.Instance.GetKeyUp("Drag"))
+        {
+            // Если карта перетаскивалась - завершаем драг
+            if (isDragging && draggedCard != null)
+            {
+                EndDrag();
+            }
+
+            // Сбрасываем состояние мыши
+            ResetMouseState();
+        }
+
+        // ============================================================
+        // 5. ОБРАБОТКА ESC (отмена перетаскивания)
+        // ============================================================
+        if (InputHandler.Instance != null && InputHandler.Instance.GetKeyDown("Pause"))
+        {
+            // Если карта перетаскивается - отменяем драг
+            if (isDragging && draggedCard != null)
+            {
+                CancelDrag();
             }
         }
     }
 
     // ============================================================
-    //  ПОДНЯТИЕ КАРТЫ
+    //  ОСНОВНЫЕ МЕТОДЫ ДРАГА
     // ============================================================
 
     /// <summary>
-    /// Поднимает карту на слой dragSortingOrder и увеличивает масштаб
+    /// Начинает процесс перетаскивания (запоминает начальную позицию)
     /// </summary>
-    public void LiftCard()
+    /// <param name="card">Карта, которую начинаем перетаскивать</param>
+    private void StartDrag(CardObject card)
     {
-        LiftCard(dragSortingOrder);
-        isDragging = true;
-    }
+        if (enableDebugLogs)
+            Debug.Log($"StartDrag: {card.cardName}");
 
-    // ============================================================
-    //  УНИВЕРСАЛЬНЫЕ МЕТОДЫ УПРАВЛЕНИЯ СОРТИРОВКОЙ
-    // ============================================================
-
-    /// <summary>
-    /// Поднимает все визуальные компоненты карты на указанное смещение
-    /// </summary>
-    /// <param name="offset">Величина смещения Sorting Order</param>
-    public void LiftCard(int offset)
-    {
-        LowerCard();// востанавливаем исходную высоту
-        Log($"Поднимаем карту на {offset}");
-
-        // ============================================================
-        // 1. ВСЕ SPRITE RENDERERS - от корневого объекта и всех дочерних
-        // ============================================================
-        SpriteRenderer[] allRenderers = GetComponentsInChildren<SpriteRenderer>(true);
-        foreach (var sr in allRenderers)
-        {
-            if (sr != null)
-            {
-                int oldOrder = sr.sortingOrder;
-                sr.sortingOrder = oldOrder + offset;
-                Log($"{sr.gameObject.name}: {oldOrder} → {sr.sortingOrder}");
-            }
-        }
-
-        // ============================================================
-        // 2. ВСЕ CANVAS - от корневого объекта и всех дочерних
-        // ============================================================
-        Canvas[] allCanvases = GetComponentsInChildren<Canvas>(true);
-        foreach (var canvas in allCanvases)
-        {
-            if (canvas != null)
-            {
-                canvas.overrideSorting = true;
-                int oldOrder = canvas.sortingOrder;
-                canvas.sortingOrder = oldOrder + offset;
-                Log($"{canvas.gameObject.name}: {oldOrder} → {canvas.sortingOrder}");
-            }
-        }
-        currentOffset = offset;
-
-        // ============================================================
-        // 3. ПОЗИЦИЯ ПО Z - смещаем корневой объект
-        // ============================================================
-        Vector3 pos = transform.position;
-        pos.z = -1f;
-        transform.position = pos;
-        Log($"Позиция Z изменена на: {pos.z}");
+        clickedCard = card;
+        mouseDownPosition = Input.mousePosition;    // Запоминаем позицию нажатия
+        isMouseDown = true;
+        hasExceededThreshold = false;
     }
 
     /// <summary>
-    /// Опускает все визуальные компоненты карты до исходных значений
+    /// Поднимает карту для перетаскивания (создаёт копию, если нужно)
     /// </summary>
-    public void LowerCard()
+    /// <param name="card">Карта, которую поднимаем</param>
+    private void PickUpCardForDrag(CardObject card)
     {
-        Log($"Опускаем карту на оригинальный слой");
+        if (enableDebugLogs)
+            Debug.Log($"PickUpCardForDrag: {card.cardName}");
 
-        // 1. Все SpriteRenderer
-        for (int i = 0; i < allRenderers.Length; i++)
+        // Проверяем, зажат ли Shift (для взятия всех карт из стопки)
+        bool shiftPressed = InputHandler.Instance != null &&
+                           InputHandler.Instance.GetKey("TakeAll");
+
+        // Если карта стакается и в стопке больше 1 карты, и Shift не зажат
+        if (card.isStackable && card.stackSize > 1 && !shiftPressed)
         {
-            if (allRenderers[i] != null)
+            // Создаём новую карту из библиотеки
+            CardObject newCard = CardLibrary.CreateCard(card.cardID, card.transform.position, 1);
+
+            // Уменьшаем стопку исходной карты
+            card.stackSize--;
+
+            if (newCard != null)
             {
-                int oldOrder = allRenderers[i].sortingOrder;
-                allRenderers[i].sortingOrder = originalOrders[i];
-                Log($"{allRenderers[i].gameObject.name}: {oldOrder} → {allRenderers[i].sortingOrder}");
+                // Настраиваем новую карту для перетаскивания
+                newCard.currentCell = null;
+                newCard.originalGridPos = card.originalGridPos;
+                newCard.PickUp();               // Поднимаем карту (визуальный подъём)
+
+                draggedCard = newCard;
+                isDragging = true;
+
+                if (enableDebugLogs)
+                    Debug.Log($"Создана и поднята 1 карта из стопки: {newCard.cardName}");
+
+                clickedCard = draggedCard;
+                return;
+            }
+            else
+            {
+                Debug.LogError($"Не удалось создать карту {card.cardID} через CardLibrary");
+                ResetDragState();
+                return;
             }
         }
 
-        // 2. Все Canvas
-        foreach (CanvasData data in childCanvases)
+        // Обычный подъём карты (без создания копии)
+        if (card != null && card.gameObject != null)
         {
-            if (data.canvas != null)
+            card.PickUp();      // Поднимаем карту (визуальный подъём)
+            draggedCard = card;
+            isDragging = true;
+
+            if (enableDebugLogs)
+                Debug.Log($"Поднята карта: {card.cardName}");
+        }
+        else
+        {
+            ResetDragState();
+        }
+    }
+
+    /// <summary>
+    /// Завершает перетаскивание - пытается положить карту на слот или в сетку
+    /// </summary>
+    public void EndDrag()
+    {
+        if (enableDebugLogs)
+            Debug.Log($"EndDrag: {draggedCard.cardName}");
+
+        // Получаем позицию мыши в мировых координатах
+        Vector3 mouseWorldPos = GetMouseWorldPosition();
+
+        // Проверяем, что карта существует
+        if (draggedCard == null || draggedCard.gameObject == null)
+        {
+            ResetDragState();
+            return;
+        }
+
+        // ============================================================
+        // ПРОВЕРЯЕМ, НЕ НАД СЛОТОМ ЛИ КУРСОР
+        // ============================================================
+        WorldSlotWindow targetSlot = null;
+        float minDistance = float.MaxValue;
+
+        // Ищем ближайший свободный слот
+        foreach (WorldSlotWindow window in WorldSlotWindow.AllSlots)
+        {
+            if (window.HasCard) continue;              // Слот занят - пропускаем
+            if (window.GetSlotRect() == null) continue;
+
+            // Вычисляем расстояние до слота
+            float distance = Vector3.Distance(mouseWorldPos, window.GetSlotRect().position);
+
+            // Если слот в радиусе обнаружения и ближе предыдущего
+            if (distance < window.slotDetectionRadius && distance < minDistance)
             {
-                int oldOrder = data.canvas.sortingOrder;
-                data.canvas.overrideSorting = data.wasOverriding;
-                data.canvas.sortingOrder = data.originalSortingOrder;
-                data.canvas.sortingLayerName = data.originalSortingLayer;
-                Log($"{data.canvas.gameObject.name}: {oldOrder} → {data.canvas.sortingOrder}");
+                minDistance = distance;
+                targetSlot = window;
             }
         }
+
+        // Если найден подходящий слот - кладём карту на слот
+        if (targetSlot != null && targetSlot.CanPlaceCard(draggedCard))
+        {
+            if (enableDebugLogs)
+                Debug.Log($"Карта {draggedCard.cardName} брошена на слот");
+
+            CardObject cardToPlace = draggedCard;
+            ResetDragState();           // Сбрасываем состояние до броска
+            targetSlot.PlaceCard(cardToPlace);  // Кладём карту на слот
+            return;
+        }
+
+        // Проверяем, не над UI ли курсор
+        if (IsPointerOverUI())
+        {
+            // Если над UI - возвращаем карту на исходную позицию
+            DropLogic.ReturnToOriginalPosition(draggedCard);
+            return;
+        }
+
+        // Пытаемся уронить карту в игровой мир
+        bool cardRemainsUnderCursor = draggedCard.Drop(mouseWorldPos);
+
+        // Если осталась часть стопки под курсором - продолжаем перетаскивание
+        if (cardRemainsUnderCursor)
+        {
+            if (enableDebugLogs)
+                Debug.Log($"{draggedCard.cardName} продолжает перетаскивание (остаток стопки)");
+
+            draggedCard.UpdateDragPosition(mouseWorldPos);
+            return;
+        }
+
+        // Сбрасываем состояние
+        ResetDragState();
+    }
+
+    /// <summary>
+    /// Отменяет перетаскивание (возвращает карту на исходную позицию)
+    /// </summary>
+    private void CancelDrag()
+    {
+        if (enableDebugLogs)
+            Debug.Log($"CancelDrag: {draggedCard?.cardName ?? "null"}");
+
+        if (draggedCard != null)
+        {
+            // Возвращаем карту на исходную позицию
+            DropLogic.ReturnToOriginalPosition(draggedCard);
+        }
+
+        ResetDragState();
+    }
+
+    // ============================================================
+    //  ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ
+    // ============================================================
+
+    /// <summary>
+    /// Получает карту под курсором мыши
+    /// </summary>
+    private CardObject GetCardUnderMouse()
+    {
+        if (mainCamera == null) return null;
+
+        // Создаём луч от камеры через позицию мыши
+        Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
+
+        // Выполняем рейкаст
+        RaycastHit hit3D;
+        if (Physics.Raycast(ray, out hit3D, raycastDistance))
+        {
+            // Возвращаем компонент CardObject, если он есть
+            return hit3D.collider.GetComponent<CardObject>();
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Получает позицию мыши в мировых координатах (Z всегда 0)
+    /// </summary>
+    private Vector3 GetMouseWorldPosition()
+    {
+        // Если есть GridManager - используем его для привязки к сетке
+        if (GridManager.Instance != null)
+        {
+            return GridManager.Instance.GetMouseWorldPositionOnGrid();
+        }
+
+        // Иначе стандартное преобразование
+        if (mainCamera == null) return Vector3.zero;
+
+        Vector3 mousePos = Input.mousePosition;
+        Vector3 world = mainCamera.ScreenToWorldPoint(new Vector3(mousePos.x, mousePos.y, 0));
+        world.z = 0;    // Z всегда 0 (управляется VisualController)
+        return world;
+    }
+
+    /// <summary>
+    /// Проверяет, находится ли курсор над UI элементом
+    /// </summary>
+    private bool IsPointerOverUI()
+    {
+        if (EventSystem.current == null) return false;
+        return EventSystem.current.IsPointerOverGameObject();
+    }
+
+    /// <summary>
+    /// Сбрасывает состояние перетаскивания
+    /// </summary>
+    private void ResetDragState()
+    {
+        if (draggedCard != null)
+            draggedCard.isDragging = false;
+
         isDragging = false;
-        currentOffset = 0;
+        draggedCard = null;
 
-        // 3. Восстанавливаем позицию по Z
-        Vector3 pos = transform.position;
-        pos.z = 0f;
-        transform.position = pos;
-        Log($"Позиция Z восстановлена на: {pos.z}");
+        // Скрываем подсветку сетки
+        GridManager.Instance?.HideHighlight();
     }
 
     /// <summary>
-    /// Обновляет список спрайтов и Canvas (вызывать после добавления новых слоёв)
+    /// Сбрасывает состояние мыши
     /// </summary>
-    public void RefreshRenderers()
+    private void ResetMouseState()
     {
-        SaveAllData();
-
-        if (isDragging)
-        {
-            LiftCard();
-        }
+        isMouseDown = false;
+        clickedCard = null;
+        hasExceededThreshold = false;
     }
 
     // ============================================================
-    //  ДОПОЛНИТЕЛЬНЫЕ МЕТОДЫ
+    //  ПУБЛИЧНЫЕ МЕТОДЫ
     // ============================================================
 
-    public bool IsDragging()
-    {
-        return isDragging;
-    }
-
-    /// <summary>
-    /// Возвращает VisualContainer
-    /// </summary>
-    public GameObject GetVisualContainer()
-    {
-        return visualContainer;
-    }
+    public bool IsDragging => isDragging;           // Идёт ли перетаскивание
+    public CardObject DraggedCard => draggedCard;   // Текущая перетаскиваемая карта
 }
