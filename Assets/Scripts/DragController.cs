@@ -93,7 +93,6 @@ public class DragController : MonoBehaviour
             {
                 // Карта над окном крафта - скрываем подсветку сетки
                 GridManager.Instance?.HideHighlight();
-                //return; // Выходим, чтобы не показывать подсветку сетки
             }
             else  GridManager.Instance?.UpdateHighlight(mouseWorldPos);
 
@@ -482,21 +481,6 @@ public class DragController : MonoBehaviour
         if (Physics.Raycast(ray, out hit, raycastDistance, 1 << LayerMask.NameToLayer("Slots")))
         {
             return true;
-            // Проверяем, что это окно крафта (а не слот)
-            CraftWindowController window = hit.collider.GetComponent<CraftWindowController>();
-            if (window != null)
-            {
-                return true;
-            }
-
-            // Также проверяем, не является ли коллайдер частью окна (например, фон)
-            // Если у окна есть коллайдер на дочернем объекте
-            if (hit.collider.transform.parent != null)
-            {
-                window = hit.collider.transform.parent.GetComponent<CraftWindowController>();
-                if (window != null)
-                    return true;
-            }
         }
 
         return false;
