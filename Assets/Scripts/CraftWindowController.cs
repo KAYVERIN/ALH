@@ -234,13 +234,13 @@ public class CraftWindowController : MonoBehaviour, ICardWindow
         {
             Log($"Из слота 0 удалена книга рецептов! Переключаемся в обычный режим");
             isRecipeBookMode = false;
-            
+
             // Удаляем все слоты кроме 0
             for (int i = slots.Count - 1; i > 0; i--)
             {
                 RemoveSlot(i);
             }
-            
+
             UpdateWindowSize();
             UpdateCraftButton();
             return;
@@ -253,35 +253,28 @@ public class CraftWindowController : MonoBehaviour, ICardWindow
             return;
         }
 
-        // Проверяем, пустые ли последние 2 слота (включая текущий)
-        int lastFilledIndex = GetLastFilledSlotIndex();
-        
-        // Если есть пустые слоты в конце - удаляем их
-        if (slots.Count > 1)
+        // Проверяем, пустые ли последние 2 слота
+        // Удаляем все пустые слоты в конце, пока последние 2 слота пустые
+        bool removedAny = true;
+        while (removedAny && slots.Count > 1)
         {
-            // Проверяем, заполнен ли предпоследний слот
-            bool secondLastEmpty = true;
-            if (slots.Count >= 2)
-            {
-                CraftSlot secondLastSlot = slots[slots.Count - 2];
-                if (secondLastSlot.HasCard)
-                    secondLastEmpty = false;
-            }
-            
-            // Если последний слот пуст и предпоследний тоже пуст - удаляем последний
-            if (!slot.HasCard && secondLastEmpty && slot.SlotIndex == slots.Count - 1)
+            removedAny = false;
+
+            // Проверяем последний слот
+            CraftSlot lastSlot = slots[slots.Count - 1];
+            // Проверяем предпоследний слот
+            CraftSlot secondLastSlot = slots[slots.Count - 2];
+
+            // Если оба последних слота пустые - удаляем последний
+            if (!lastSlot.HasCard && !secondLastSlot.HasCard)
             {
                 RemoveSlot(slots.Count - 1);
-                UpdateWindowSize();
-            }
-            else if (!slot.HasCard && slot.SlotIndex == slots.Count - 1 && slots.Count > 1)
-            {
-                // Если последний слот пуст - удаляем его
-                RemoveSlot(slots.Count - 1);
-                UpdateWindowSize();
+                removedAny = true;
+                Log($"Удалён пустой слот {slots.Count} (последние 2 слота пусты)");
             }
         }
 
+        UpdateWindowSize();
         UpdateCraftButton();
     }
 
