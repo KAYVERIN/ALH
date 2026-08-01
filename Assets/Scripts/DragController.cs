@@ -269,7 +269,7 @@ public class DragController : MonoBehaviour
         // 1. ПРОВЕРЯЕМ СЛОТЫ КРАФТА (ПРИОРИТЕТ 1)
         // ============================================================
         CraftSlot craftSlot = GetCraftSlotUnderMouse();
-        bool craftSlotTru = craftSlot.CanPlaceCard(draggedCard)
+        bool craftSlotTru = craftSlot.CanPlaceCard(draggedCard);
         if (craftSlot != null && craftSlotTru)
         {
             if (craftSlotTru)
