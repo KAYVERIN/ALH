@@ -101,23 +101,23 @@ public class CraftWindowController : MonoBehaviour, ICardWindow
         ClearSlots();
 
         // Проверяем, является ли карта книгой рецептов или рецептом
-        isRecipeBookMode = IsRecipeBookOrRecipe();
+        //isRecipeBookMode = IsRecipeBookOrRecipe();
 
         // Создаём первый слот (всегда открыт)
         CreateSlot(0);
 
         // Если книга рецептов - сразу создаём все слоты
-        if (isRecipeBookMode)
-        {
-            for (int i = 1; i < totalSlotsCount; i++)
-            {
-                CreateSlot(i);
-            }
+        //if (isRecipeBookMode)
+        //{
+        //    for (int i = 1; i < totalSlotsCount; i++)
+        //    {
+        //        CreateSlot(i);
+        //    }
             // Все слоты созданы, но кнопка неактивна до заполнения всех
-        }
+        //}
 
         // Обновляем размер окна
-        UpdateWindowSize();
+        //UpdateWindowSize();
 
         // Деактивируем кнопку (она активируется при заполнении нужных слотов)
         UpdateCraftButton();
