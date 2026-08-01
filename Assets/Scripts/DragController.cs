@@ -89,35 +89,7 @@ public class DragController : MonoBehaviour
             // Обновляем позицию карты (только X и Y, Z управляется VisualController)
             draggedCard.UpdateDragPosition(mouseWorldPos);
 
-            // ============================================================
-            // ПРОВЕРЯЕМ, НАД ЧЕМ НАХОДИТСЯ КАРТА
-            // ============================================================
-
-            // 1. Проверяем, не над слотом крафта ли карта
-            CraftSlot craftSlot = GetCraftSlotUnderMouse();
-            if (craftSlot != null && craftSlot.IsSlotActive && !craftSlot.HasCard)
-            {
-                // Карта над слотом крафта - скрываем подсветку сетки
-                GridManager.Instance?.HideHighlight();
-                // Подсвечиваем слот крафта
-                craftSlot.HighlightSlot(true);
-                return; // Выходим, чтобы не проверять другие условия
-            }
-            else
-            {
-                // Скрываем подсветку всех слотов крафта
-                HideAllCraftSlotHighlights();
-            }
-
-            // 2. Проверяем, не над окном крафта ли карта (но не над слотом)
-            if (IsPointerOverCraftWindow())
-            {
-                // Карта над окном крафта - скрываем подсветку сетки
-                GridManager.Instance?.HideHighlight();
-                return; // Выходим, чтобы не показывать подсветку сетки
-            }
-
-            // 3. Проверяем, не над обычным слотом ли карта
+            // Проверяем, не над слотом ли карта
             if (WorldSlotWindow.IsCardOverAnySlot(draggedCard))
             {
                 // Карта над слотом - скрываем подсветку сетки
@@ -192,6 +164,7 @@ public class DragController : MonoBehaviour
             }
         }
     }
+
     // ============================================================
     //  ОСНОВНЫЕ МЕТОДЫ ДРАГА
     // ============================================================
@@ -488,14 +461,6 @@ public class DragController : MonoBehaviour
         if (Physics.Raycast(ray, out hit, raycastDistance, 1 << LayerMask.NameToLayer("Slots")))
         {
             CraftSlot slot = hit.collider.GetComponent<CraftSlot>();
-
-            // Проверяем, не является ли коллайдер частью окна (а не слота)
-            if (slot == null)
-            {
-                // Может быть коллайдер на дочернем объекте слота
-                slot = hit.collider.GetComponentInParent<CraftSlot>();
-            }
-
             if (slot != null && slot.IsSlotActive && !slot.HasCard)
             {
                 return slot;
@@ -503,52 +468,6 @@ public class DragController : MonoBehaviour
         }
 
         return null;
-    }
-
-    /// <summary>
-    /// Проверяет, находится ли курсор над окном крафта
-    /// </summary>
-    private bool IsPointerOverCraftWindow()
-    {
-        if (mainCamera == null) return false;
-
-        Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
-        RaycastHit hit;
-
-        // Ищем окна крафта на слое "Slots"
-        if (Physics.Raycast(ray, out hit, raycastDistance, 1 << LayerMask.NameToLayer("Slots")))
-        {
-            // Проверяем, что это окно крафта (а не слот)
-            CraftWindowController window = hit.collider.GetComponent<CraftWindowController>();
-            if (window != null)
-            {
-                return true;
-            }
-
-            // Также проверяем, не является ли коллайдер частью окна (например, фон)
-            // Если у окна есть коллайдер на дочернем объекте
-            if (hit.collider.transform.parent != null)
-            {
-                window = hit.collider.transform.parent.GetComponent<CraftWindowController>();
-                if (window != null)
-                    return true;
-            }
-        }
-
-        return false;
-    }
-
-    /// <summary>
-    /// Скрывает подсветку всех слотов крафта
-    /// </summary>
-    private void HideAllCraftSlotHighlights()
-    {
-        // Найти все CraftSlot на сцене и убрать подсветку
-        CraftSlot[] allSlots = FindObjectsOfType<CraftSlot>();
-        foreach (CraftSlot slot in allSlots)
-        {
-            slot.HighlightSlot(false);
-        }
     }
 
     // ============================================================
