@@ -481,12 +481,13 @@ public class DragController : MonoBehaviour
         // Ищем окна крафта на слое "Slots"
         if (Physics.Raycast(ray, out hit, raycastDistance, 1 << LayerMask.NameToLayer("Slots")))
         {
+            return true;
             // Проверяем, что это окно крафта (а не слот)
             CraftWindowController window = hit.collider.GetComponent<CraftWindowController>();
-            //if (window != null)
-            //{
-            //    return true;
-            //}
+            if (window != null)
+            {
+                return true;
+            }
 
             // Также проверяем, не является ли коллайдер частью окна (например, фон)
             // Если у окна есть коллайдер на дочернем объекте
