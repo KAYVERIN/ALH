@@ -26,10 +26,6 @@ public class WorldSlotWindow : MonoBehaviour
 
     private void Awake()
     {
-        if (slotRect == null)
-        {
-            slotRect = transform.Find("Slot") as RectTransform;
-        }
 
         if (windowRect == null)
         {
