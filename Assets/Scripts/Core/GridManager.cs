@@ -447,16 +447,7 @@ public class GridManager : MonoBehaviour
     /// </summary>
     public void UpdateHighlight(Vector3 mouseWorldPos)
     {
-        // Проверяем, не над окном крафта ли курсор
-        bool isOverCraftWindow = false;
-        if (CraftWindow.IsAnyOpen())
-        {
-            CraftWindow window = CraftWindow.GetCurrentWindow();
-            if (window != null)
-            {
-                isOverCraftWindow = window.IsMouseOverWindow(mouseWorldPos);
-            }
-        }
+
 
         // Проверяем, не над UI ли курсор
         bool isOverUI = false;
@@ -465,12 +456,7 @@ public class GridManager : MonoBehaviour
             isOverUI = EventSystem.current.IsPointerOverGameObject();
         }
 
-        // Если курсор над UI или над окном крафта - скрываем подсветку
-        if (isOverCraftWindow || isOverUI)
-        {
-            HideHighlight();
-            return;
-        }
+
 
         // Ищем ячейку под курсором
         Cell nearestCell = GetCellAtWorldPosition(mouseWorldPos);
