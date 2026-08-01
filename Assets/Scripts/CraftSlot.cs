@@ -56,11 +56,7 @@ public class CraftSlot : MonoBehaviour
             if (Mathf.Abs(currentCard.transform.localPosition.x) > 2f ||
             Mathf.Abs(currentCard.transform.localPosition.y) > 2f)
             {
-                // Открепляем карту от слота
-                currentCard.transform.SetParent(null, true);
-                // Очищаем ссылку
-                Log($"Карта {currentCard.cardName} извлечена из слота (родитель изменён)");
-                currentCard = null;
+                RemoveCard();
             }
         }
     }
