@@ -242,9 +242,9 @@ public class CardVisualController : MonoBehaviour
         currentOffset = 0;
 
         // 3. Восстанавливаем позицию по Z
-        Vector3 pos = transform.position;
-        pos.z = 0f;
-        transform.position = pos;
+        //Vector3 pos = transform.position;
+        //pos.z = 0f;
+        //transform.position = pos;
         Log($"Позиция Z восстановлена на: {pos.z}");
     }
 
