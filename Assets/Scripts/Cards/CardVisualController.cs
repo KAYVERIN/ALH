@@ -200,12 +200,12 @@ public class CardVisualController : MonoBehaviour
         currentOffset = offset;
 
         // ============================================================
-        // 3. ПОЗИЦИЯ ПО Z - смещаем корневой объект
+        // 3. ПОЗИЦИЯ ПО Z - смещаем ТОЛЬКО Z, сохраняя X и Y
         // ============================================================
-        //Vector3 pos = transform.position;
-        //pos.z = -1f;
-        //transform.position = pos;
-        //Log($"Позиция Z изменена на: {pos.z}");
+        Vector3 pos = transform.position;
+        pos.z = -1f;
+        transform.position = pos;
+        Log($"Позиция Z изменена на: {pos.z}, X={pos.x}, Y={pos.y}");
     }
 
     /// <summary>
@@ -242,10 +242,10 @@ public class CardVisualController : MonoBehaviour
         currentOffset = 0;
 
         // 3. Восстанавливаем позицию по Z
-        //Vector3 pos = transform.position;
-        //pos.z = 0f;
-        //transform.position = pos;
-        //Log($"Позиция Z восстановлена на: {pos.z}");
+        Vector3 pos = transform.position;
+        pos.z = 0f;
+        transform.position = pos;
+        Log($"Позиция Z восстановлена на: {pos.z}");
     }
 
     /// <summary>
