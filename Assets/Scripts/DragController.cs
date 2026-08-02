@@ -214,8 +214,11 @@ public class DragController : MonoBehaviour
         // Если карта стакается и в стопке больше 1 карты, и Shift не зажат
         if (card.isStackable && card.stackSize > 1 && !shiftPressed)
         {
-            // Создаём новую карту из библиотеки
-            CardObject newCard = CardLibrary.CreateCard(card.cardID, card.transform.position, 1);
+            // Сохраняем позицию исходной карты
+            Vector3 originalPos = card.transform.position;
+
+            // Создаём новую карту из библиотеки (передаём позицию исходной карты)
+            CardObject newCard = CardLibrary.CreateCard(card.cardID, originalPos, 1);
 
             // Уменьшаем стопку исходной карты
             card.stackSize--;
@@ -225,7 +228,12 @@ public class DragController : MonoBehaviour
                 // Настраиваем новую карту для перетаскивания
                 newCard.currentCell = null;
                 newCard.originalGridPos = card.originalGridPos;
-                newCard.PickUp();               // Поднимаем карту (визуальный подъём)
+
+                // Убеждаемся, что карта находится в правильной позиции
+                newCard.transform.position = originalPos;
+
+                // Поднимаем карту (визуальный подъём) - этот метод сам установит позицию под курсор
+                newCard.PickUp();
 
                 draggedCard = newCard;
                 isDragging = true;
