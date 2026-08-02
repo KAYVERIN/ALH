@@ -290,8 +290,8 @@ public class CardObject : MonoBehaviour
         // Если карта в ячейке - убираем из неё
         if (currentCell != null)
         {
-            originalGridPos = new Vector2Int(currentCell.gridX, currentCell.gridY);
-            currentCell.RemoveCard();
+            //originalGridPos = new Vector2Int(currentCell.gridX, currentCell.gridY);
+            //currentCell.RemoveCard();
             currentCell = null;
         }
 
