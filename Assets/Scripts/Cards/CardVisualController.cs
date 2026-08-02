@@ -194,7 +194,7 @@ public class CardVisualController : MonoBehaviour
                 int oldOrder = canvas.sortingOrder;
                 canvas.sortingOrder = oldOrder + offset;
                 Log($"{canvas.gameObject.name}: {oldOrder} → {canvas.sortingOrder}");
-                //Debug.Log($"ПОСЛЕ изменения Z: {transform.position.z}"); // Лог ПОСЛЕ изменения
+                
             }
         }
         currentOffset = offset;
@@ -202,10 +202,10 @@ public class CardVisualController : MonoBehaviour
         // ============================================================
         // 3. ПОЗИЦИЯ ПО Z - смещаем корневой объект
         // ============================================================
-        Vector3 pos = transform.position;
-        pos.z = -1f;
-        transform.position = pos;
-        Log($"Позиция Z изменена на: {pos.z}");
+        //Vector3 pos = transform.position;
+        //pos.z = -1f;
+        //transform.position = pos;
+        //Log($"Позиция Z изменена на: {pos.z}");
     }
 
     /// <summary>
