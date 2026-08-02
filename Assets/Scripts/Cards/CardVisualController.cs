@@ -241,11 +241,11 @@ public class CardVisualController : MonoBehaviour
         isDragging = false;
         currentOffset = 0;
 
-        // 3. Восстанавливаем позицию по Z
+        // 3. Восстанавливаем позицию по Z (сохраняя X и Y)
         Vector3 pos = transform.position;
         pos.z = 0f;
         transform.position = pos;
-        Log($"Позиция Z восстановлена на: {pos.z}");
+        Log($"Позиция Z восстановлена на: {pos.z}, X={pos.x}, Y={pos.y}");
     }
 
     /// <summary>
