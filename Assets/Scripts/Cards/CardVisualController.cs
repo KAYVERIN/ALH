@@ -245,7 +245,7 @@ public class CardVisualController : MonoBehaviour
         //Vector3 pos = transform.position;
         //pos.z = 0f;
         //transform.position = pos;
-        Log($"Позиция Z восстановлена на: {pos.z}");
+        //Log($"Позиция Z восстановлена на: {pos.z}");
     }
 
     /// <summary>
