@@ -294,18 +294,26 @@ public class CardObject : MonoBehaviour
             currentCell.RemoveCard();
             currentCell = null;
         }
-        // Сначала сохраняем текущую позицию
+
+        // Получаем текущую позицию карты
         Vector3 currentPos = transform.position;
+
+        // Получаем позицию мыши в мире
         Vector3 mouseWorldPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+
+        // Сохраняем Z координату, чтобы карта не прыгала по глубине
         mouseWorldPos.z = currentPos.z;
+
+        // Сначала устанавливаем позицию под курсор
         transform.position = new Vector3(mouseWorldPos.x, mouseWorldPos.y, currentPos.z);
 
+        // Теперь поднимаем визуально (меняет только Z и сортировку)
         LiftCardVisuals();
+
         isDragging = true;
 
-
         OnCardPickedUp?.Invoke(this);
-        Log($"Карта {cardName} поднята");
+        Log($"Карта {cardName} поднята, позиция: {transform.position}");
     }
 
     /// <summary>
