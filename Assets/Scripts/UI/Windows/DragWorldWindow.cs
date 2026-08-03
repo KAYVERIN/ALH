@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 /// <summary>
 /// Скрипт для перетаскивания окна (3D объекта) мышью по миру.
@@ -21,6 +22,9 @@ public class DragWorldWindow : MonoBehaviour
     [Tooltip("3D коллайдер окна, по которому определяется клик (обязательно)")]
     [SerializeField] private Collider windowCollider;
 
+    [Tooltip("Canvas, на котором находятся UI элементы окна (опционально)")]
+    [SerializeField] private Canvas uiCanvas;
+
     private RectTransform rectTransform;
     private Camera mainCamera;
     private Vector3 offset;
@@ -33,6 +37,14 @@ public class DragWorldWindow : MonoBehaviour
         // Получаем компоненты
         rectTransform = GetComponent<RectTransform>();
         mainCamera = Camera.main;
+
+        // Если Canvas не назначен - пытаемся найти на объекте или в дочерних
+        if (uiCanvas == null)
+        {
+            uiCanvas = GetComponentInChildren<Canvas>(true);
+            if (uiCanvas == null)
+                uiCanvas = GetComponent<Canvas>();
+        }
 
         // Проверяем, назначен ли коллайдер в инспекторе
         if (windowCollider == null)
@@ -66,6 +78,14 @@ public class DragWorldWindow : MonoBehaviour
         // Начало ожидания перетаскивания по нажатию ЛКМ
         if (Input.GetMouseButtonDown(0))
         {
+            // Проверяем, не нажат ли UI элемент
+            if (IsPointerOverUI())
+            {
+                if (enableDebugLogs)
+                    Debug.Log("DragWorldWindow: Клик по UI элементу, перетаскивание игнорируется");
+                return;
+            }
+
             if (IsPointerOverWindow())
             {
                 isReadyToDrag = true;
@@ -101,6 +121,42 @@ public class DragWorldWindow : MonoBehaviour
             // Сбрасываем состояние готовности, даже если перетаскивание не началось
             isReadyToDrag = false;
         }
+    }
+
+    /// <summary>
+    /// Проверяет, находится ли курсор над UI элементом
+    /// </summary>
+    private bool IsPointerOverUI()
+    {
+        // Проверяем через EventSystem
+        if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
+        {
+            return true;
+        }
+
+        // Дополнительная проверка через GraphicsRaycaster, если есть Canvas
+        if (uiCanvas != null)
+        {
+            // Проверяем, что клик был по UI элементу на этом Canvas
+            var pointerEventData = new PointerEventData(EventSystem.current)
+            {
+                position = Input.mousePosition
+            };
+
+            var raycastResults = new System.Collections.Generic.List<RaycastResult>();
+            GraphicRaycaster raycaster = uiCanvas.GetComponent<GraphicRaycaster>();
+
+            if (raycaster != null)
+            {
+                raycaster.Raycast(pointerEventData, raycastResults);
+                if (raycastResults.Count > 0)
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     /// <summary>
