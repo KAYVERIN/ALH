@@ -1,11 +1,8 @@
 using UnityEngine;
-using UnityEngine.UI;
-using UnityEngine.EventSystems;
 
 /// <summary>
 /// Скрипт для перетаскивания окна (3D объекта) мышью по миру.
 /// Использует 3D Raycast для определения попадания в коллайдер окна.
-/// Перетаскивание начинается только после движения курсора при зажатой ЛКМ.
 /// </summary>
 public class DragWorldWindow : MonoBehaviour
 {
@@ -16,36 +13,20 @@ public class DragWorldWindow : MonoBehaviour
     [Tooltip("Включает отладочные сообщения в консоль")]
     [SerializeField] private bool enableDebugLogs = false;
 
-    [Tooltip("Минимальное расстояние движения мыши для начала перетаскивания (в пикселях)")]
-    [SerializeField] private float dragThreshold = 5f;
-
     [Header("References")]
     [Tooltip("3D коллайдер окна, по которому определяется клик (обязательно)")]
     [SerializeField] private Collider windowCollider;
-
-    [Tooltip("Canvas, на котором находятся UI элементы окна (опционально)")]
-    [SerializeField] private Canvas uiCanvas;
 
     private RectTransform rectTransform;
     private Camera mainCamera;
     private Vector3 offset;
     private bool isDragging = false;
-    private bool isReadyToDrag = false;
-    private Vector3 mouseDownPosition;
 
     private void Awake()
     {
         // Получаем компоненты
         rectTransform = GetComponent<RectTransform>();
         mainCamera = Camera.main;
-
-        // Если Canvas не назначен - пытаемся найти на объекте или в дочерних
-        if (uiCanvas == null)
-        {
-            uiCanvas = GetComponentInChildren<Canvas>(true);
-            if (uiCanvas == null)
-                uiCanvas = GetComponent<Canvas>();
-        }
 
         // Проверяем, назначен ли коллайдер в инспекторе
         if (windowCollider == null)
@@ -76,31 +57,10 @@ public class DragWorldWindow : MonoBehaviour
 
     private void Update()
     {
-        // Начало ожидания перетаскивания по нажатию ЛКМ
+        // Начало перетаскивания по нажатию ЛКМ
         if (Input.GetMouseButtonDown(0))
         {
-            // Проверяем, не нажат ли UI элемент
-            if (IsPointerOverUI())
-            {
-                if (enableDebugLogs)
-                    Debug.Log("DragWorldWindow: Клик по UI элементу, перетаскивание игнорируется");
-                return;
-            }
-
             if (IsPointerOverWindow())
-            {
-                isReadyToDrag = true;
-                mouseDownPosition = Input.mousePosition;
-                if (enableDebugLogs)
-                    Debug.Log($"DragWorldWindow: Ожидание движения мыши для начала перетаскивания окна {gameObject.name}");
-            }
-        }
-
-        // Проверяем движение мыши при зажатой ЛКМ и готовности к перетаскиванию
-        if (isReadyToDrag && Input.GetMouseButton(0))
-        {
-            // Проверяем, превысило ли движение мыши пороговое значение
-            if (Vector3.Distance(Input.mousePosition, mouseDownPosition) >= dragThreshold)
             {
                 StartDrag();
             }
@@ -113,51 +73,10 @@ public class DragWorldWindow : MonoBehaviour
         }
 
         // Конец перетаскивания по отпусканию ЛКМ
-        if (Input.GetMouseButtonUp(0))
+        if (isDragging && Input.GetMouseButtonUp(0))
         {
-            if (isDragging)
-            {
-                StopDrag();
-            }
-            // Сбрасываем состояние готовности, даже если перетаскивание не началось
-            isReadyToDrag = false;
+            StopDrag();
         }
-    }
-
-    /// <summary>
-    /// Проверяет, находится ли курсор над UI элементом
-    /// </summary>
-    private bool IsPointerOverUI()
-    {
-        // Проверяем через EventSystem
-        if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
-        {
-            return true;
-        }
-
-        // Дополнительная проверка через GraphicsRaycaster, если есть Canvas
-        if (uiCanvas != null)
-        {
-            // Проверяем, что клик был по UI элементу на этом Canvas
-            var pointerEventData = new PointerEventData(EventSystem.current)
-            {
-                position = Input.mousePosition
-            };
-
-            var raycastResults = new System.Collections.Generic.List<RaycastResult>();
-            GraphicRaycaster raycaster = uiCanvas.GetComponent<GraphicRaycaster>();
-
-            if (raycaster != null)
-            {
-                raycaster.Raycast(pointerEventData, raycastResults);
-                if (raycastResults.Count > 0)
-                {
-                    return true;
-                }
-            }
-        }
-
-        return false;
     }
 
     /// <summary>
@@ -197,7 +116,6 @@ public class DragWorldWindow : MonoBehaviour
     private void StartDrag()
     {
         isDragging = true;
-        isReadyToDrag = false; // Сбрасываем состояние готовности
         offset = rectTransform.position - GetMouseWorldPosition();
 
         if (enableDebugLogs)
