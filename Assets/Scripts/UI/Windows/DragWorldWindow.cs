@@ -3,6 +3,7 @@ using UnityEngine;
 /// <summary>
 /// Скрипт для перетаскивания окна (3D объекта) мышью по миру.
 /// Использует 3D Raycast для определения попадания в коллайдер окна.
+/// Перетаскивание начинается только после движения курсора при зажатой ЛКМ.
 /// </summary>
 public class DragWorldWindow : MonoBehaviour
 {
@@ -13,6 +14,9 @@ public class DragWorldWindow : MonoBehaviour
     [Tooltip("Включает отладочные сообщения в консоль")]
     [SerializeField] private bool enableDebugLogs = false;
 
+    [Tooltip("Минимальное расстояние движения мыши для начала перетаскивания (в пикселях)")]
+    [SerializeField] private float dragThreshold = 5f;
+
     [Header("References")]
     [Tooltip("3D коллайдер окна, по которому определяется клик (обязательно)")]
     [SerializeField] private Collider windowCollider;
@@ -21,6 +25,8 @@ public class DragWorldWindow : MonoBehaviour
     private Camera mainCamera;
     private Vector3 offset;
     private bool isDragging = false;
+    private bool isReadyToDrag = false;
+    private Vector3 mouseDownPosition;
 
     private void Awake()
     {
@@ -57,10 +63,23 @@ public class DragWorldWindow : MonoBehaviour
 
     private void Update()
     {
-        // Начало перетаскивания по нажатию ЛКМ
+        // Начало ожидания перетаскивания по нажатию ЛКМ
         if (Input.GetMouseButtonDown(0))
         {
             if (IsPointerOverWindow())
+            {
+                isReadyToDrag = true;
+                mouseDownPosition = Input.mousePosition;
+                if (enableDebugLogs)
+                    Debug.Log($"DragWorldWindow: Ожидание движения мыши для начала перетаскивания окна {gameObject.name}");
+            }
+        }
+
+        // Проверяем движение мыши при зажатой ЛКМ и готовности к перетаскиванию
+        if (isReadyToDrag && Input.GetMouseButton(0))
+        {
+            // Проверяем, превысило ли движение мыши пороговое значение
+            if (Vector3.Distance(Input.mousePosition, mouseDownPosition) >= dragThreshold)
             {
                 StartDrag();
             }
@@ -73,9 +92,14 @@ public class DragWorldWindow : MonoBehaviour
         }
 
         // Конец перетаскивания по отпусканию ЛКМ
-        if (isDragging && Input.GetMouseButtonUp(0))
+        if (Input.GetMouseButtonUp(0))
         {
-            StopDrag();
+            if (isDragging)
+            {
+                StopDrag();
+            }
+            // Сбрасываем состояние готовности, даже если перетаскивание не началось
+            isReadyToDrag = false;
         }
     }
 
@@ -116,6 +140,7 @@ public class DragWorldWindow : MonoBehaviour
     private void StartDrag()
     {
         isDragging = true;
+        isReadyToDrag = false; // Сбрасываем состояние готовности
         offset = rectTransform.position - GetMouseWorldPosition();
 
         if (enableDebugLogs)
