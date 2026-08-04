@@ -34,11 +34,11 @@ public class CardData : ScriptableObject
     public Color iconBackgroundColor = Color.white;
 
     [Tooltip("Смещение фона иконки относительно центра карты")]
-    public Vector2 iconBackgroundOffset = new Vector2(0f,0.6f);
+    public Vector2 iconBackgroundOffset = new Vector2(0f,0.56f);
     
 
     [Tooltip("Масштаб фона иконки")]
-    public float iconBackgroundScale = 0.6f;
+    public float iconBackgroundScale = 0.66f;
 
     [Tooltip("Поворот фона иконки (в градусах)")]
     public float iconBackgroundRotation = 0f;
@@ -48,10 +48,10 @@ public class CardData : ScriptableObject
     public Sprite extraSprite;
 
     [Tooltip("Смещение дополнительного спрайта")]
-    public Vector2 extraOffset = new Vector2(0f, 0.6f);
+    public Vector2 extraOffset = new Vector2(0f, 0.56f);
 
     [Tooltip("Масштаб дополнительного спрайта")]
-    public float extraScale = 0.5f;
+    public float extraScale = 0.66f;
 
     [Tooltip("Поворот дополнительного спрайта (в градусах)")]
     public float extraRotation = 0f;
