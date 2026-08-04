@@ -115,6 +115,7 @@ public class CardData : ScriptableObject
     // ============================================================
 
     [System.Serializable]
+    [CustomPropertyDrawer(typeof(CraftInteraction))]
     public class CraftInteraction
     {
         [Tooltip("Типы карт, которые можно поместить в эту ячейку")]
