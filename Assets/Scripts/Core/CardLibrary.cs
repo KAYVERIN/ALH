@@ -28,6 +28,9 @@ public class CardLibrary : MonoBehaviour
     public float stackCounterScale = 0.5f;
     public int stackSortingOrder = 100;
 
+    [Header("Пути для загрузки карт")]
+    public string[] resourcePaths = new string[] { "Cards/Data" };
+
     [Header("Отладка")]
     [SerializeField] private bool enableDebugLogsInspector = false;
     private static bool enableDebugLogs = false;
@@ -101,21 +104,32 @@ public class CardLibrary : MonoBehaviour
 
     void LoadCardsFromResources()
     {
-        CardData[] foundCards = Resources.LoadAll<CardData>("Cards/Data");
+        List<CardData> allFoundCards = new List<CardData>();
 
-        if (foundCards.Length > 0)
+        foreach (string path in resourcePaths)
+        {
+            CardData[] foundCards = Resources.LoadAll<CardData>(path);
+            if (foundCards.Length > 0)
+            {
+                allFoundCards.AddRange(foundCards);
+                if (enableDebugLogs)
+                    Debug.Log($"Найдено {foundCards.Length} карт в {path}");
+            }
+            else
+            {
+                if (enableDebugLogs)
+                    Debug.LogWarning($"Карты в {path} не найдены.");
+            }
+        }
+
+        if (allFoundCards.Count > 0)
         {
             if (enableDebugLogs)
-                Debug.Log($"Найдено {foundCards.Length} карт в Resources");
-            foreach (var card in foundCards)
+                Debug.Log($"Всего найдено {allFoundCards.Count} карт");
+            foreach (var card in allFoundCards)
             {
                 AddCardToDictionary(card);
             }
-        }
-        else
-        {
-            if (enableDebugLogs)
-                Debug.LogWarning("Карты в Resources не найдены.");
         }
     }
 
