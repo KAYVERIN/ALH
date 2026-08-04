@@ -10,14 +10,14 @@ public class ArchetypeDotVisualizer : MonoBehaviour
     {
         public CardData.Archetype archetype;
         public TextMeshProUGUI text;
-
-        [Header("Цвета")]
-        public Color positiveColor = Color.green;
-        public Color negativeColor = Color.red;
     }
 
     [Header("Настройки")]
     [SerializeField] private bool enableDebugLogs = false;
+
+    [Header("Цвета")]
+    [SerializeField] private Color positiveColor = Color.green;
+    [SerializeField] private Color negativeColor = Color.red;
 
     [Header("Точки архетипов")]
     [SerializeField] private GameObject archetypeDotsContainer;
@@ -146,8 +146,8 @@ public class ArchetypeDotVisualizer : MonoBehaviour
                 string newText = Mathf.Abs(value).ToString();
                 dotData.text.text = newText;
 
-                // Используем настраиваемые цвета из инспектора
-                dotData.text.color = value < 0 ? dotData.negativeColor : dotData.positiveColor;
+                // Используем глобальные цвета
+                dotData.text.color = value < 0 ? negativeColor : positiveColor;
 
                 Log($"Установлен текст: '{newText}', цвет: {(value < 0 ? "отрицательный" : "положительный")}");
                 Log($"После установки: text.text = '{dotData.text.text}'");
