@@ -119,6 +119,40 @@ public class CardData : ScriptableObject
     {
         [Tooltip("Типы карт, которые можно поместить в эту ячейку")]
         public List<CardType> allowedCardTypes = new List<CardType>();
+
+        [Tooltip("ID конкретных карт, которые можно поместить в эту ячейку (приоритет выше, чем allowedCardTypes)")]
+        public List<string> allowedCardIDs = new List<string>();
+
+        /// <summary>
+        /// Проверяет, можно ли поместить карту в этот слот
+        /// </summary>
+        public bool IsCardAllowed(CardObject card)
+        {
+            if (card == null) return false;
+
+            CardData cardData = card.GetCardData();
+            if (cardData == null) return false;
+
+            // 1. Сначала проверяем по ID (приоритет)
+            if (allowedCardIDs != null && allowedCardIDs.Count > 0)
+            {
+                return allowedCardIDs.Contains(cardData.cardID);
+            }
+
+            // 2. Если ID не заданы, проверяем по типам
+            if (allowedCardTypes != null && allowedCardTypes.Count > 0)
+            {
+                foreach (CardType cardType in cardData.Types)
+                {
+                    if (allowedCardTypes.Contains(cardType))
+                        return true;
+                }
+                return false;
+            }
+
+            // 3. Если ничего не задано - принимаем любую
+            return true;
+        }
     }
 
     [Header("=== СИСТЕМА КРАФТА ===")]
