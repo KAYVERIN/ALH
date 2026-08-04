@@ -314,37 +314,7 @@ public class DragController : MonoBehaviour
         }
         
 
-        // ============================================================
-        // 2. ПРОВЕРЯЕМ ОБЫЧНЫЕ СЛОТЫ (WorldSlotWindow)
-        // ============================================================
-        WorldSlotWindow targetSlot = null;
-        float minDistance = float.MaxValue;
 
-        // Ищем ближайший свободный слот
-        foreach (WorldSlotWindow window in WorldSlotWindow.AllSlots)
-        {
-            if (window.HasCard) continue;
-            if (window.GetSlotRect() == null) continue;
-
-            float distance = Vector3.Distance(mouseWorldPos, window.GetSlotRect().position);
-            if (distance < window.slotDetectionRadius && distance < minDistance)
-            {
-                minDistance = distance;
-                targetSlot = window;
-            }
-        }
-
-        // Если найден подходящий слот - кладём карту на слот
-        if (targetSlot != null && targetSlot.CanPlaceCard(draggedCard))
-        {
-            if (enableDebugLogs)
-                Debug.Log($"Карта {draggedCard.cardName} брошена на обычный слот");
-
-            CardObject cardToPlace = draggedCard;
-            ResetDragState();
-            targetSlot.PlaceCard(cardToPlace);
-            return;
-        }
 
         // Проверяем, не над UI ли курсор
         if (IsPointerOverUI())
