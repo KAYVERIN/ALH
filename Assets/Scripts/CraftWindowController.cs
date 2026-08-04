@@ -150,7 +150,10 @@ public class CraftWindowController : MonoBehaviour, ICardWindow
             return;
         }
 
-        List<CardType> allowedTypes = sourceCardData.GetAllowedTypesForSlot(index);
+        // Получаем полный объект взаимодействия
+        CardData.CraftInteraction interaction = sourceCardData.GetInteraction(index);
+        // Для обратной совместимости извлекаем типы
+        List<CardType> allowedTypes = interaction != null ? interaction.allowedCardTypes : new List<CardType>();
 
         GameObject slotObject = Instantiate(slotPrefab, slotsContainer);
         slotObject.name = $"Slot_{index}";
@@ -169,10 +172,11 @@ public class CraftWindowController : MonoBehaviour, ICardWindow
             return;
         }
 
-        slot.Initialize(index, allowedTypes, this);
+        // Передаём полный объект взаимодействия
+        slot.Initialize(index, interaction, this);
         slots.Add(slot);
 
-        Log($"Создан слот {index}, разрешено типов: {allowedTypes.Count}");
+        Log($"Создан слот {index}, разрешено типов: {(interaction != null ? interaction.allowedCardTypes.Count : 0)}, ID: {(interaction != null && interaction.allowedCardIDs != null ? interaction.allowedCardIDs.Count : 0)}");
 
         UpdateWindowSize();
     }

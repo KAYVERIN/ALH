@@ -27,6 +27,7 @@ public class CraftSlot : MonoBehaviour
     private bool isSlotActive = false;     // Слот виден и принимает карты?
     private int slotIndex = -1;             // Индекс слота в окне
     private CraftWindowController parentWindow;
+    private CardData.CraftInteraction slotInteraction; 
 
     public CardObject CurrentCard => currentCard;
     public bool HasCard => currentCard != null;
@@ -38,12 +39,18 @@ public class CraftSlot : MonoBehaviour
     //  ИНИЦИАЛИЗАЦИЯ
     // ============================================================
 
-    public void Initialize(int index, List<CardType> allowedTypes, CraftWindowController window)
+    public void Initialize(int index, CardData.CraftInteraction interaction, CraftWindowController window)
     {
         slotIndex = index;
-        allowedCardTypes = new List<CardType>(allowedTypes);
+        slotInteraction = interaction; // Сохраняем полный объект взаимодействия
         parentWindow = window;
         isSlotActive = true;
+
+        // Извлекаем типы для обратной совместимости
+        if (interaction != null)
+        {
+            allowedCardTypes = new List<CardType>(interaction.allowedCardTypes);
+        }
 
         // Включаем коллайдер
         if (slotCollider != null)
@@ -55,7 +62,7 @@ public class CraftSlot : MonoBehaviour
             highlightRenderer = highlightObject.GetComponent<SpriteRenderer>();
         }
 
-        Log($"Слот {index} инициализирован, разрешено типов: {allowedTypes.Count}");
+        Log($"Слот {index} инициализирован, разрешено типов: {(allowedCardTypes != null ? allowedCardTypes.Count : 0)}, ID: {(interaction != null && interaction.allowedCardIDs != null ? interaction.allowedCardIDs.Count : 0)}");
     }
 
     private void Update()
@@ -82,23 +89,55 @@ public class CraftSlot : MonoBehaviour
         if (card == null || HasCard || !isSlotActive)
             return false;
 
-        // Если фильтр пустой - принимаем любую карту
-        if (allowedCardTypes == null || allowedCardTypes.Count == 0)
-            return true;
+        // Используем новый метод из CraftInteraction
+        if (slotInteraction != null)
+            return slotInteraction.IsCardAllowed(card);
 
-        // Получаем данные карты
+        // Если нет данных о взаимодействии - проверяем по старой логике
+        // (на случай обратной совместимости)
         CardData cardData = card.GetCardData();
         if (cardData == null)
             return false;
 
-        // Проверяем, есть ли у карты разрешённый тип
+        if (allowedCardTypes == null || allowedCardTypes.Count == 0)
+            return true;
+
         foreach (CardType cardType in cardData.Types)
         {
             if (allowedCardTypes.Contains(cardType))
                 return true;
         }
 
-        Log($"Карта {card.cardName} не подходит для слота {slotIndex}");
+        return false;
+    }
+
+    /// <summary>
+    /// Проверяет, валидна ли карта для слота (без учёта занятости)
+    /// Используется для подсветки при наведении
+    /// </summary>
+    public bool IsCardValidForSlot(CardObject card)
+    {
+        if (card == null || !isSlotActive)
+            return false;
+
+        // Используем новый метод из CraftInteraction
+        if (slotInteraction != null)
+            return slotInteraction.IsCardAllowed(card);
+
+        // Обратная совместимость
+        if (allowedCardTypes == null || allowedCardTypes.Count == 0)
+            return true;
+
+        CardData cardData = card.GetCardData();
+        if (cardData == null)
+            return false;
+
+        foreach (CardType cardType in cardData.Types)
+        {
+            if (allowedCardTypes.Contains(cardType))
+                return true;
+        }
+
         return false;
     }
 
@@ -190,30 +229,7 @@ public class CraftSlot : MonoBehaviour
         Log($"Подсветка слота {slotIndex}: {(highlight ? "вкл" : "выкл")}, {(highlight ? (isValid ? "валидна" : "невалидна") : "")}");
     }
 
-    /// <summary>
-    /// Проверяет, валидна ли карта для слота (без учёта занятости)
-    /// Используется для подсветки при наведении
-    /// </summary>
-    public bool IsCardValidForSlot(CardObject card)
-    {
-        if (card == null || !isSlotActive)
-            return false;
 
-        if (allowedCardTypes == null || allowedCardTypes.Count == 0)
-            return true;
-
-        CardData cardData = card.GetCardData();
-        if (cardData == null)
-            return false;
-
-        foreach (CardType cardType in cardData.Types)
-        {
-            if (allowedCardTypes.Contains(cardType))
-                return true;
-        }
-
-        return false;
-    }
     // ============================================================
     //  УПРАВЛЕНИЕ АКТИВНОСТЬЮ СЛОТА
     // ============================================================
