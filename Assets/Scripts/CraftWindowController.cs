@@ -11,6 +11,7 @@ public class CraftWindowController : MonoBehaviour, ICardWindow
     [SerializeField] private RectTransform windowRect;
     [SerializeField] private RectTransform slotsContainer;
     [SerializeField] private Button craftButton;
+    [SerializeField] private Button closeButton; // Новая кнопка закрытия
     [SerializeField] private GameObject slotPrefab;
 
     [Header("Slot Settings")]
@@ -48,6 +49,17 @@ public class CraftWindowController : MonoBehaviour, ICardWindow
         {
             craftButton.interactable = false;
             craftButton.onClick.AddListener(OnCraftButtonClicked);
+        }
+
+        // Настройка кнопки закрытия
+        if (closeButton != null)
+        {
+            closeButton.onClick.AddListener(CloseWindow);
+            Log("Кнопка закрытия настроена");
+        }
+        else
+        {
+            Debug.LogWarning("[CraftWindowController] closeButton не назначен в инспекторе!");
         }
     }
 
@@ -182,13 +194,13 @@ public class CraftWindowController : MonoBehaviour, ICardWindow
             {
                 Log($"В слот 0 помещена книга рецептов! Открываем все слоты");
                 isRecipeBookMode = true;
-                
+
                 // Создаём все недостающие слоты
                 for (int i = slots.Count; i < totalSlotsCount; i++)
                 {
                     CreateSlot(i);
                 }
-                
+
                 UpdateWindowSize();
                 UpdateCraftButton();
                 return;
