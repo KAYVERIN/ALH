@@ -147,7 +147,7 @@ public class ArchetypeDotVisualizer : MonoBehaviour
                 dotData.text.text = newText;
 
                 // Используем глобальные цвета
-                dotData.text.color = value <= 0 ? negativeColor : positiveColor;
+                dotData.text.color = value < 0 ? negativeColor : positiveColor;
 
                 Log($"Установлен текст: '{newText}', цвет: {(value < 0 ? "отрицательный" : "положительный")}");
                 Log($"После установки: text.text = '{dotData.text.text}'");
