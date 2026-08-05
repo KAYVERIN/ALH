@@ -150,6 +150,6 @@ public static class ArchetypeCalculator
         values[CardData.Archetype.Red] = N;            // К = +N
         values[CardData.Archetype.Blue] = N;           // С = +N
         values[CardData.Archetype.Sandal] = N;         // Сан = +N
-        values[CardData.Archetype.White] = 0;          // Б = 0 (нейтральный)
+        values[CardData.Archetype.White] = N;         
     }
 }
