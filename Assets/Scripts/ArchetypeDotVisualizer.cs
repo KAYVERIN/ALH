@@ -135,13 +135,13 @@ public class ArchetypeDotVisualizer : MonoBehaviour
             int value = data.GetArchetypeValue(dotData.archetype);
             Log($"{dotData.archetype} = {value}");
 
-            if (value == 0)
+            /*if (value == 0)
             {
                 //dotData.text.gameObject.SetActive(false);
                 Log($"{dotData.archetype} = 0, текст скрыт");
             }
             else
-            {
+            {*/
                 dotData.text.gameObject.SetActive(true);
                 string newText = Mathf.Abs(value).ToString();
                 dotData.text.text = newText;
@@ -151,7 +151,7 @@ public class ArchetypeDotVisualizer : MonoBehaviour
 
                 Log($"Установлен текст: '{newText}', цвет: {(value < 0 ? "отрицательный" : "положительный")}");
                 Log($"После установки: text.text = '{dotData.text.text}'");
-            }
+           // }
         }
 
         Log("===== UpdateVisuals END =====");
