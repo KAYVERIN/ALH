@@ -137,7 +137,7 @@ public class ArchetypeDotVisualizer : MonoBehaviour
 
             if (value == 0)
             {
-                dotData.text.gameObject.SetActive(false);
+                //dotData.text.gameObject.SetActive(false);
                 Log($"{dotData.archetype} = 0, текст скрыт");
             }
             else
