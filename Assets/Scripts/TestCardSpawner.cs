@@ -31,6 +31,25 @@ public class TestCardSpawner : MonoBehaviour
     [Tooltip("Список карт/стопок для создания")]
     [SerializeField] private List<CardSpawnData> cardsToSpawn = new List<CardSpawnData>();
 
+    [Header("Опции спавна")]
+    [Tooltip("Спавнить все карты из CardLibrary (игнорирует список cardsToSpawn)")]
+    [SerializeField] private bool spawnAllCards = false;
+
+    [Tooltip("Количество каждой карты при спавне всех")]
+    [SerializeField] private int allCardsCount = 1;
+
+    [Tooltip("Использовать умное размещение при спавне всех карт")]
+    [SerializeField] private bool allCardsUseSmartPlacement = true;
+
+    [Tooltip("Смещение позиции между картами при спавне всех (по X)")]
+    [SerializeField] private float allCardsSpacingX = 1.5f;
+
+    [Tooltip("Смещение позиции между картами при спавне всех (по Y)")]
+    [SerializeField] private float allCardsSpacingY = 0f;
+
+    [Tooltip("Начальная позиция для спавна всех карт")]
+    [SerializeField] private Vector3 allCardsStartPosition = Vector3.zero;
+
     [Header("Настройки задержки")]
     [Tooltip("Задержка перед спавном (сек)")]
     [SerializeField] private float spawnDelay = 0.5f;
@@ -64,7 +83,14 @@ public class TestCardSpawner : MonoBehaviour
             if (logSpawnInfo)
                 Debug.Log("CardLibrary загружена! Создаём карты...");
 
-            SpawnCards();
+            if (spawnAllCards)
+            {
+                SpawnAllCardsFromLibrary();
+            }
+            else
+            {
+                SpawnCards();
+            }
         }
         else
         {
@@ -138,6 +164,89 @@ public class TestCardSpawner : MonoBehaviour
             Debug.Log("=== СОЗДАНИЕ КАРТ ЗАВЕРШЕНО ===");
     }
 
+    /// <summary>
+    /// Спавнит все карты из CardLibrary
+    /// </summary>
+    void SpawnAllCardsFromLibrary()
+    {
+        if (CardLibrary.Instance == null)
+        {
+            Debug.LogError("CardLibrary.Instance == null!");
+            return;
+        }
+
+        // Получаем все карты из библиотеки
+        var allCards = CardLibrary.Instance.allCards;
+
+        if (allCards == null || allCards.Count == 0)
+        {
+            Debug.LogWarning("В CardLibrary нет карт для спавна!");
+            return;
+        }
+
+        if (logSpawnInfo)
+            Debug.Log($"=== СПАВН ВСЕХ КАРТ ИЗ БИБЛИОТЕКИ (всего: {allCards.Count}) ===");
+
+        int spawnedCount = 0;
+        Vector3 currentPosition = allCardsStartPosition;
+
+        foreach (var cardData in allCards)
+        {
+            if (cardData == null)
+            {
+                Debug.LogWarning("Пропущен null CardData");
+                continue;
+            }
+
+            if (string.IsNullOrEmpty(cardData.cardID))
+            {
+                Debug.LogWarning($"Пропущена карта '{cardData.name}' (cardID пустой)");
+                continue;
+            }
+
+            if (allCardsCount <= 0)
+            {
+                Debug.LogWarning($"Пропущена карта '{cardData.cardID}' (count = {allCardsCount})");
+                continue;
+            }
+
+            // Создаём карту
+            CardObject card = CardLibrary.CreateCard(
+                cardData.cardID,
+                currentPosition,
+                allCardsCount
+            );
+
+            if (card == null)
+            {
+                Debug.LogError($"Не удалось создать карту '{cardData.cardID}' (CardData: {cardData.name})");
+                continue;
+            }
+
+            // Размещаем карту
+            if (allCardsUseSmartPlacement)
+            {
+                DropLogic.PlaceCardSmart(card);
+                if (logSpawnInfo)
+                    Debug.Log($"Создана карта: {cardData.cardName} ({cardData.cardID}) x{allCardsCount} (умное размещение)");
+            }
+            else
+            {
+                // Просто размещаем в указанной позиции
+                card.transform.position = currentPosition;
+                if (logSpawnInfo)
+                    Debug.Log($"Создана карта: {cardData.cardName} ({cardData.cardID}) x{allCardsCount} (фиксированная позиция)");
+            }
+
+            spawnedCount++;
+            currentPosition.x += allCardsSpacingX;
+            currentPosition.y += allCardsSpacingY;
+        }
+
+        if (logSpawnInfo)
+            Debug.Log($"=== СПАВН ВСЕХ КАРТ ЗАВЕРШЕН (создано: {spawnedCount}/{allCards.Count}) ===");
+    }
+
     // Метод для добавления карты из кода (опционально)
     public void AddCardToSpawn(CardData cardData, Vector3 position, int count = 1, bool useSmartPlacement = true)
     {
@@ -175,6 +284,27 @@ public class TestCardSpawner : MonoBehaviour
                 Debug.Log("- NULL CardData");
         }
     }
+
+#if UNITY_EDITOR
+    // Публичный метод для вызова спавна всех карт из редактора
+    public void EditorSpawnAllCards()
+    {
+        if (CardLibrary.Instance != null && CardLibrary.Instance.IsReady())
+        {
+            SpawnAllCardsFromLibrary();
+        }
+        else
+        {
+            Debug.LogError("CardLibrary не загружен или не готов. Запустите сцену для загрузки библиотеки.");
+        }
+    }
+
+    // Публичный метод для получения значения spawnAllCards
+    public bool GetSpawnAllCards() => spawnAllCards;
+
+    // Публичный метод для установки значения spawnAllCards
+    public void SetSpawnAllCards(bool value) => spawnAllCards = value;
+#endif
 }
 
 #if UNITY_EDITOR
@@ -189,8 +319,38 @@ public class TestCardSpawnerEditor : Editor
         // Получаем доступ к целевой переменной
         TestCardSpawner spawner = (TestCardSpawner)target;
         
-        // Добавляем кнопку для вывода списка в консоль
+        // Добавляем кнопку для спавна всех карт
         GUILayout.Space(10);
+        EditorGUILayout.HelpBox(
+            "Если включена опция 'Spawn All Cards', будут созданы ВСЕ карты из CardLibrary, " +
+            "а список cardsToSpawn будет проигнорирован.",
+            MessageType.Info
+        );
+        
+        GUILayout.Space(5);
+        
+        if (GUILayout.Button("Spawn All Cards Now (Editor)"))
+        {
+            if (CardLibrary.Instance != null && CardLibrary.Instance.IsReady())
+            {
+                if (EditorUtility.DisplayDialog("Спавн всех карт", 
+                    "Будут созданы все карты из CardLibrary. Продолжить?", 
+                    "Да", "Отмена"))
+                {
+                    // Используем публичный метод вместо прямого доступа к полю
+                    spawner.EditorSpawnAllCards();
+                }
+            }
+            else
+            {
+                EditorUtility.DisplayDialog("Ошибка", 
+                    "CardLibrary не загружен или не готов. Запустите сцену для загрузки библиотеки.", 
+                    "OK");
+            }
+        }
+        
+        // Добавляем кнопку для вывода списка в консоль
+        GUILayout.Space(5);
         if (GUILayout.Button("Log Spawn List to Console"))
         {
             spawner.LogSpawnList();
