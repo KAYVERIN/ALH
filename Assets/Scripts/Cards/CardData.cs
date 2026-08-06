@@ -26,6 +26,9 @@ public class CardData : ScriptableObject
     [Tooltip("Поворот иконки (в градусах)")]
     public float iconRotation = 0f;
 
+    [Tooltip("Порядок слоя для основной иконки")]
+    public int iconOrderInLayer = 5;
+
     [Header("=== НАСТРОЙКА ФОНА ДЛЯ ИКОНКИ ===")]
     [Tooltip("Фон для иконки (деревня, верстак, пещера и т.д.)")]
     public Sprite iconBackground;
@@ -34,14 +37,16 @@ public class CardData : ScriptableObject
     public Color iconBackgroundColor = Color.white;
 
     [Tooltip("Смещение фона иконки относительно центра карты")]
-    public Vector2 iconBackgroundOffset = new Vector2(0f,0.56f);
-    
+    public Vector2 iconBackgroundOffset = new Vector2(0f,0.56f);    
 
     [Tooltip("Масштаб фона иконки")]
     public float iconBackgroundScale = 0.66f;
 
     [Tooltip("Поворот фона иконки (в градусах)")]
     public float iconBackgroundRotation = 0f;
+
+    [Tooltip("Порядок слоя для фона иконки")]
+    public int iconBackgroundOrderInLayer = 2;
 
     [Header("=== ДОПОЛНИТЕЛЬНЫЕ СЛОИ (опционально) ===")]
     [Tooltip("Дополнительный спрайт (можно добавить ещё один слой)")]
@@ -58,13 +63,6 @@ public class CardData : ScriptableObject
 
     [Tooltip("Цвет дополнительного спрайта")]
     public Color extraColor = Color.white;
-
-    [Header("=== НАСТРОЙКИ ORDER IN LAYER ===")]
-    [Tooltip("Порядок слоя для основной иконки")]
-    public int iconOrderInLayer = 5;
-
-    [Tooltip("Порядок слоя для фона иконки")]
-    public int iconBackgroundOrderInLayer = 2;
 
     [Tooltip("Порядок слоя для дополнительного слоя")]
     public int extraLayerOrderInLayer = 1;
